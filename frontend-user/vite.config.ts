@@ -14,7 +14,8 @@ export default defineConfig({
       dts: 'src/auto-imports.d.ts'
     }),
     Components({
-      dts: 'src/components.d.ts'
+      dts: 'src/components.d.ts',
+      exclude: [/node_modules/, /\.git\//, /\.vscode\//, /van-config-provider/]
     })
   ],
   resolve: {

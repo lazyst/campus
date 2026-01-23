@@ -104,29 +104,6 @@ a:hover {
   display: none;
 }
 
-/* 安全区适配 */
-.safe-area-bottom {
-  padding-bottom: constant(safe-area-inset-bottom);
-  padding-bottom: env(safe-area-inset-bottom);
-}
-
-/* 底部导航栏安全间距 */
-.main-layout-content {
-  padding-bottom: 60px;
-}
-
-.hide-scrollbar::-webkit-scrollbar {
-  display: none;
-}
-
-/* 浮动按钮避免与底部导航栏重叠 */
-.van-floating-bubble {
-  position: fixed !important;
-  bottom: 70px !important;
-  right: 16px !important;
-  z-index: 100 !important;
-}
-
 /* 底部导航栏安全间距 */
 .main-layout-content {
   padding-bottom: 60px;

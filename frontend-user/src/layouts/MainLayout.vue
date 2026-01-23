@@ -1,5 +1,5 @@
 <template>
-  <div class="min-h-screen bg-gray-50 pb-14">
+  <div class="min-h-screen bg-gray-50 pb-14" :class="{ 'pt-11': showTopPadding }">
     <router-view />
     
     <!-- Floating Action Button -->
@@ -13,11 +13,11 @@
     </div>
     
     <!-- Custom TabBar -->
-    <TabBar 
-      v-model="activeTab" 
-      :items="tabItems" 
+    <TabBar
+      :model-value="activeTab"
+      :items="tabItems"
       @change="onTabChange"
-      v-show="showTabbar" 
+      v-show="showTabbar"
     />
   </div>
 </template>
@@ -99,6 +99,27 @@ const activeTab = computed(() => {
 const showTabbar = computed(() => {
   const routeName = route.name as string || ''
   return !hiddenTabbarRoutes.includes(routeName)
+})
+
+// Compute whether to show top padding
+// 一级页面（首页）没有自己的 NavBar，需要顶部 padding 为 MainLayout 的 NavBar 留出空间
+const showTopPadding = computed(() => {
+  const path = route.path
+  // 匹配一级页面的路径模式
+  if (path === '/' || path.startsWith('/?')) {
+    return true // Forum (首页)
+  }
+  if (path === '/trade') {
+    return true
+  }
+  if (path.startsWith('/messages') && !path.includes('/chat')) {
+    return true // Messages (首页，不是 chat 详情)
+  }
+  if (path === '/profile') {
+    return true
+  }
+  // 其他都是二级页，有自己的 NavBar，不需要顶部 padding
+  return false
 })
 
 // Compute whether to show floating button
