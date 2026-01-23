@@ -485,6 +485,260 @@ git checkout -b refactor/remove-vant-ui
 
 ---
 
+## 任务依赖关系
+
+### 执行顺序
+
+**第一阶段** (必须首先完成):
+- 0.1 → 0.2 (环境准备)
+
+**第二阶段** (依赖环境准备):
+- 1.1 → 1.2 → 1.3 → 1.4 (基础组件)
+- 2.1 → 2.2 (导航组件)
+
+**第三阶段** (依赖组件完成):
+- 3.1 (布局重构,需要基础组件和导航组件)
+
+**第四阶段** (并行执行):
+- 4.1 → 4.2 (认证页面,依赖布局)
+- 5.1 → 5.2 → 5.3 → 5.4 (首页,依赖布局)
+- 6.1 → 6.2 → 6.3 → 6.4 (论坛模块,依赖布局)
+- 7.1 → 7.2 → 7.3 → 7.4 (闲置模块,依赖布局)
+- 8.1 → 8.2 → 8.3 (消息模块,依赖布局)
+- 9.1 → 9.2 → 9.3 → 9.4 → 9.5 → 9.6 → 9.7 (个人中心,依赖布局)
+
+**第五阶段** (所有页面重构后):
+- 10.1 (移除vant-ui依赖)
+- 11.1 (测试和修复)
+
+### 依赖关系表
+
+| 任务ID | 依赖任务 | 说明 |
+|--------|----------|------|
+| 1.1-1.4 | 0.1, 0.2 | 基础组件需要Tailwind环境 |
+| 2.1-2.2 | 0.1, 0.2 | 导航组件需要Tailwind环境 |
+| 3.1 | 1.1-1.4, 2.1-2.2 | 布局需要基础组件和导航组件 |
+| 4.1-4.2 | 3.1 | 认证页面需要布局组件 |
+| 5.1-5.4 | 3.1 | 首页需要布局组件 |
+| 6.1-6.4 | 3.1 | 论坛模块需要布局组件 |
+| 7.1-7.4 | 3.1 | 闲置模块需要布局组件 |
+| 8.1-8.3 | 3.1 | 消息模块需要布局组件 |
+| 9.1-9.7 | 3.1 | 个人中心需要布局组件 |
+| 10.1 | 4.1-4.2, 5.1-5.4, 6.1-6.4, 7.1-7.4, 8.1-8.3, 9.1-9.7 | 移除vant-ui需要所有页面重构完成 |
+| 11.1 | 10.1 | 测试需要vant-ui完全移除 |
+
+---
+
+## 页面完整性检查
+
+### 完整文件清单 (27个文件)
+
+#### 布局 (1个) ✅
+- [ ] `src/layouts/MainLayout.vue` - 主布局
+
+#### 首页 (4个) ✅
+- [ ] `src/views/home/Forum.vue` - 论坛首页
+- [ ] `src/views/home/Trade.vue` - 闲置首页
+- [ ] `src/views/home/Messages.vue` - 消息首页
+- [ ] `src/views/home/Profile.vue` - 个人中心首页
+
+#### 认证 (2个) ✅
+- [ ] `src/views/login/index.vue` - 登录页面
+- [ ] `src/views/register/index.vue` - 注册页面
+
+#### 论坛模块 (4个) ✅
+- [ ] `src/views/forum/index.vue` - 论坛列表
+- [ ] `src/views/forum/detail/index.vue` - 帖子详情
+- [ ] `src/views/forum/create/index.vue` - 发布帖子
+- [ ] `src/views/forum/components/ForumList.vue` - 论坛列表组件
+
+#### 闲置模块 (4个) ✅
+- [ ] `src/views/trade/index.vue` - 闲置列表
+- [ ] `src/views/trade/detail/index.vue` - 商品详情
+- [ ] `src/views/trade/create/index.vue` - 发布商品
+- [ ] `src/views/trade/components/TradeList.vue` - 闲置列表组件
+
+#### 消息模块 (3个) ✅
+- [ ] `src/views/messages/index.vue` - 消息列表
+- [ ] `src/views/messages/chat/index.vue` - 聊天页面
+- [ ] `src/views/messages/components/MessageList.vue` - 消息列表组件
+
+#### 个人中心 (7个) ✅
+- [ ] `src/views/profile/index.vue` - 个人中心首页
+- [ ] `src/views/profile/edit/index.vue` - 编辑资料
+- [ ] `src/views/profile/posts/index.vue` - 我的帖子
+- [ ] `src/views/profile/items/index.vue` - 我的闲置
+- [ ] `src/views/profile/collections/index.vue` - 我的收藏
+- [ ] `src/views/profile/messages/index.vue` - 我的消息
+- [ ] `src/views/home/components/MyProfile.vue` - 首页个人组件
+
+#### 其他 (2个) ✅
+- [ ] `src/App.vue` - 应用入口
+- [ ] `src/views/home/index.vue` - 首页路由
+
+### 组件清单 (6个新建)
+
+#### 基础组件 (4个) ✅
+- [ ] `src/components/base/Button.vue` - 按钮组件
+- [ ] `src/components/base/Input.vue` - 输入框组件
+- [ ] `src/components/base/Card.vue` - 卡片组件
+- [ ] `src/components/base/Cell.vue` - 单元格组件
+
+#### 导航组件 (2个) ✅
+- [ ] `src/components/navigation/NavBar.vue` - 导航栏组件
+- [ ] `src/components/navigation/TabBar.vue` - 底部标签栏组件
+
+---
+
+## 质量检查清单
+
+### 代码质量检查
+
+#### 组件代码质量
+- [ ] **命名规范**: 组件使用PascalCase命名
+- [ ] **Props类型**: 所有props有明确的TypeScript类型定义
+- [ ] **无console.log**: 生产代码中无console.log调试语句
+- [ ] **无any类型**: 避免使用any类型,使用明确类型
+- [ ] **组件单一职责**: 每个组件只做一件事
+
+#### 样式代码质量
+- [ ] **使用Tailwind**: 所有样式使用Tailwind类名
+- [ ] **无内联样式**: 避免使用内联style属性
+- [ ] **响应式断点**: 正确使用响应式前缀
+- [ ] **颜色使用变量**: 使用设计系统定义的颜色
+
+#### TypeScript代码质量
+- [ ] **类型定义**: 复杂逻辑有类型定义
+- [ ] **接口分离**: 大型接口拆分为小接口
+- [ ] **无类型断言滥用**: 避免as any,as unknown
+- [ ] **枚举使用**: 使用枚举代替魔法数字
+
+### 功能测试检查
+
+#### 交互测试
+- [ ] **按钮点击**: 所有按钮点击有视觉反馈
+- [ ] **输入框**: 输入框聚焦时有边框高亮
+- [ ] **列表项**: 列表项点击有active状态
+- [ ] **TabBar**: 底部导航高亮正确
+
+#### 表单测试
+- [ ] **输入验证**: 表单提交前有验证
+- [ ] **键盘弹出**: 输入框聚焦时键盘不遮挡
+- [ ] **提交成功**: 表单提交后有成功提示
+- [ ] **提交失败**: 表单提交失败有错误提示
+
+#### 页面测试
+- [ ] **页面加载**: 页面加载无白屏
+- [ ] **页面跳转**: 路由跳转正常,无404
+- [ ] **页面返回**: 返回按钮正常工作
+- [ ] **页面刷新**: 刷新页面保持状态
+
+### 移动端专项检查
+
+#### 触摸体验
+- [ ] **点击区域**: 所有可点击元素≥44×44px
+- [ ] **触摸反馈**: 点击有明显的视觉反馈
+- [ ] **手势支持**: 列表支持滑动操作(如果需要)
+
+#### 适配测试
+- [ ] **320px**: iPhone SE宽度显示正常
+- [ ] **390px**: iPhone 14/15标准宽度显示正常
+- [ ] **430px**: iPhone Pro Max宽度显示正常
+- [ ] **安全区**: iPhone底部安全区正确适配
+
+---
+
+## 回滚策略
+
+### 回滚场景
+
+#### 场景1: 单个文件重构出错
+
+```bash
+# 查看该文件的重构前版本
+git show f1fc36d:src/views/login/index.vue > backup_login.vue
+
+# 回滚单个文件
+git checkout HEAD -- src/views/login/index.vue
+```
+
+#### 场景2: 整个阶段重构出错
+
+```bash
+# 查看提交历史
+git log --oneline --graph
+
+# 回滚到特定阶段之前
+git checkout 15cc75f  # 回滚到添加项目文件的状态
+```
+
+#### 场景3: 需要完全回退到重构前
+
+```bash
+# 方法1: 回退到初始提交
+git checkout f1fc36d
+
+# 方法2: 创建新分支保留重构版本
+git branch backup-refactor-remove-vant-ui
+git checkout master
+
+# 查看重构分支的备份
+git checkout backup-refactor-remove-vant-ui
+```
+
+### 备份策略
+
+#### 自动备份 (每次重构前)
+
+```bash
+# 在开始重构前,创建备份标签
+git tag backup-before-phase-1
+
+# 重构完成后,更新标签
+git tag -d backup-before-phase-1
+git tag backup-before-phase-1
+```
+
+#### 手动备份 (关键节点)
+
+```bash
+# 在每个阶段完成后创建备份
+git tag phase-1-complete
+git tag phase-2-complete
+# ...以此类推
+```
+
+### 恢复流程
+
+#### 从标签恢复
+
+```bash
+# 查看所有备份标签
+git tag -l | grep backup
+
+# 从标签恢复
+git checkout backup-before-phase-3
+```
+
+#### 从分支恢复
+
+```bash
+# 查看备份分支
+git branch -a | grep backup
+
+# 切换到备份分支
+git checkout backup-refactor-remove-vant-ui
+```
+
+### 安全规则
+
+1. **每日备份**: 每天开始重构前创建标签
+2. **阶段备份**: 每个主要阶段完成后创建标签
+3. **测试验证**: 回滚后验证功能正常
+4. **文档记录**: 记录回滚原因和解决方法
+
+---
+
 ## 执行方式
 
 请运行以下命令开始执行重构：
