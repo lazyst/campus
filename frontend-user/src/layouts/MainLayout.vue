@@ -1,31 +1,49 @@
 <template>
-  <div class="main-layout">
+  <div class="min-h-screen bg-gray-50 pb-14">
     <router-view />
     
-    <!-- 浮动发布按钮 -->
-    <van-floating-bubble 
+    <!-- Floating Action Button -->
+    <div 
       v-if="showFloatingButton"
-      icon="plus" 
-      @click="onCreate" 
-    />
+      class="fixed right-4 bg-primary text-white rounded-full w-12 h-12 flex items-center justify-center shadow-lg cursor-pointer z-40"
+      style="bottom: 70px;"
+      @click="onCreate"
+    >
+      <span class="text-2xl font-medium">+</span>
+    </div>
     
-    <van-tabbar :model-value="activeTab" @update:model-value="onTabChange" v-show="showTabbar">
-      <van-tabbar-item name="Forum" icon="comment-o">论坛</van-tabbar-item>
-      <van-tabbar-item name="Trade" icon="shop-o">闲置</van-tabbar-item>
-      <van-tabbar-item name="Messages" icon="chat-o">消息</van-tabbar-item>
-      <van-tabbar-item name="MyProfile" icon="user-o">我的</van-tabbar-item>
-    </van-tabbar>
+    <!-- Custom TabBar -->
+    <TabBar 
+      v-model="activeTab" 
+      :items="tabItems" 
+      @change="onTabChange"
+      v-show="showTabbar" 
+    />
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
+import { ref, computed } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
+import TabBar from '../components/navigation/TabBar.vue'
+
+interface TabItem {
+  name: string
+  label: string
+}
 
 const router = useRouter()
 const route = useRoute()
 
-// 路由名称到Tab名称的映射
+// Tab bar items configuration
+const tabItems: TabItem[] = [
+  { name: 'Forum', label: '论坛' },
+  { name: 'Trade', label: '闲置' },
+  { name: 'Messages', label: '消息' },
+  { name: 'MyProfile', label: '我的' }
+]
+
+// Route name to tab name mapping
 const routeToTabMap: Record<string, string> = {
   'Forum': 'Forum',
   'Trade': 'Trade', 
@@ -33,19 +51,33 @@ const routeToTabMap: Record<string, string> = {
   'MyProfile': 'MyProfile'
 }
 
-// 不显示tabbar的路由列表
-const hiddenTabbarRoutes = ['Login', 'Register', 'Profile', 'ForumDetail', 'TradeDetail', 'TradeCreate', 'ChatDetail', 'ForumCreate', 'ProfileEdit', 'ProfilePosts', 'ProfileItems', 'ProfileCollections', 'ProfileNotifications']
+// Routes where tabbar should be hidden
+const hiddenTabbarRoutes = [
+  'Login', 
+  'Register', 
+  'Profile', 
+  'ForumDetail', 
+  'TradeDetail', 
+  'TradeCreate', 
+  'ChatDetail', 
+  'ForumCreate', 
+  'ProfileEdit', 
+  'ProfilePosts', 
+  'ProfileItems', 
+  'ProfileCollections', 
+  'ProfileNotifications'
+]
 
-// 根据当前路由计算激活的tab
+// Compute active tab based on current route
 const activeTab = computed(() => {
   const routeName = route.name as string || ''
   
-  // 直接匹配
+  // Direct match
   if (routeToTabMap[routeName]) {
     return routeToTabMap[routeName]
   }
   
-  // 根据路径前缀匹配
+  // Match by path prefix
   const path = route.path
   if (path === '/' || path.startsWith('/?')) {
     return 'Forum'
@@ -60,21 +92,21 @@ const activeTab = computed(() => {
     return 'MyProfile'
   }
   
-  return 'Forum' // 默认值
+  return 'Forum' // Default
 })
 
-// 计算是否显示tabbar
+// Compute whether to show tabbar
 const showTabbar = computed(() => {
   const routeName = route.name as string || ''
   return !hiddenTabbarRoutes.includes(routeName)
 })
 
-// 计算是否显示浮动按钮
+// Compute whether to show floating button
 const showFloatingButton = computed(() => {
   const routeName = route.name as string || ''
   const path = route.path
   
-  // 只在论坛和闲置页面显示
+  // Show only on forum and trade pages
   if (routeName === 'Forum' || path === '/' || path.startsWith('/?')) {
     return true
   }
@@ -84,6 +116,7 @@ const showFloatingButton = computed(() => {
   return false
 })
 
+// Handle tab change
 function onTabChange(name: string) {
   const routeMap: Record<string, string> = {
     'Forum': '/',
@@ -94,12 +127,13 @@ function onTabChange(name: string) {
   
   const targetPath = routeMap[name] || '/'
   
-  // 只有当目标路径与当前路径不同时才导航
+  // Only navigate if target path is different from current path
   if (route.path !== targetPath) {
     router.push(targetPath)
   }
 }
 
+// Handle create action
 function onCreate() {
   const routeName = route.name as string || ''
   const path = route.path
@@ -111,20 +145,3 @@ function onCreate() {
   }
 }
 </script>
-
-<style scoped>
-.main-layout {
-  min-height: 100vh;
-  background: #f7f8fa;
-  padding-bottom: 50px;
-}
-
-/* 覆盖Vant浮动按钮的内联样式，避免与底部导航栏重叠 */
-:deep(.van-floating-bubble) {
-  bottom: 70px !important;
-  top: auto !important;
-  transform: none !important;
-  right: 16px !important;
-  left: auto !important;
-}
-</style>

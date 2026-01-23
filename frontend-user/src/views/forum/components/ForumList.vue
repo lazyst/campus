@@ -1,23 +1,49 @@
 <template>
-  <div class="forum-list">
-    <van-list
-      v-model:loading="loading"
-      :finished="finished"
-      finished-text="没有更多了"
-      @load="onLoad"
-    >
-      <div v-for="post in list" :key="post.id" class="post-item" @click="onPostClick(post)">
-        <div class="post-header">
-          <span class="post-title">{{ post.title }}</span>
-        </div>
-        <div class="post-content">{{ post.content }}</div>
-        <div class="post-footer">
+  <div class="p-3">
+    <!-- Loading State -->
+    <div v-if="loading && list.length === 0" class="text-center py-8">
+      <span class="text-gray-400">加载中...</span>
+    </div>
+    
+    <!-- Empty State -->
+    <div v-else-if="list.length === 0" class="text-center py-8">
+      <span class="text-gray-400">暂无帖子</span>
+    </div>
+    
+    <!-- Post List -->
+    <div v-else>
+      <div 
+        v-for="post in list" 
+        :key="post.id" 
+        class="bg-white rounded-lg p-3 mb-2.5 cursor-pointer"
+        @click="onPostClick(post)"
+      >
+        <!-- Post Title -->
+        <div class="font-semibold text-gray-800 mb-2">{{ post.title }}</div>
+        
+        <!-- Post Content Preview -->
+        <div class="text-sm text-gray-500 mb-2 line-clamp-2">{{ post.content }}</div>
+        
+        <!-- Post Footer -->
+        <div class="flex justify-between text-xs text-gray-400">
           <span>{{ post.userNickname }}</span>
-          <span>{{ post.likeCount }} 点赞</span>
-          <span>{{ post.commentCount }} 评论</span>
+          <div class="flex gap-3">
+            <span>点赞 {{ post.likeCount }}</span>
+            <span>评论 {{ post.commentCount }}</span>
+          </div>
         </div>
       </div>
-    </van-list>
+      
+      <!-- Loading More -->
+      <div v-if="loading && list.length > 0" class="text-center py-4">
+        <span class="text-gray-400">加载中...</span>
+      </div>
+      
+      <!-- Finished -->
+      <div v-if="finished && list.length > 0" class="text-center py-4">
+        <span class="text-gray-400 text-sm">没有更多了</span>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -35,10 +61,6 @@ const list = ref<Post[]>([])
 const loading = ref(false)
 const finished = ref(false)
 const page = ref(1)
-
-function onLoad() {
-  loadPosts()
-}
 
 async function loadPosts() {
   try {
@@ -60,41 +82,22 @@ async function loadPosts() {
   }
 }
 
+function onLoad() {
+  loadPosts()
+}
+
 function onPostClick(post: Post) {
   router.push(`/forum/${post.id}`)
 }
 
+// Reset list when boardId changes
 watch(() => props.boardId, () => {
   list.value = []
   page.value = 1
   finished.value = false
   loadPosts()
 })
-</script>
 
-<style scoped>
-.forum-list {
-  padding: 10px;
-}
-.post-item {
-  background: #fff;
-  border-radius: 8px;
-  padding: 12px;
-  margin-bottom: 10px;
-}
-.post-title {
-  font-size: 16px;
-  font-weight: bold;
-}
-.post-content {
-  font-size: 14px;
-  color: #666;
-  margin: 8px 0;
-}
-.post-footer {
-  display: flex;
-  justify-content: space-between;
-  font-size: 12px;
-  color: #999;
-}
-</style>
+// Initial load
+onLoad()
+</script>

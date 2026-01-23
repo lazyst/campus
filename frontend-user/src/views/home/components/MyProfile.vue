@@ -1,47 +1,55 @@
 <template>
-  <div class="my-profile">
-    <div class="profile-header" @click="goToProfile">
-      <div class="avatar">我</div>
-      <div class="user-info">
-        <div class="nickname">点击登录</div>
-        <div class="phone">登录后查看完整信息</div>
+  <div class="my-profile min-h-[calc(100vh-50px)] bg-gray-100 p-4">
+    <div class="profile-header flex items-center bg-white rounded-xl p-5 mb-4 cursor-pointer" @click="goToProfile">
+      <div class="avatar w-15 h-15 bg-primary text-white rounded-full flex items-center justify-center text-2xl mr-4">
+        我
       </div>
-      <van-icon name="arrow" />
+      <div class="user-info flex-1">
+        <div class="nickname text-lg font-bold mb-1">点击登录</div>
+        <div class="phone text-sm text-gray-400">登录后查看完整信息</div>
+      </div>
+      <span class="text-gray-400">›</span>
     </div>
     
-    <div class="menu-section">
-      <div class="menu-item" @click="goTo('/profile/edit')">
-        <van-icon name="user-o" />
-        <span>编辑资料</span>
+    <div class="menu-section bg-white rounded-xl mb-4">
+      <div class="menu-item flex items-center p-4 border-b border-gray-100 cursor-pointer" @click="goTo('/profile/edit')">
+        <span class="w-5 text-primary mr-3">编</span>
+        <span class="flex-1">编辑资料</span>
+        <span class="text-gray-400">›</span>
       </div>
-      <div class="menu-item" @click="goTo('/profile/posts')">
-        <van-icon name="comment-o" />
-        <span>我的帖子</span>
+      <div class="menu-item flex items-center p-4 border-b border-gray-100 cursor-pointer" @click="goTo('/profile/posts')">
+        <span class="w-5 text-primary mr-3">帖</span>
+        <span class="flex-1">我的帖子</span>
+        <span class="text-gray-400">›</span>
       </div>
-      <div class="menu-item" @click="goTo('/profile/items')">
-        <van-icon name="shop-o" />
-        <span>我的闲置</span>
+      <div class="menu-item flex items-center p-4 border-b border-gray-100 cursor-pointer" @click="goTo('/profile/items')">
+        <span class="w-5 text-primary mr-3">闲</span>
+        <span class="flex-1">我的闲置</span>
+        <span class="text-gray-400">›</span>
       </div>
-      <div class="menu-item" @click="goTo('/profile/collections')">
-        <van-icon name="star-o" />
-        <span>我的收藏</span>
+      <div class="menu-item flex items-center p-4 border-b border-gray-100 cursor-pointer" @click="goTo('/profile/collections')">
+        <span class="w-5 text-primary mr-3">收</span>
+        <span class="flex-1">我的收藏</span>
+        <span class="text-gray-400">›</span>
       </div>
-      <div class="menu-item" @click="goTo('/profile/messages')">
-        <van-icon name="bell-o" />
-        <span>消息通知</span>
+      <div class="menu-item flex items-center p-4 cursor-pointer" @click="goTo('/profile/messages')">
+        <span class="w-5 text-primary mr-3">消</span>
+        <span class="flex-1">消息通知</span>
+        <span class="text-gray-400">›</span>
       </div>
     </div>
     
-    <div class="action-section">
-      <van-button type="primary" block @click="goToLogin">
+    <div class="action-section px-4">
+      <BaseButton type="primary" block @click="goToLogin">
         登录/注册
-      </van-button>
+      </BaseButton>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
 import { useRouter } from 'vue-router'
+import BaseButton from '@/components/base/Button.vue'
 
 const router = useRouter()
 
@@ -57,68 +65,3 @@ function goToLogin() {
   router.push('/login')
 }
 </script>
-
-<style scoped>
-.my-profile {
-  min-height: calc(100vh - 50px);
-  background: #f5f5f5;
-  padding: 16px;
-}
-.profile-header {
-  display: flex;
-  align-items: center;
-  background: #fff;
-  border-radius: 12px;
-  padding: 20px;
-  margin-bottom: 16px;
-}
-.avatar {
-  width: 60px;
-  height: 60px;
-  background: #1989fa;
-  color: #fff;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 24px;
-  margin-right: 16px;
-}
-.user-info {
-  flex: 1;
-}
-.nickname {
-  font-size: 18px;
-  font-weight: bold;
-  margin-bottom: 4px;
-}
-.phone {
-  font-size: 14px;
-  color: #999;
-}
-.menu-section {
-  background: #fff;
-  border-radius: 12px;
-  margin-bottom: 16px;
-}
-.menu-item {
-  display: flex;
-  align-items: center;
-  padding: 16px;
-  border-bottom: 1px solid #f5f5f5;
-}
-.menu-item:last-child {
-  border-bottom: none;
-}
-.menu-item .van-icon {
-  margin-right: 12px;
-  font-size: 20px;
-  color: #1989fa;
-}
-.menu-item span {
-  flex: 1;
-}
-.action-section {
-  padding: 0 16px;
-}
-</style>

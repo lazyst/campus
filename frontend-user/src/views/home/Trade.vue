@@ -1,20 +1,14 @@
 <template>
-  <div class="trade-page">
-    <van-nav-bar title="闲置交易" />
+  <div class="min-h-screen bg-gray-100">
+    <!-- Navigation Bar -->
+    <NavBar title="闲置交易" />
+    
+    <!-- Trade List -->
     <TradeList />
   </div>
 </template>
 
 <script setup lang="ts">
-import { useRouter } from 'vue-router'
 import TradeList from '@/views/trade/components/TradeList.vue'
-
-const router = useRouter()
+import NavBar from '@/components/navigation/NavBar.vue'
 </script>
-
-<style scoped>
-.trade-page {
-  min-height: 100vh;
-  background: #f5f5f5;
-}
-</style>

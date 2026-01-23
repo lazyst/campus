@@ -1,25 +1,44 @@
 <template>
-  <div class="post-detail">
-    <van-nav-bar :title="post?.title || '帖子详情'" left-arrow @click-left="onClickLeft" />
+  <div class="post-detail min-h-screen bg-gray-100">
+    <NavBar :title="post?.title || '帖子详情'" :left-arrow="true" @click-left="onClickLeft" />
     
-    <div v-if="post" class="post-content">
-      <div class="post-header">
+    <div v-if="post" class="post-content bg-white p-4">
+      <div class="flex justify-between items-center mb-4 text-sm text-gray-500">
         <div class="post-author">作者：{{ post.nickname }}</div>
         <div class="post-time">{{ post.time }}</div>
       </div>
-      <div class="post-body">{{ post.content }}</div>
-      <div class="post-actions">
-        <van-button icon="like-o"> {{ post.likeCount }}</van-button>
-        <van-button icon="comment-o"> {{ post.commentCount }}</van-button>
+      <div class="post-body text-base leading-relaxed mb-5">{{ post.content }}</div>
+      <div class="post-actions flex gap-5">
+        <BaseButton type="default" size="small" round>
+          赞 {{ post.likeCount }}
+        </BaseButton>
+        <BaseButton type="default" size="small" round>
+          评论 {{ post.commentCount }}
+        </BaseButton>
       </div>
     </div>
-    <van-skeleton v-else title :row="5" />
+    <div v-else class="p-4 bg-white">
+      <!-- Loading skeleton - simple HTML/CSS -->
+      <div class="animate-pulse">
+        <div class="flex justify-between items-center mb-4">
+          <div class="h-4 bg-gray-200 rounded w-1/3"></div>
+          <div class="h-4 bg-gray-200 rounded w-1/4"></div>
+        </div>
+        <div class="h-6 bg-gray-200 rounded mb-4 w-3/4"></div>
+        <div class="h-4 bg-gray-200 rounded mb-2"></div>
+        <div class="h-4 bg-gray-200 rounded mb-2"></div>
+        <div class="h-4 bg-gray-200 rounded mb-2 w-5/6"></div>
+        <div class="h-10 bg-gray-200 rounded w-1/3 mt-6"></div>
+      </div>
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import NavBar from '@/components/navigation/NavBar.vue'
+import BaseButton from '@/components/base/Button.vue'
 
 interface Post {
   title: string
@@ -52,11 +71,3 @@ function onClickLeft() {
   router.back()
 }
 </script>
-
-<style scoped>
-.post-detail { min-height: 100vh; background: #f5f5f5; }
-.post-content { padding: 16px; background: #fff; }
-.post-header { display: flex; justify-content: space-between; margin-bottom: 16px; font-size: 14px; color: #666; }
-.post-body { font-size: 16px; line-height: 1.8; margin-bottom: 20px; }
-.post-actions { display: flex; gap: 20px; }
-</style>

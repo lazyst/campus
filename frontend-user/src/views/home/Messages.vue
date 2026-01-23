@@ -1,18 +1,14 @@
 <template>
-  <div class="messages-page">
-    <van-nav-bar title="消息" />
+  <div class="min-h-screen bg-gray-100">
+    <!-- Navigation Bar -->
+    <NavBar title="消息" />
+    
+    <!-- Message List -->
     <MessageList />
   </div>
 </template>
 
 <script setup lang="ts">
 import MessageList from '@/views/messages/components/MessageList.vue'
+import NavBar from '@/components/navigation/NavBar.vue'
 </script>
-
-<style scoped>
-.messages-page {
-  min-height: 100vh;
-  background: #f5f5f5;
-  padding-bottom: 50px;
-}
-</style>

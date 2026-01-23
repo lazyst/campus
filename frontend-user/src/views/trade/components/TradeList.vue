@@ -1,28 +1,70 @@
 <template>
   <div class="trade-list">
-    <van-tabs v-model:active="activeTab" @change="onTabChange">
-      <van-tab title="出售"></van-tab>
-      <van-tab title="收购"></van-tab>
-    </van-tabs>
+    <!-- Category Tabs -->
+    <div class="flex gap-3 px-4 py-3 bg-white overflow-x-auto whitespace-nowrap border-b border-gray-100">
+      <span 
+        :class="[
+          'px-3 py-1.5 rounded-full text-sm cursor-pointer transition-colors flex-shrink-0',
+          activeTab === 0 ? 'bg-primary text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+        ]"
+        @click="activeTab = 0"
+      >
+        出售
+      </span>
+      <span 
+        :class="[
+          'px-3 py-1.5 rounded-full text-sm cursor-pointer transition-colors flex-shrink-0',
+          activeTab === 1 ? 'bg-primary text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+        ]"
+        @click="activeTab = 1"
+      >
+        收购
+      </span>
+    </div>
     
-    <van-list
-      v-model:loading="loading"
-      :finished="finished"
-      finished-text="没有更多了"
-      @load="onLoad"
-    >
-      <div v-for="item in list" :key="item.id" class="trade-item" @click="onItemClick(item)">
-        <div class="trade-image">{{ item.type === 1 ? '收' : '售' }}</div>
-        <div class="trade-content">
-          <div class="trade-title">{{ item.title }}</div>
-          <div class="trade-price">¥{{ item.price }}</div>
-          <div class="trade-footer">
+    <!-- Item List -->
+    <div class="p-3">
+      <!-- Empty State -->
+      <div v-if="list.length === 0 && !loading" class="text-center py-8">
+        <span class="text-gray-400">暂无闲置物品</span>
+      </div>
+      
+      <!-- Item Cards -->
+      <div 
+        v-for="item in list" 
+        :key="item.id" 
+        class="bg-white rounded-lg p-3 mb-2.5 flex cursor-pointer"
+        @click="onItemClick(item)"
+      >
+        <!-- Item Image/Type Badge -->
+        <div 
+          class="w-20 h-20 rounded-lg flex items-center justify-center text-white font-bold text-lg mr-3 flex-shrink-0"
+          :class="item.type === 1 ? 'bg-success' : 'bg-primary'"
+        >
+          {{ item.type === 1 ? '收' : '售' }}
+        </div>
+        
+        <!-- Item Content -->
+        <div class="flex-1 min-w-0">
+          <div class="font-semibold text-gray-800 mb-1 truncate">{{ item.title }}</div>
+          <div class="text-lg font-bold text-danger mb-1">¥{{ item.price }}</div>
+          <div class="flex justify-between text-xs text-gray-400">
             <span>{{ item.nickname }}</span>
-            <span>{{ item.viewCount }} 浏览</span>
+            <span>浏览 {{ item.viewCount }}</span>
           </div>
         </div>
       </div>
-    </van-list>
+      
+      <!-- Loading -->
+      <div v-if="loading" class="text-center py-4">
+        <span class="text-gray-400">加载中...</span>
+      </div>
+      
+      <!-- Finished -->
+      <div v-if="finished && list.length > 0" class="text-center py-4">
+        <span class="text-gray-400 text-sm">没有更多了</span>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -73,49 +115,7 @@ function onTabChange() {
 function onItemClick(item: TradeItem) {
   router.push(`/trade/${item.id}`)
 }
-</script>
 
-<style scoped>
-.trade-list {
-  padding: 10px;
-}
-.trade-item {
-  display: flex;
-  background: #fff;
-  border-radius: 8px;
-  padding: 12px;
-  margin-bottom: 10px;
-}
-.trade-image {
-  width: 80px;
-  height: 80px;
-  background: #1989fa;
-  color: #fff;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 18px;
-  border-radius: 8px;
-  margin-right: 12px;
-}
-.trade-content {
-  flex: 1;
-}
-.trade-title {
-  font-size: 16px;
-  font-weight: bold;
-  margin-bottom: 8px;
-}
-.trade-price {
-  font-size: 18px;
-  color: #f44;
-  font-weight: bold;
-  margin-bottom: 8px;
-}
-.trade-footer {
-  display: flex;
-  justify-content: space-between;
-  font-size: 12px;
-  color: #999;
-}
-</style>
+// Initial load
+onLoad()
+</script>

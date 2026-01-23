@@ -1,26 +1,35 @@
 <template>
-  <div class="my-items">
-    <van-nav-bar title="我的闲置" left-arrow @click-left="onClickLeft" />
+  <div class="my-items min-h-screen bg-gray-100 pt-2.5">
+    <NavBar title="我的闲置" :left-arrow="true" @click-left="onClickLeft" />
     
-    <van-list finished-text="没有更多了">
-      <div v-for="i in 5" :key="i" class="item-row">
-        <div class="item-image">物</div>
-        <div class="item-info">
-          <div class="item-title">闲置物品 {{ i }}</div>
-          <div class="item-price">¥{{ i * 100 }}</div>
+    <div class="p-2.5">
+      <div v-for="i in 5" :key="i" class="item-row flex bg-white rounded-lg p-3 mb-2.5">
+        <div class="item-image w-20 h-20 bg-primary text-white rounded-lg flex items-center justify-center mr-3">
+          物
+        </div>
+        <div class="item-info flex-1">
+          <div class="item-title text-base font-bold mb-2">闲置物品 {{ i }}</div>
+          <div class="item-price text-lg text-red-500 mb-2">¥{{ i * 100 }}</div>
           <div class="item-status">
-            <van-tag :type="i % 2 === 0 ? 'success' : 'warning'">
+            <span 
+              :class="[
+                'text-xs px-2 py-0.5 rounded',
+                i % 2 === 0 ? 'bg-green-100 text-green-600' : 'bg-yellow-100 text-yellow-600'
+              ]"
+            >
               {{ i % 2 === 0 ? '已上架' : '已下架' }}
-            </van-tag>
+            </span>
           </div>
         </div>
       </div>
-    </van-list>
+    </div>
+    <div class="text-center py-4 text-gray-400 text-sm">没有更多了</div>
   </div>
 </template>
 
 <script setup lang="ts">
 import { useRouter } from 'vue-router'
+import NavBar from '@/components/navigation/NavBar.vue'
 
 const router = useRouter()
 
@@ -28,12 +37,3 @@ function onClickLeft() {
   router.back()
 }
 </script>
-
-<style scoped>
-.my-items { min-height: 100vh; background: #f5f5f5; padding: 10px; }
-.item-row { display: flex; background: #fff; border-radius: 8px; padding: 12px; margin-bottom: 10px; }
-.item-image { width: 80px; height: 80px; background: #1989fa; color: #fff; border-radius: 8px; display: flex; align-items: center; justify-content: center; margin-right: 12px; }
-.item-info { flex: 1; }
-.item-title { font-size: 16px; font-weight: bold; margin-bottom: 8px; }
-.item-price { font-size: 18px; color: #f44; margin-bottom: 8px; }
-</style>

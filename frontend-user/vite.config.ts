@@ -3,18 +3,17 @@ import vue from '@vitejs/plugin-vue'
 import { resolve } from 'path'
 import AutoImport from 'unplugin-auto-import/vite'
 import Components from 'unplugin-vue-components/vite'
-import { VantResolver } from 'unplugin-vue-components/resolvers'
+import TailwindCSS from '@tailwindcss/postcss'
 
 export default defineConfig({
   plugins: [
     vue(),
+    TailwindCSS(),
     AutoImport({
       imports: ['vue', 'vue-router', 'pinia'],
-      resolvers: [VantResolver()],
       dts: 'src/auto-imports.d.ts'
     }),
     Components({
-      resolvers: [VantResolver()],
       dts: 'src/components.d.ts'
     })
   ],

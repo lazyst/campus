@@ -1,12 +1,13 @@
 <template>
-  <div class="messages-page">
-    <van-nav-bar title="消息" left-arrow @click-left="onClickLeft" />
+  <div class="messages-page min-h-screen bg-gray-100">
+    <NavBar title="消息" :left-arrow="true" @click-left="onClickLeft" />
     <MessageList />
   </div>
 </template>
 
 <script setup lang="ts">
 import { useRouter } from 'vue-router'
+import NavBar from '@/components/navigation/NavBar.vue'
 import MessageList from './components/MessageList.vue'
 
 const router = useRouter()
@@ -15,10 +16,3 @@ function onClickLeft() {
   router.back()
 }
 </script>
-
-<style scoped>
-.messages-page {
-  min-height: 100vh;
-  background: #f5f5f5;
-}
-</style>

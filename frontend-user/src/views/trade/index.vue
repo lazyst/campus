@@ -1,13 +1,21 @@
 <template>
-  <div class="trade-page">
-    <van-nav-bar title="闲置交易" left-arrow @click-left="onClickLeft" />
+  <div class="trade-page min-h-screen bg-gray-100 pb-16">
+    <NavBar title="闲置交易" :left-arrow="true" @click-left="onClickLeft" />
     <TradeList />
-    <van-floating-bubble icon="plus" @click="onAdd" />
+    
+    <!-- Floating Add Button -->
+    <div 
+      class="fixed bottom-6 right-4 w-14 h-14 bg-primary rounded-full flex items-center justify-center text-white text-3xl shadow-lg cursor-pointer hover:bg-blue-600 active:bg-blue-700 transition-colors z-40"
+      @click="onAdd"
+    >
+      +
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
 import { useRouter } from 'vue-router'
+import NavBar from '@/components/navigation/NavBar.vue'
 import TradeList from './components/TradeList.vue'
 
 const router = useRouter()
@@ -20,11 +28,3 @@ function onAdd() {
   router.push('/trade/create')
 }
 </script>
-
-<style scoped>
-.trade-page {
-  min-height: 100vh;
-  background: #f5f5f5;
-  padding-bottom: 60px;
-}
-</style>

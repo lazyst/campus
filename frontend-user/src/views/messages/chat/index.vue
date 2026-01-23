@@ -1,22 +1,30 @@
 <template>
-  <div class="chat-detail">
-    <van-nav-bar :title="chatName || '聊天详情'" left-arrow @click-left="onClickLeft" />
+  <div class="chat-detail min-h-screen bg-gray-100 flex flex-col">
+    <NavBar :title="chatName || '聊天详情'" :left-arrow="true" @click-left="onClickLeft" />
     
-    <div class="chat-messages" ref="chatContainer">
-      <div v-for="msg in messages" :key="msg.id" :class="['message-row', msg.isMe ? 'me' : 'other']">
-        <div :class="['message-bubble', msg.isMe ? 'my-bubble' : 'other-bubble']">
+    <div class="chat-messages flex-1 p-4 overflow-y-auto">
+      <div v-for="msg in messages" :key="msg.id" :class="['flex mb-3', msg.isMe ? 'justify-end' : 'justify-start']">
+        <div 
+          :class="[
+            'max-w-[70%] px-3 py-2.5 rounded-lg text-sm',
+            msg.isMe ? 'bg-primary text-white' : 'bg-white'
+          ]"
+        >
           {{ msg.content }}
         </div>
       </div>
     </div>
     
-    <div class="chat-input">
-      <van-field
+    <div class="chat-input flex items-center p-2.5 bg-white border-t border-gray-100">
+      <input
         v-model="inputMessage"
         placeholder="请输入消息..."
+        class="flex-1 border border-gray-300 rounded-full px-4 py-2 text-sm outline-none focus:border-primary focus:ring-1 focus:ring-primary mr-2"
         @keypress.enter="onSend"
       />
-      <van-button type="primary" size="small" @click="onSend">发送</van-button>
+      <BaseButton type="primary" size="small" round @click="onSend">
+        发送
+      </BaseButton>
     </div>
   </div>
 </template>
@@ -24,6 +32,8 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import NavBar from '@/components/navigation/NavBar.vue'
+import BaseButton from '@/components/base/Button.vue'
 
 interface Message {
   id: number
@@ -63,16 +73,3 @@ function onSend() {
   inputMessage.value = ''
 }
 </script>
-
-<style scoped>
-.chat-detail { min-height: 100vh; background: #f5f5f5; display: flex; flex-direction: column; }
-.chat-messages { flex: 1; padding: 16px; overflow-y: auto; }
-.message-row { display: flex; margin-bottom: 12px; }
-.message-row.me { justify-content: flex-end; }
-.message-row.other { justify-content: flex-start; }
-.message-bubble { max-width: 70%; padding: 10px 14px; border-radius: 12px; font-size: 14px; }
-.my-bubble { background: #1989fa; color: #fff; }
-.other-bubble { background: #fff; }
-.chat-input { display: flex; align-items: center; padding: 10px; background: #fff; border-top: 1px solid #eee; }
-.chat-input .van-field { flex: 1; margin-right: 10px; }
-</style>

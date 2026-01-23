@@ -1,0 +1,30 @@
+@import "tailwindcss";
+
+/* Custom base styles */
+body {
+  background-color: #f9fafb;
+  color: #1f2937;
+}
+
+/* Safe area for iPhone */
+.pb-safe {
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+/* Mobile-first typography */
+.text-body {
+  font-size: 0.875rem;
+  color: #4b5563;
+}
+
+.text-title {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #1f2937;
+}
+
+.text-heading {
+  font-size: 1.125rem;
+  font-weight: 700;
+  color: #111827;
+}

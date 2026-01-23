@@ -1,31 +1,37 @@
 <template>
-  <div class="item-detail">
-    <van-nav-bar title="物品详情" left-arrow @click-left="onClickLeft" />
+  <div class="item-detail min-h-screen bg-gray-100 pb-16">
+    <NavBar title="物品详情" :left-arrow="true" @click-left="onClickLeft" />
     
     <div v-if="item" class="item-content">
-      <div class="item-image-placeholder">物品图片</div>
-      <div class="item-info">
-        <div class="item-price">¥{{ item.price }}</div>
-        <div class="item-title">{{ item.title }}</div>
-        <div class="item-meta">
+      <div class="item-image-placeholder h-72 bg-primary text-white flex items-center justify-center text-xl">
+        物品图片
+      </div>
+      <div class="item-info p-4 bg-white mb-2.5">
+        <div class="item-price text-2xl text-red-500 font-bold mb-2">¥{{ item.price }}</div>
+        <div class="item-title text-lg font-bold mb-2">{{ item.title }}</div>
+        <div class="item-meta flex gap-4 text-sm text-gray-500">
           <span>{{ item.type === 1 ? '收购' : '出售' }}</span>
           <span>{{ item.viewCount }} 浏览</span>
           <span>{{ item.contactCount }} 联系</span>
         </div>
       </div>
-      <div class="item-description">
-        <div class="section-title">物品描述</div>
-        <div class="section-content">{{ item.description }}</div>
+      <div class="item-description p-4 bg-white mb-2.5">
+        <div class="section-title font-bold mb-2">物品描述</div>
+        <div class="section-content text-sm leading-relaxed">{{ item.description }}</div>
       </div>
-      <div class="user-info">
-        <div class="user-avatar">用</div>
+      <div class="user-info flex items-center p-4 bg-white mb-2.5">
+        <div class="user-avatar w-12 h-12 bg-primary text-white rounded-full flex items-center justify-center mr-3">
+          用
+        </div>
         <div class="user-detail">
-          <div class="user-name">{{ item.nickname }}</div>
-          <div class="user-time">发布于 {{ item.time }}</div>
+          <div class="user-name font-bold">{{ item.nickname }}</div>
+          <div class="user-time text-xs text-gray-500">发布于 {{ item.time }}</div>
         </div>
       </div>
-      <div class="contact-action">
-        <van-button type="primary" block @click="onContact">联系卖家</van-button>
+      <div class="contact-action fixed bottom-0 left-0 right-0 p-2.5 bg-white border-t border-gray-100 pb-safe">
+        <BaseButton type="primary" block @click="onContact">
+          联系卖家
+        </BaseButton>
       </div>
     </div>
   </div>
@@ -34,6 +40,8 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import NavBar from '@/components/navigation/NavBar.vue'
+import BaseButton from '@/components/base/Button.vue'
 
 interface Item {
   title: string
@@ -71,22 +79,6 @@ function onClickLeft() {
 
 function onContact() {
   // TODO: Implement contact logic
+  alert('联系卖家功能开发中')
 }
 </script>
-
-<style scoped>
-.item-detail { min-height: 100vh; background: #f5f5f5; padding-bottom: 60px; }
-.item-image-placeholder { height: 300px; background: #1989fa; color: #fff; display: flex; align-items: center; justify-content: center; font-size: 20px; }
-.item-info { padding: 16px; background: #fff; margin-bottom: 10px; }
-.item-price { font-size: 24px; color: #f44; font-weight: bold; margin-bottom: 8px; }
-.item-title { font-size: 18px; font-weight: bold; margin-bottom: 8px; }
-.item-meta { display: flex; gap: 16px; font-size: 14px; color: #999; }
-.item-description { padding: 16px; background: #fff; margin-bottom: 10px; }
-.section-title { font-weight: bold; margin-bottom: 8px; }
-.section-content { font-size: 14px; line-height: 1.6; }
-.user-info { display: flex; align-items: center; padding: 16px; background: #fff; margin-bottom: 10px; }
-.user-avatar { width: 50px; height: 50px; background: #1989fa; color: #fff; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-right: 12px; }
-.user-name { font-weight: bold; }
-.user-time { font-size: 12px; color: #999; }
-.contact-action { position: fixed; bottom: 0; left: 0; right: 0; padding: 10px; background: #fff; }
-</style>

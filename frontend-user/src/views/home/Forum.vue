@@ -1,36 +1,49 @@
 <template>
-  <div class="forum-page">
-    <van-nav-bar title="论坛" />
-    <van-tabs v-model:active="activeBoard" @change="onBoardChange">
-      <van-tab name="all" title="全部" />
-      <van-tab 
+  <div class="min-h-screen bg-gray-100">
+    <!-- Navigation Bar -->
+    <NavBar title="论坛" />
+    
+    <!-- Category Tabs -->
+    <div class="flex gap-3 px-4 py-3 bg-white overflow-x-auto whitespace-nowrap">
+      <span 
+        :class="[
+          'px-3 py-1.5 rounded-full text-sm cursor-pointer transition-colors flex-shrink-0',
+          activeBoard === 'all' ? 'bg-primary text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+        ]"
+        @click="activeBoard = 'all'"
+      >
+        全部
+      </span>
+      <span 
         v-for="board in boards" 
-        :key="board.id" 
-        :name="board.id" 
-        :title="board.name" 
-      />
-    </van-tabs>
+        :key="board.id"
+        :class="[
+          'px-3 py-1.5 rounded-full text-sm cursor-pointer transition-colors flex-shrink-0',
+          activeBoard === board.id ? 'bg-primary text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+        ]"
+        @click="activeBoard = board.id"
+      >
+        {{ board.name }}
+      </span>
+    </div>
+    
+    <!-- Forum List -->
     <ForumList :board-id="currentBoardId" />
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
-import { useRouter } from 'vue-router'
 import { getBoards, type Board } from '@/api/forum'
 import ForumList from '@/views/forum/components/ForumList.vue'
+import NavBar from '@/components/navigation/NavBar.vue'
 
-const router = useRouter()
 const activeBoard = ref('all')
 const boards = ref<Board[]>([])
 
 const currentBoardId = computed(() => {
   return activeBoard.value === 'all' ? undefined : activeBoard.value
 })
-
-function onBoardChange() {
-  // 切换板块时刷新列表
-}
 
 onMounted(async () => {
   try {
@@ -40,10 +53,3 @@ onMounted(async () => {
   }
 })
 </script>
-
-<style scoped>
-.forum-page {
-  min-height: 100vh;
-  background: #f5f5f5;
-}
-</style>
