@@ -1,0 +1,20 @@
+# Maven target 目录
+target/
+
+# Maven wrapper
+.mvn/
+mvnw
+mvnw.cmd
+
+# Spring Boot logs
+*.log
+hs_err_pid*.log
+logs/
+
+# IDE
+.project
+.classpath
+.settings/
+.factorypath
+.idea/
+.vscode/

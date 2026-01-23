@@ -1,0 +1,38 @@
+# Dependencies
+node_modules/
+dist/
+dist-ssr/
+
+# Build outputs
+*.tsbuildinfo
+
+# Cache
+.vite/
+.turbo/
+.eslintcache
+.nyc_output/
+coverage/
+
+# Auto-generated files
+auto-imports.d.ts
+components.d.ts
+
+# Logs
+*.log
+*.log.*
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# IDE
+.idea/
+.vscode/
+*.swo
+*.swp
+*~
+
+# OS
+.DS_Store
+Thumbs.db

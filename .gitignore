@@ -1,1 +1,141 @@
-backend/nul
+# ========================================
+# 通用通用忽略
+# ========================================
+
+# 操作系统文件
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+Desktop.ini
+
+# IDE 配置
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.project
+.classpath
+.settings/
+.factorypath
+
+# 日志文件
+*.log
+*.log.*
+
+# 临时文件
+.nul
+*.tmp
+*.temp
+.sisyphus/
+.ruff_cache/
+
+# 环境配置（示例）
+.env
+.env.local
+.env.*.local
+*.key
+*.pem
+
+# ========================================
+# Backend - Spring Boot + Maven
+# ========================================
+
+# Maven 构建
+backend/target/
+backend/.mvn/
+backend/mvnw
+backend/mvnw.cmd
+backend/.mvn/wrapper/maven-wrapper.jar
+
+# Spring Boot
+backend/*.log
+backend/hs_err_pid*.log
+backend/logs/
+
+# IDE
+backend/.project
+backend/.classpath
+backend/.settings/
+backend/.factorypath
+backend/.idea/
+backend/.vscode/
+
+# ========================================
+# Frontend - Vue 3 + Vite + npm
+# ========================================
+
+# Dependencies
+node_modules/
+dist/
+dist-ssr/
+
+# Build outputs
+*.tsbuildinfo
+
+# Testing
+coverage/
+.nyc_output/
+
+# Bundle analyzer
+.vite/build/
+
+# Cache
+.vite/
+.turbo/
+.eslintcache
+.auto-imports.d.ts
+components.d.ts
+vitest.config.ts.timestamp-*
+
+# Lock files（团队约定）
+# package-lock.json (根据团队需求启用/禁用)
+# yarn.lock
+# pnpm-lock.yaml
+
+# Logs
+frontend-user/node_modules/
+frontend-user/dist/
+frontend-user/.vite/
+frontend-user/*.log
+frontend-user/auto-imports.d.ts
+frontend-user/components.d.ts
+
+frontend-admin/node_modules/
+frontend-admin/dist/
+frontend-admin/.vite/
+frontend-admin/*.log
+
+# IDE
+.vscode/
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+.idea/
+
+# System files
+.DS_Store
+Thumbs.db
+
+# ========================================
+# 其他
+# ========================================
+
+# Docker
+.dockerignore
+
+# Deployment
+*.bak
+*.backup
+
+# Sensitive data
+*.key
+*.pem
+*.crt
+*.p12
+secrets/
