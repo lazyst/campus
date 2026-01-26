@@ -18,6 +18,15 @@ export default defineConfig({
       exclude: [/node_modules/, /\.git\//, /\.vscode\//, /van-config-provider/]
     })
   ],
+  test: {
+    globals: true,
+    environment: 'happy-dom',
+    setupFiles: [],
+    coverage: {
+      provider: 'v8',
+      reporter: ['text', 'json', 'html']
+    }
+  },
   resolve: {
     alias: {
       '@': resolve(__dirname, 'src')
