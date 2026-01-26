@@ -32,14 +32,14 @@
   </div>
 </template>
 
-<script setup lang="ts">
+<script setup>
 import { ref, computed, onMounted } from 'vue'
-import { getBoards, type Board } from '@/api/forum'
+import { getBoards } from '@/api/modules'
 import ForumList from '@/views/forum/components/ForumList.vue'
 import NavBar from '@/components/navigation/NavBar.vue'
 
 const activeBoard = ref('all')
-const boards = ref<Board[]>([])
+const boards = ref([])
 
 const currentBoardId = computed(() => {
   return activeBoard.value === 'all' ? undefined : activeBoard.value
