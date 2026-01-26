@@ -1,8 +1,28 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
-import { login as loginApi, register as registerApi, logout as logoutApi, getUserInfo, type RegisterResult } from '@/api/auth'
-import type { LoginParams, RegisterParams, UserInfo } from '@/api/auth'
+import { login as loginApi, register as registerApi, logout as logoutApi, getUserInfo } from '@/api/modules'
 import router from '@/router'
+
+// 本地类型定义
+interface UserInfo {
+  id: number
+  phone: string
+  nickname: string
+  avatar?: string
+  gender?: number
+  bio?: string
+}
+
+interface LoginParams {
+  phone: string
+  password: string
+}
+
+interface RegisterParams {
+  phone: string
+  password: string
+  nickname: string
+}
 
 export const useUserStore = defineStore('user', () => {
   const token = ref<string | null>(localStorage.getItem('token'))
@@ -26,17 +46,14 @@ export const useUserStore = defineStore('user', () => {
     return data
   }
 
-  async function register(params: RegisterParams) {
-    const result: RegisterResult = await registerApi(params)
-    setToken(result.token)
-    userInfo.value = {
-      id: result.user.id,
-      phone: result.user.phone,
-      nickname: result.user.nickname,
-      avatar: result.user.avatar,
-      gender: result.user.gender,
-      bio: result.user.bio
+  async function register(params) {
+    const result = await registerApi(params)
+    // 新的register API已经在内部处理了token保存
+    // result包含 { user, token }
+    if (result.token) {
+      token.value = result.token
     }
+    userInfo.value = result.user
     return result
   }
 
