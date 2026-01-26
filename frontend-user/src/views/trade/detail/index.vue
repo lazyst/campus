@@ -1,7 +1,7 @@
 <template>
   <div class="item-detail min-h-screen bg-gray-100 pb-16">
     <NavBar title="物品详情" :left-arrow="true" @click-left="onClickLeft" />
-    
+
     <div v-if="item" class="item-content">
       <div class="item-image-placeholder h-72 bg-primary text-white flex items-center justify-center text-xl">
         物品图片
@@ -23,10 +23,17 @@
         <div class="user-avatar w-12 h-12 bg-primary text-white rounded-full flex items-center justify-center mr-3">
           用
         </div>
-        <div class="user-detail">
-          <div class="user-name font-bold">{{ item.nickname }}</div>
-          <div class="user-time text-xs text-gray-500">发布于 {{ item.time }}</div>
+        <div class="user-detail flex-1">
+          <div class="user-name font-bold">{{ item.userNickname }}</div>
+          <div class="user-time text-xs text-gray-500">发布于 {{ formatDate(item.createdAt) }}</div>
         </div>
+        <BaseButton
+          :type="isCollected ? 'primary' : 'default'"
+          size="small"
+          @click="onToggleCollect"
+        >
+          {{ isCollected ? '已收藏' : '收藏' }}
+        </BaseButton>
       </div>
       <div class="contact-action fixed bottom-0 left-0 right-0 p-2.5 bg-white border-t border-gray-100 pb-safe">
         <BaseButton type="primary" block @click="onContact">
@@ -37,48 +44,63 @@
   </div>
 </template>
 
-<script setup lang="ts">
+<script setup>
 import { ref, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import { getItemById, contactSeller, toggleItemCollect, checkItemCollected } from '@/api/modules'
 import NavBar from '@/components/navigation/NavBar.vue'
 import BaseButton from '@/components/base/Button.vue'
 
-interface Item {
-  title: string
-  price: number
-  type: number
-  description: string
-  nickname: string
-  time: string
-  viewCount: number
-  contactCount: number
-}
-
 const route = useRoute()
 const router = useRouter()
-const item = ref<Item | null>(null)
+const item = ref(null)
+const isCollected = ref(false)
 
-onMounted(() => {
-  setTimeout(() => {
-    item.value = {
-      title: `闲置物品详情 - ID: ${route.params.id}`,
-      price: 500,
-      type: 2,
-      description: '这是一款闲置物品的详细描述，包含物品的现状、新旧程度等信息。',
-      nickname: '测试用户',
-      time: '2026-01-22 10:00',
-      viewCount: 45,
-      contactCount: 12
-    }
-  }, 500)
-})
+async function loadItemDetail() {
+  try {
+    const itemId = route.params.id
+    item.value = await getItemById(itemId)
+
+    // 检查收藏状态
+    isCollected.value = await checkItemCollected(itemId)
+  } catch (error) {
+    console.error('获取物品详情失败:', error)
+  }
+}
+
+async function onContact() {
+  try {
+    await contactSeller(route.params.id)
+    // 跳转到消息页面
+    router.push('/messages')
+  } catch (error) {
+    console.error('联系卖家失败:', error)
+  }
+}
+
+async function onToggleCollect() {
+  try {
+    const result = await toggleItemCollect(route.params.id)
+    isCollected.value = result.isCollected
+  } catch (error) {
+    console.error('收藏操作失败:', error)
+  }
+}
 
 function onClickLeft() {
   router.back()
 }
 
-function onContact() {
-  // TODO: Implement contact logic
-  alert('联系卖家功能开发中')
+function formatDate(dateString) {
+  const date = new Date(dateString)
+  return date.toLocaleDateString('zh-CN', {
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit'
+  })
 }
+
+onMounted(() => {
+  loadItemDetail()
+})
 </script>
