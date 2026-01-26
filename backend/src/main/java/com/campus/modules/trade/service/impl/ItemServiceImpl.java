@@ -28,7 +28,12 @@ public class ItemServiceImpl extends ServiceImpl<ItemMapper, Item> implements It
     @Override
     @Transactional
     public Item getDetail(Long itemId) {
-        Item item = this.getById(itemId);
+        LambdaQueryWrapper<Item> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(Item::getId, itemId)
+               .eq(Item::getDeleted, false)
+               .ne(Item::getStatus, 0);  // 排除已删除（status=0）的物品
+
+        Item item = this.getOne(wrapper);
         if (item != null) {
             // 增加浏览次数
             item.setViewCount(item.getViewCount() + 1);

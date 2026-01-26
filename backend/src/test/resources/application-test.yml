@@ -5,6 +5,12 @@ spring:
   application:
     name: campus-helping-platform-test
 
+  # 测试上下文缓存配置 - 增加缓存大小以支持嵌套测试类
+  test:
+    context:
+      cache:
+        max-size: 20
+
   # 使用H2内存数据库进行测试
   datasource:
     driver-class-name: org.h2.Driver
@@ -14,54 +20,55 @@ spring:
 
   jpa:
     hibernate:
-      ddl-auto: create-drop
-    show-sql: true
+      ddl-auto: none
+    show-sql: false
     properties:
       hibernate:
         dialect: org.hibernate.dialect.H2Dialect
-        format_sql: true
 
-  # SQL初始化
   sql:
     init:
-      mode: never
+      mode: always
+      schema-locations: classpath:schema-h2.sql
+      continue-on-error: true
 
-# MyBatis-Plus配置（测试环境）
-mybatis-plus:
-  mapper-locations: classpath*:/mapper/**/*.xml
-  type-aliases-package: com.campus.entity
-  global-config:
-    db-config:
-      id-type: auto
-      logic-delete-field: deleted
-      logic-delete-value: 1
-      logic-not-delete-value: 0
-  configuration:
-    map-underscore-to-camel-case: true
-    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+  # MyBatis-Plus配置（测试环境）
+  mybatis-plus:
+    mapper-locations: classpath*:/mapper/**/*.xml
+    type-aliases-package: com.campus.entity
+    global-config:
+      db-config:
+        id-type: auto
+        logic-delete-field: deleted
+        logic-delete-value: 1
+        logic-not-delete-value: 0
+    configuration:
+      map-underscore-to-camel-case: true
+      log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
 
-# JWT配置
-jwt:
-  secret: test-jwt-secret-key-for-testing-purposes-only-2024-very-long
-  expiration: 3600000
-  header: Authorization
-  prefix: Bearer
+  # JWT配置
+  jwt:
+    secret: test-jwt-secret-key-for-testing-purposes-only-2024-very-long
+    expiration: 3600000
+    header: Authorization
+    prefix: Bearer
 
-# WebSocket配置
-websocket:
-  endpoint: /ws
-  allowed-origins: "*"
+  # WebSocket配置
+  websocket:
+    endpoint: /ws
+    allowed-origins: "*"
 
-# Swagger配置
-springdoc:
-  api-docs:
-    enabled: false
-  swagger-ui:
-    enabled: false
+  # Swagger配置
+  springdoc:
+    api-docs:
+      enabled: false
+    swagger-ui:
+      enabled: false
 
-# 日志配置
-logging:
-  level:
-    root: WARN
-    com.campus: DEBUG
-    org.hibernate.SQL: DEBUG
+  # 日志配置
+  logging:
+    level:
+      root: WARN
+      com.campus: DEBUG
+      org.hibernate.SQL: DEBUG
+

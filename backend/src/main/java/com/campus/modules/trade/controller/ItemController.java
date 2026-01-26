@@ -153,9 +153,11 @@ public class ItemController {
             return Result.error("物品不存在");
         }
 
-        // Soft delete
-        item.setDeleted(1);
-        itemService.updateById(item);
+        // Soft delete using removeById (MyBatis-Plus @TableLogic will handle it)
+        boolean success = itemService.removeById(itemId);
+        if (!success) {
+            return Result.error("删除失败");
+        }
         return Result.success();
     }
 

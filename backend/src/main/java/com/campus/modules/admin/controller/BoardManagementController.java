@@ -2,8 +2,8 @@ package com.campus.modules.admin.controller;
 
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.campus.common.Result;
+import com.campus.config.JwtConfig;
 import com.campus.modules.admin.service.AdminService;
-import com.campus.modules.auth.service.AuthService;
 import com.campus.modules.forum.entity.Board;
 import com.campus.modules.forum.service.BoardService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -22,12 +22,12 @@ public class BoardManagementController {
 
     private final BoardService boardService;
     private final AdminService adminService;
-    private final AuthService authService;
+    private final JwtConfig jwtConfig;
 
-    public BoardManagementController(BoardService boardService, AdminService adminService, AuthService authService) {
+    public BoardManagementController(BoardService boardService, AdminService adminService, JwtConfig jwtConfig) {
         this.boardService = boardService;
         this.adminService = adminService;
-        this.authService = authService;
+        this.jwtConfig = jwtConfig;
     }
 
     @Operation(summary = "获取板块列表")
@@ -113,17 +113,19 @@ public class BoardManagementController {
     public Result<Void> delete(
             @RequestHeader("Authorization") String authHeader,
             @PathVariable Long boardId) {
-        
+
         verifyAdmin(authHeader);
-        
+
         Board board = boardService.getById(boardId);
         if (board == null || (board.getDeleted() != null && board.getDeleted() == 1)) {
             return Result.error("板块不存在");
         }
-        
-        // Soft delete
-        board.setDeleted(1);
-        boardService.updateById(board);
+
+        // Soft delete using removeById (MyBatis-Plus @TableLogic will handle it)
+        boolean success = boardService.removeById(boardId);
+        if (!success) {
+            return Result.error("删除失败");
+        }
         return Result.success();
     }
 
@@ -153,12 +155,31 @@ public class BoardManagementController {
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
             throw new SecurityException("未授权访问");
         }
-        
+
         String token = authHeader.replace("Bearer ", "");
-        Long adminId = authService.getUserIdFromToken(token);
-        
+
+        // 从token中提取admin ID和role
+        String subject = jwtConfig.getUsernameFromToken(token);
+        Integer role = jwtConfig.getRoleFromToken(token);
+
+        if (subject == null) {
+            throw new SecurityException("权限验证失败: 无效的token");
+        }
+
+        // 验证是否为管理员token (role == 1 或 2)
+        if (role == null || (role != 1 && role != 2)) {
+            throw new SecurityException("权限不足: 非管理员token");
+        }
+
+        Long adminId;
+        try {
+            adminId = Long.parseLong(subject);
+        } catch (NumberFormatException e) {
+            throw new SecurityException("权限验证失败: 无效的管理员ID");
+        }
+
         if (!adminService.isSuperAdmin(adminId)) {
-            throw new SecurityException("权限不足");
+            throw new SecurityException("权限不足: 非超级管理员");
         }
     }
 

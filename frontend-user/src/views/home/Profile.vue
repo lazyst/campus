@@ -4,7 +4,7 @@
     
     <div class="p-4">
       <!-- Profile Header -->
-      <div class="bg-white rounded-xl p-5 mb-4 flex items-center" @click="goToProfile">
+      <div class="bg-white rounded-xl p-5 mb-4 flex items-center" @click="goToLogin">
         <div class="w-15 h-15 bg-primary text-white rounded-full flex items-center justify-center text-2xl mr-4">
           我
         </div>
@@ -58,14 +58,6 @@ import NavBar from '@/components/navigation/NavBar.vue'
 import BaseButton from '@/components/base/Button.vue'
 
 const router = useRouter()
-
-function goToProfile() {
-  router.push('/profile')
-}
-
-function goTo(path: string) {
-  router.push(path)
-}
 
 function goToLogin() {
   router.push('/login')
