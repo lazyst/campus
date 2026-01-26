@@ -47,17 +47,20 @@
   </div>
 </template>
 
-<script setup lang="ts">
+<script setup>
 import { ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
-import { getPosts, type Post } from '@/api/forum'
+import { getPosts } from '@/api/modules'
 
 const router = useRouter()
-const props = defineProps<{
-  boardId?: number
-}>()
+const props = defineProps({
+  boardId: {
+    type: Number,
+    default: undefined
+  }
+})
 
-const list = ref<Post[]>([])
+const list = ref([])
 const loading = ref(false)
 const finished = ref(false)
 const page = ref(1)
@@ -86,7 +89,7 @@ function onLoad() {
   loadPosts()
 }
 
-function onPostClick(post: Post) {
+function onPostClick(post) {
   router.push(`/forum/${post.id}`)
 }
 
