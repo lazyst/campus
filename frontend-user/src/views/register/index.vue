@@ -65,15 +65,14 @@
   </div>
 </template>
 
-<script setup lang="ts">
+<script setup>
 import { ref, reactive, computed } from 'vue'
 import { useRouter } from 'vue-router'
-import { useUserStore } from '@/stores/user'
+import { register } from '@/api/modules'
 import NavBar from '@/components/navigation/NavBar.vue'
 import BaseInput from '@/components/base/Input.vue'
 import BaseButton from '@/components/base/Button.vue'
 
-const userStore = useUserStore()
 const router = useRouter()
 
 const loading = ref(false)
@@ -123,21 +122,24 @@ function goToLogin() {
 
 async function handleSubmit() {
   if (!isFormValid.value) {
-    alert('请填写完整且正确的注册信息')
     return
   }
-  
+
   loading.value = true
   try {
-    await userStore.register({
+    // 使用新的API层注册
+    // 新API会自动：显示Toast、保存Token、显示Loading
+    await register({
       phone: form.phone,
       password: form.password,
       nickname: form.nickname
     })
-    alert('注册成功')
+
+    // 注册成功后，跳转到首页
     router.replace('/')
-  } catch (error: any) {
-    alert(error.message || '注册失败')
+  } catch (error) {
+    // 错误已被新API层自动处理并显示Toast
+    console.error('注册失败', error)
   } finally {
     loading.value = false
   }
