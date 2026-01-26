@@ -75,24 +75,24 @@
   </div>
 </template>
 
-<script setup lang="ts">
+<script setup>
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import NavBar from '@/components/navigation/NavBar.vue'
 import BaseInput from '@/components/base/Input.vue'
 import BaseButton from '@/components/base/Button.vue'
-import { getBoards, createPost, type Board } from '@/api/forum'
+import { getBoards, createPost } from '@/api/modules'
 
 const router = useRouter()
 const showBoardPicker = ref(false)
 const submitting = ref(false)
 const attemptedSubmit = ref(false)
-const boards = ref<Board[]>([])
-const boardColumns = ref<{text: string, value: number}[]>([])
+const boards = ref([])
+const boardColumns = ref([])
 const selectedBoardIndex = ref(0)
 
 const form = ref({
-  boardId: 0 as number,
+  boardId: 0,
   boardName: '',
   title: '',
   content: ''
@@ -112,23 +112,24 @@ function onBoardConfirm() {
 
 async function onSubmit() {
   attemptedSubmit.value = true
-  
+
   if (!form.value.boardId || !form.value.title || !form.value.content) {
     return
   }
-  
+
   try {
     submitting.value = true
+    // 使用新的API层创建帖子
+    // 新API会自动：显示Toast、显示Loading
     await createPost({
       boardId: form.value.boardId,
       title: form.value.title,
       content: form.value.content
     })
-    alert('发布成功')
     router.back()
-  } catch (error: any) {
+  } catch (error) {
+    // 错误已被新API层自动处理并显示Toast
     console.error('发布帖子失败:', error)
-    alert(error.message || '发布失败')
   } finally {
     submitting.value = false
   }
