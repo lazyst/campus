@@ -54,7 +54,7 @@
       </div>
       
       <!-- Submit Button -->
-      <BaseButton type="primary" block round @click="onSubmit">
+      <BaseButton type="primary" block round :loading="submitting" @click="onSubmit">
         发布
       </BaseButton>
     </form>
@@ -83,15 +83,17 @@
   </div>
 </template>
 
-<script setup lang="ts">
+<script setup>
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import NavBar from '@/components/navigation/NavBar.vue'
 import BaseInput from '@/components/base/Input.vue'
 import BaseButton from '@/components/base/Button.vue'
+import { createItem } from '@/api/modules'
 
 const router = useRouter()
 const showTypePicker = ref(false)
+const submitting = ref(false)
 const attemptedSubmit = ref(false)
 const typeColumns = ['出售', '收购']
 const selectedTypeIndex = ref(0)
@@ -112,15 +114,29 @@ function onTypeConfirm() {
   showTypePicker.value = false
 }
 
-function onSubmit() {
+async function onSubmit() {
   attemptedSubmit.value = true
-  
+
   if (!form.value.title || !form.value.price) {
     return
   }
-  
-  // TODO: Implement create item logic
-  alert('发布功能开发中')
-  router.back()
+
+  try {
+    submitting.value = true
+    // 使用新的API层创建物品
+    // 新API会自动：显示Toast、显示Loading
+    await createItem({
+      type: form.value.type === '出售' ? 2 : 1,
+      title: form.value.title,
+      price: parseFloat(form.value.price),
+      description: form.value.description || ''
+    })
+    router.back()
+  } catch (error) {
+    // 错误已被新API层自动处理并显示Toast
+    console.error('创建物品失败:', error)
+  } finally {
+    submitting.value = false
+  }
 }
 </script>
