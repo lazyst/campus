@@ -1,29 +1,31 @@
 <template>
-  <div class="min-h-screen bg-gray-50 pb-14" :class="{ 'pt-11': showTopPadding }">
-    <router-view />
+  <div 
+    class="main-layout"
+    :class="{ 'main-layout--with-top-padding': showTopPadding }"
+  >
+    <router-view class="main-layout__content" />
     
-    <!-- Floating Action Button -->
-    <div 
+    <!-- 浮动发布按钮 -->
+    <button
       v-if="showFloatingButton"
-      class="fixed right-4 bg-primary text-white rounded-full w-12 h-12 flex items-center justify-center shadow-lg cursor-pointer z-40"
-      style="bottom: 70px;"
+      class="fab-button"
       @click="onCreate"
     >
-      <span class="text-2xl font-medium">+</span>
-    </div>
+      发布
+    </button>
     
-    <!-- Custom TabBar -->
+    <!-- 自定义 TabBar -->
     <TabBar
+      v-show="showTabbar"
       :model-value="activeTab"
       :items="tabItems"
       @change="onTabChange"
-      v-show="showTabbar"
     />
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { computed } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import TabBar from '../components/navigation/TabBar.vue'
 
@@ -166,3 +168,49 @@ function onCreate() {
   }
 }
 </script>
+
+<style scoped>
+.main-layout {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  background-color: var(--bg-secondary);
+}
+
+.main-layout--with-top-padding {
+  padding-top: var(--nav-height);
+}
+
+.main-layout__content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+}
+
+/* 浮动发布按钮样式 */
+.fab-button {
+  position: fixed;
+  right: var(--space-4);
+  bottom: calc(var(--tabbar-height) + var(--space-6));
+  min-width: 56px;
+  height: 56px;
+  padding: 0 var(--space-4);
+  font-size: var(--text-sm);
+  font-weight: var(--font-weight-medium);
+  color: var(--text-inverse);
+  background-color: var(--color-primary-700);
+  border: none;
+  border-radius: var(--radius-full);
+  box-shadow: var(--shadow-lg);
+  cursor: pointer;
+  transition: all var(--transition-normal);
+  z-index: var(--z-fixed);
+}
+
+.fab-button:active {
+  transform: scale(0.95);
+  background-color: var(--color-primary-800);
+  box-shadow: var(--shadow-md);
+}
+</style>

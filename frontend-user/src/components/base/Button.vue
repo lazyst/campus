@@ -1,32 +1,26 @@
 <template>
   <button
     :class="[
-      'inline-flex items-center justify-center font-medium border border-transparent rounded-full cursor-pointer transition-all duration-200',
-      typeClasses,
-      sizeClasses,
+      'base-button',
+      `base-button--${type}`,
+      `base-button--${size}`,
       {
-        'w-full': block,
-        'opacity-50 cursor-not-allowed': disabled || loading,
-        'rounded-full': round
+        'base-button--block': block,
+        'base-button--round': round,
+        'base-button--disabled': disabled || loading
       }
     ]"
     :disabled="disabled || loading"
     @click="handleClick"
   >
-    <!-- Loading spinner -->
-    <svg v-if="loading" class="animate-spin -ml-1 mr-2 h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-      <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-      <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-    </svg>
-    
-    <!-- Button text -->
-    <slot></slot>
+    <span v-if="loading" class="base-button__spinner"></span>
+    <span :class="{ 'base-button__text--loading': loading }">
+      <slot></slot>
+    </span>
   </button>
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
-
 interface Props {
   type?: 'primary' | 'success' | 'danger' | 'default'
   size?: 'normal' | 'small' | 'large'
@@ -49,30 +43,136 @@ const emit = defineEmits<{
   click: [event: MouseEvent]
 }>()
 
-// Type classes mapping
-const typeClasses = computed(() => {
-  const map: Record<string, string> = {
-    'primary': 'bg-primary text-white hover:bg-blue-600 active:bg-blue-700',
-    'success': 'bg-success text-white hover:bg-green-600 active:bg-green-700',
-    'danger': 'bg-danger text-white hover:bg-red-600 active:bg-red-700',
-    'default': 'bg-white text-default border border-gray-300 hover:bg-gray-50 active:bg-gray-100'
-  }
-  return map[props.type] || map.primary
-})
-
-// Size classes mapping
-const sizeClasses = computed(() => {
-  const map: Record<string, string> = {
-    'normal': 'h-11 px-5 text-base',
-    'small': 'h-9 px-4 text-sm',
-    'large': 'h-12 px-6 text-lg'
-  }
-  return map[props.size] || map.normal
-})
-
 function handleClick(event: MouseEvent) {
   if (!props.disabled && !props.loading) {
     emit('click', event)
   }
 }
 </script>
+
+<style scoped>
+.base-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: var(--font-weight-medium);
+  border: 1px solid transparent;
+  border-radius: var(--radius-full);
+  cursor: pointer;
+  transition: all var(--transition-normal);
+  outline: none;
+  position: relative;
+  overflow: hidden;
+}
+
+.base-button:active {
+  transform: scale(0.98);
+}
+
+/* Size variants */
+.base-button--normal {
+  height: 44px;
+  padding: 0 var(--space-5);
+  font-size: var(--text-base);
+}
+
+.base-button--small {
+  height: 36px;
+  padding: 0 var(--space-4);
+  font-size: var(--text-sm);
+}
+
+.base-button--large {
+  height: 48px;
+  padding: 0 var(--space-6);
+  font-size: var(--text-lg);
+}
+
+/* Type variants */
+.base-button--primary {
+  background-color: var(--color-primary-700);
+  color: var(--text-inverse);
+  box-shadow: var(--shadow-primary-md);
+}
+
+.base-button--primary:hover:not(.base-button--disabled) {
+  background-color: var(--color-primary-800);
+}
+
+.base-button--primary:active:not(.base-button--disabled) {
+  background-color: var(--color-primary-900);
+  box-shadow: var(--shadow-sm);
+}
+
+.base-button--success {
+  background-color: var(--color-success-500);
+  color: var(--text-inverse);
+}
+
+.base-button--success:hover:not(.base-button--disabled) {
+  background-color: var(--color-success-600);
+}
+
+.base-button--success:active:not(.base-button--disabled) {
+  background-color: var(--color-success-700);
+}
+
+.base-button--danger {
+  background-color: var(--color-error-500);
+  color: var(--text-inverse);
+}
+
+.base-button--danger:hover:not(.base-button--disabled) {
+  background-color: var(--color-error-600);
+}
+
+.base-button--danger:active:not(.base-button--disabled) {
+  background-color: var(--color-error-700);
+}
+
+.base-button--default {
+  background-color: var(--bg-card);
+  color: var(--text-primary);
+  border-color: var(--border-default);
+}
+
+.base-button--default:hover:not(.base-button--disabled) {
+  background-color: var(--bg-secondary);
+}
+
+.base-button--default:active:not(.base-button--disabled) {
+  background-color: var(--bg-tertiary);
+}
+
+/* Block button */
+.base-button--block {
+  width: 100%;
+}
+
+/* Disabled state */
+.base-button--disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Spinner */
+.base-button__spinner {
+  width: 18px;
+  height: 18px;
+  border: 2px solid currentColor;
+  border-top-color: transparent;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+  margin-right: var(--space-2);
+}
+
+.base-button__text--loading {
+  margin-left: var(--space-1);
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+</style>

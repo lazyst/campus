@@ -1,64 +1,75 @@
 <template>
-  <div class="notification-messages min-h-screen bg-gray-100 pt-2.5">
+  <div class="profile-messages-page">
     <NavBar title="消息通知" :left-arrow="true" @click-left="onClickLeft">
       <template #right>
-        <BaseButton type="primary" size="small" @click="onMarkAllRead">
+        <button class="profile-messages__mark-all" @click="onMarkAllRead">
           全部已读
-        </BaseButton>
+        </button>
       </template>
     </NavBar>
 
-    <div class="p-2.5">
+    <div class="profile-messages-container">
       <!-- Loading State -->
-      <div v-if="loading && notifications.length === 0" class="text-center py-8">
-        <span class="text-gray-400">加载中...</span>
+      <div v-if="loading && notifications.length === 0" class="profile-messages__state">
+        <span class="profile-messages__state-text">加载中...</span>
       </div>
 
       <!-- Empty State -->
-      <div v-else-if="notifications.length === 0" class="text-center py-8">
-        <span class="text-gray-400">暂无通知</span>
+      <div v-else-if="notifications.length === 0" class="profile-messages__state">
+        <span class="profile-messages__state-text">暂无通知</span>
       </div>
 
       <!-- Notification List -->
-      <div
-        v-for="notif in notifications"
-        :key="notif.id"
-        class="notify-item flex bg-white rounded-lg p-3 mb-2.5 cursor-pointer"
-        :class="{ 'bg-blue-50': !notif.read }"
-        @click="onNotificationClick(notif)"
-      >
-        <div class="notify-icon w-10 h-10 bg-primary text-white rounded-full flex items-center justify-center mr-3 text-xs">
-          {{ notif.type === 'system' ? '系统' : '通知' }}
+      <div v-else class="profile-messages__list">
+        <div
+          v-for="notif in notifications"
+          :key="notif.id"
+          class="profile-messages__item"
+          :class="{ 'profile-messages__item--unread': !notif.read }"
+          @click="onNotificationClick(notif)"
+        >
+          <div class="profile-messages__item-icon">
+            {{ notif.type === 'system' ? '系' : '通' }}
+          </div>
+          <div class="profile-messages__item-content">
+            <div class="profile-messages__item-title">{{ notif.title }}</div>
+            <div class="profile-messages__item-desc">{{ notif.content }}</div>
+            <div class="profile-messages__item-time">{{ formatDate(notif.createdAt) }}</div>
+          </div>
+          <div v-if="!notif.read" class="profile-messages__unread-dot"></div>
         </div>
-        <div class="notify-content flex-1">
-          <div class="notify-title font-bold mb-1">{{ notif.title }}</div>
-          <div class="notify-desc text-sm text-gray-500 mb-1">{{ notif.content }}</div>
-          <div class="notify-time text-xs text-gray-400">{{ formatDate(notif.createdAt) }}</div>
+
+        <!-- Loading More -->
+        <div v-if="loading && notifications.length > 0" class="profile-messages__state">
+          <span class="profile-messages__state-text">加载中...</span>
         </div>
-      </div>
 
-      <!-- Loading More -->
-      <div v-if="loading && notifications.length > 0" class="text-center py-4">
-        <span class="text-gray-400">加载中...</span>
-      </div>
-
-      <!-- Finished -->
-      <div v-if="finished && notifications.length > 0" class="text-center py-4">
-        <span class="text-gray-400 text-sm">没有更多了</span>
+        <!-- Finished -->
+        <div v-if="finished && notifications.length > 0" class="profile-messages__state">
+          <span class="profile-messages__state-text profile-messages__state-text--muted">没有更多了</span>
+        </div>
       </div>
     </div>
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { getNotifications, markAsRead, markAllAsRead } from '@/api/modules'
 import NavBar from '@/components/navigation/NavBar.vue'
-import BaseButton from '@/components/base/Button.vue'
+
+interface Notification {
+  id: number
+  title: string
+  content: string
+  type: string
+  read: boolean
+  createdAt: string
+}
 
 const router = useRouter()
-const notifications = ref([])
+const notifications = ref<Notification[]>([])
 const loading = ref(false)
 const finished = ref(false)
 const page = ref(1)
@@ -68,23 +79,25 @@ async function loadNotifications() {
 
   try {
     loading.value = true
-    const newNotifications = await getNotifications({
+    const response = await getNotifications({
       page: page.value,
       size: 10
     })
 
-    if (Array.isArray(newNotifications)) {
-      notifications.value.push(...newNotifications)
+    let newNotifications: Notification[] = []
+    if (Array.isArray(response)) {
+      newNotifications = response as Notification[]
       if (newNotifications.length < 10) {
         finished.value = true
       }
-    } else if (newNotifications.records) {
-      notifications.value.push(...newNotifications.records)
-      if (notifications.value.length >= newNotifications.total) {
+    } else if ((response as { records?: Notification[] }).records) {
+      newNotifications = (response as { records: Notification[], total: number }).records
+      if (notifications.value.length >= (response as { total: number }).total) {
         finished.value = true
       }
     }
 
+    notifications.value.push(...newNotifications)
     page.value++
   } catch (error) {
     console.error('获取通知失败:', error)
@@ -93,7 +106,7 @@ async function loadNotifications() {
   }
 }
 
-async function onNotificationClick(notification) {
+async function onNotificationClick(notification: Notification) {
   if (!notification.read) {
     try {
       await markAsRead(notification.id)
@@ -102,7 +115,6 @@ async function onNotificationClick(notification) {
       console.error('标记已读失败:', error)
     }
   }
-  // 可选：跳转到相关页面
 }
 
 async function onMarkAllRead() {
@@ -118,7 +130,7 @@ function onClickLeft() {
   router.back()
 }
 
-function formatDate(dateString) {
+function formatDate(dateString: string): string {
   const date = new Date(dateString)
   return date.toLocaleDateString('zh-CN', {
     year: 'numeric',
@@ -131,3 +143,118 @@ onMounted(() => {
   loadNotifications()
 })
 </script>
+
+<style scoped>
+.profile-messages-page {
+  min-height: 100vh;
+  background-color: var(--bg-page);
+}
+
+.profile-messages-container {
+  padding: var(--page-padding);
+}
+
+.profile-messages__mark-all {
+  font-size: var(--text-sm);
+  color: var(--color-primary-700);
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: var(--space-1) var(--space-2);
+}
+
+.profile-messages__mark-all:active {
+  opacity: 0.7;
+}
+
+.profile-messages__state {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-8) 0;
+}
+
+.profile-messages__state-text {
+  font-size: var(--text-sm);
+  color: var(--text-tertiary);
+}
+
+.profile-messages__state-text--muted {
+  font-size: var(--text-xs);
+}
+
+.profile-messages__list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.profile-messages__item {
+  display: flex;
+  align-items: flex-start;
+  padding: var(--space-4);
+  background-color: var(--bg-card);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  border: 1px solid var(--border-light);
+  cursor: pointer;
+  transition: all var(--transition-normal);
+  position: relative;
+}
+
+.profile-messages__item--unread {
+  background-color: var(--color-primary-50);
+}
+
+.profile-messages__item:active {
+  transform: scale(0.98);
+}
+
+.profile-messages__item-icon {
+  width: 40px;
+  height: 40px;
+  background-color: var(--color-primary-700);
+  color: #FFFFFF;
+  border-radius: var(--radius-full);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: var(--text-sm);
+  font-weight: var(--font-weight-medium);
+  margin-right: var(--space-3);
+  flex-shrink: 0;
+}
+
+.profile-messages__item-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.profile-messages__item-title {
+  font-size: var(--text-base);
+  font-weight: var(--font-weight-semibold);
+  color: var(--text-primary);
+  margin-bottom: var(--space-1);
+}
+
+.profile-messages__item-desc {
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+  margin-bottom: var(--space-1);
+  line-height: var(--line-height-normal);
+}
+
+.profile-messages__item-time {
+  font-size: var(--text-xs);
+  color: var(--text-tertiary);
+}
+
+.profile-messages__unread-dot {
+  width: 8px;
+  height: 8px;
+  background-color: var(--color-error-500);
+  border-radius: var(--radius-full);
+  flex-shrink: 0;
+  margin-left: var(--space-2);
+}
+</style>

@@ -26,7 +26,7 @@ const routes: RouteRecordRaw[] = [
       {
         path: 'profile',
         name: 'MyProfile',
-        component: () => import('@/views/home/Profile.vue')
+        component: () => import('@/views/profile/index.vue')
       }
     ]
   },
@@ -42,12 +42,7 @@ const routes: RouteRecordRaw[] = [
     name: 'Register',
     component: () => import('@/views/register/index.vue')
   },
-  {
-    path: '/profile',
-    name: 'Profile',
-    component: () => import('@/views/profile/index.vue')
-  },
-  
+
   // 详情页面（不显示底部导航）
   {
     path: '/forum/:id',

@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia'
-import { ref } from 'vue'
+import { ref, watch } from 'vue'
 import { login as loginApi, register as registerApi, logout as logoutApi, getUserInfo } from '@/api/modules'
 import router from '@/router'
 
@@ -24,19 +24,64 @@ interface RegisterParams {
   nickname: string
 }
 
+// 从 localStorage 恢复数据
+function loadState(): { token: string | null; userInfo: UserInfo | null } {
+  try {
+    const stored = localStorage.getItem('user')
+    if (stored) {
+      const parsed = JSON.parse(stored)
+      return {
+        token: parsed.token || localStorage.getItem('token'),
+        userInfo: parsed.userInfo || null
+      }
+    }
+  } catch (e) {
+    console.warn('恢复用户状态失败:', e)
+  }
+  return {
+    token: localStorage.getItem('token'),
+    userInfo: null
+  }
+}
+
 export const useUserStore = defineStore('user', () => {
-  const token = ref<string | null>(localStorage.getItem('token'))
-  const userInfo = ref<UserInfo | null>(null)
+  const { token: storedToken, userInfo: storedUserInfo } = loadState()
+
+  const token = ref<string | null>(storedToken)
+  const userInfo = ref<UserInfo | null>(storedUserInfo)
+  const isInitialized = ref(false)
+
+  // 监听 userInfo 变化，自动持久化
+  watch(userInfo, (newValue) => {
+    try {
+      const state = {
+        token: token.value,
+        userInfo: newValue
+      }
+      localStorage.setItem('user', JSON.stringify(state))
+    } catch (e) {
+      console.warn('保存用户状态失败:', e)
+    }
+  }, { deep: true })
+
+  // 监听 token 变化，同步保存
+  watch(token, (newValue) => {
+    if (newValue) {
+      localStorage.setItem('token', newValue)
+    } else {
+      localStorage.removeItem('token')
+    }
+  })
 
   function setToken(t: string) {
     token.value = t
-    localStorage.setItem('token', t)
   }
 
   function removeToken() {
     token.value = null
     userInfo.value = null
     localStorage.removeItem('token')
+    localStorage.removeItem('user')
   }
 
   async function login(params: LoginParams) {
@@ -46,10 +91,8 @@ export const useUserStore = defineStore('user', () => {
     return data
   }
 
-  async function register(params) {
+  async function register(params: RegisterParams) {
     const result = await registerApi(params)
-    // 新的register API已经在内部处理了token保存
-    // result包含 { user, token }
     if (result.token) {
       token.value = result.token
     }
@@ -58,7 +101,11 @@ export const useUserStore = defineStore('user', () => {
   }
 
   async function logout() {
-    await logoutApi()
+    try {
+      await logoutApi()
+    } catch (e) {
+      console.warn('登出API调用失败:', e)
+    }
     removeToken()
     router.push('/login')
   }
@@ -68,16 +115,26 @@ export const useUserStore = defineStore('user', () => {
       const data = await getUserInfo()
       userInfo.value = data
     } catch (error) {
-      removeToken()
+      console.warn('获取用户信息失败:', error)
+    }
+  }
+
+  // 初始化函数
+  async function initialize() {
+    if (token.value && !isInitialized.value) {
+      await fetchUserInfo()
+      isInitialized.value = true
     }
   }
 
   return {
     token,
     userInfo,
+    isInitialized,
     login,
     register,
     logout,
-    fetchUserInfo
+    fetchUserInfo,
+    initialize
   }
 })

@@ -57,7 +57,6 @@ class AuthServiceTest {
         @DisplayName("登录成功")
         void shouldLoginSuccessfully() {
             when(userService.getByPhone("13800000000")).thenReturn(testUser);
-            when(passwordEncoder.matches("password123", testUser.getPassword())).thenReturn(true);
             when(jwtConfig.generateToken("13800000000")).thenReturn("test-jwt-token");
 
             String token = authService.login("13800000000", "password123");
@@ -84,7 +83,6 @@ class AuthServiceTest {
         @DisplayName("密码错误时登录失败")
         void shouldFailLoginWhenPasswordWrong() {
             when(userService.getByPhone("13800000000")).thenReturn(testUser);
-            when(passwordEncoder.matches("wrongpassword", testUser.getPassword())).thenReturn(false);
 
             IllegalArgumentException exception = assertThrows(
                     IllegalArgumentException.class,
@@ -99,7 +97,6 @@ class AuthServiceTest {
         void shouldFailLoginWhenUserDisabled() {
             testUser.setStatus(0);
             when(userService.getByPhone("13800000000")).thenReturn(testUser);
-            when(passwordEncoder.matches("password123", testUser.getPassword())).thenReturn(true);
 
             IllegalArgumentException exception = assertThrows(
                     IllegalArgumentException.class,

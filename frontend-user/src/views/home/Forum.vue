@@ -1,30 +1,26 @@
 <template>
-  <div class="min-h-screen bg-gray-100">
+  <div class="forum-page">
     <!-- Navigation Bar -->
     <NavBar title="论坛" />
     
     <!-- Category Tabs -->
-    <div class="flex gap-3 px-4 py-3 bg-white overflow-x-auto whitespace-nowrap">
-      <span 
-        :class="[
-          'px-3 py-1.5 rounded-full text-sm cursor-pointer transition-colors flex-shrink-0',
-          activeBoard === 'all' ? 'bg-primary text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-        ]"
+    <div class="forum-tabs">
+      <button
+        class="forum-tab"
+        :class="{ 'forum-tab--active': activeBoard === 'all' }"
         @click="activeBoard = 'all'"
       >
         全部
-      </span>
-      <span 
+      </button>
+      <button
         v-for="board in boards" 
         :key="board.id"
-        :class="[
-          'px-3 py-1.5 rounded-full text-sm cursor-pointer transition-colors flex-shrink-0',
-          activeBoard === board.id ? 'bg-primary text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-        ]"
+        class="forum-tab"
+        :class="{ 'forum-tab--active': activeBoard === board.id }"
         @click="activeBoard = board.id"
       >
         {{ board.name }}
-      </span>
+      </button>
     </div>
     
     <!-- Forum List -->
@@ -53,3 +49,50 @@ onMounted(async () => {
   }
 })
 </script>
+
+<style scoped>
+.forum-page {
+  min-height: 100vh;
+  background-color: var(--bg-page);
+}
+
+.forum-tabs {
+  display: flex;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--page-padding);
+  background-color: var(--bg-card);
+  border-bottom: 1px solid var(--border-light);
+  overflow-x: auto;
+  white-space: nowrap;
+  -webkit-overflow-scrolling: touch;
+}
+
+.forum-tabs::-webkit-scrollbar {
+  display: none;
+}
+
+.forum-tab {
+  flex-shrink: 0;
+  padding: var(--space-2) var(--space-3);
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+  background-color: var(--bg-tertiary);
+  border: none;
+  border-radius: var(--radius-full);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.forum-tab:active {
+  background-color: var(--color-primary-100);
+}
+
+.forum-tab--active {
+  color: var(--text-inverse);
+  background-color: var(--color-primary-700);
+}
+
+.forum-tab--active:active {
+  background-color: var(--color-primary-800);
+}
+</style>

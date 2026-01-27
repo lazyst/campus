@@ -1,92 +1,200 @@
 <template>
-  <div class="profile-page min-h-screen bg-gray-100">
-    <div class="profile-header bg-white p-6 flex items-center">
-      <div class="avatar-section mr-5">
-        <div class="w-20 h-20 rounded-full bg-primary text-white flex items-center justify-center text-2xl">
-          {{ userInfo?.nickname?.charAt(0) || '未' }}
+  <div class="profile-page">
+    <!-- 用户信息头部 -->
+    <div class="profile-header">
+      <div class="profile-user-info">
+        <div class="profile-avatar">
+          <span>{{ userAvatar }}</span>
         </div>
-      </div>
-      <div class="info-section">
-        <h2 class="text-xl font-bold mb-1">{{ userInfo?.nickname || '未登录' }}</h2>
-        <p class="text-gray-500 text-sm">{{ userInfo?.phone || '请先登录' }}</p>
-      </div>
-    </div>
-
-    <div class="profile-menu mt-5">
-      <div class="bg-white">
-        <div 
-          class="flex justify-between items-center p-4 border-b border-gray-100 cursor-pointer hover:bg-gray-50"
-          @click="router.push('/profile/edit')"
-        >
-          <span>编辑资料</span>
-          <span class="text-gray-400">›</span>
-        </div>
-        <div 
-          class="flex justify-between items-center p-4 border-b border-gray-100 cursor-pointer hover:bg-gray-50"
-          @click="router.push('/profile/posts')"
-        >
-          <span>我的帖子</span>
-          <span class="text-gray-400">›</span>
-        </div>
-        <div 
-          class="flex justify-between items-center p-4 border-b border-gray-100 cursor-pointer hover:bg-gray-50"
-          @click="router.push('/profile/items')"
-        >
-          <span>我的闲置</span>
-          <span class="text-gray-400">›</span>
-        </div>
-        <div 
-          class="flex justify-between items-center p-4 border-b border-gray-100 cursor-pointer hover:bg-gray-50"
-          @click="router.push('/profile/collections')"
-        >
-          <span>我的收藏</span>
-          <span class="text-gray-400">›</span>
-        </div>
-        <div 
-          class="flex justify-between items-center p-4 cursor-pointer hover:bg-gray-50"
-          @click="router.push('/profile/messages')"
-        >
-          <span>消息通知</span>
-          <span class="text-gray-400">›</span>
+        <div class="profile-user-details">
+          <h2 class="profile-name">{{ userName }}</h2>
+          <p class="profile-phone">{{ userPhone }}</p>
         </div>
       </div>
     </div>
 
-    <div class="logout-section mt-10 px-5">
-      <BaseButton type="primary" block @click="handleLogout">
-        退出登录
-      </BaseButton>
+    <!-- 菜单列表 -->
+    <div class="profile-menu">
+      <div class="profile-menu-group">
+        <div class="profile-menu-title">账号管理</div>
+        <div 
+          v-for="(item, index) in mainMenuItems" 
+          :key="index"
+          class="profile-menu-item"
+          @click="handleMenuClick(item.route)"
+        >
+          <span class="profile-menu-label">{{ item.label }}</span>
+          <span class="profile-menu-arrow">›</span>
+        </div>
+      </div>
+
+      <div class="profile-menu-group">
+        <div class="profile-menu-title">我的内容</div>
+        <div 
+          v-for="(item, index) in contentMenuItems" 
+          :key="index"
+          class="profile-menu-item"
+          @click="handleMenuClick(item.route)"
+        >
+          <span class="profile-menu-label">{{ item.label }}</span>
+          <span class="profile-menu-arrow">›</span>
+        </div>
+      </div>
+
+      <div class="profile-menu-group">
+        <div class="profile-menu-title">其他</div>
+        <div 
+          v-for="(item, index) in otherMenuItems" 
+          :key="index"
+          class="profile-menu-item"
+          @click="handleMenuClick(item.route)"
+        >
+          <span class="profile-menu-label">{{ item.label }}</span>
+          <span class="profile-menu-arrow">›</span>
+        </div>
+      </div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
-import { useUserStore } from '@/stores/user'
-import { useRouter } from 'vue-router'
-import BaseButton from '@/components/base/Button.vue'
+import { computed } from 'vue';
+import { useRouter } from 'vue-router';
+import { useUserStore } from '@/stores/user';
 
-const userStore = useUserStore()
-const router = useRouter()
+const router = useRouter();
+const userStore = useUserStore();
 
-const userInfo = ref(userStore.userInfo)
-
-onMounted(async () => {
-  if (!userStore.token) {
-    router.push('/login')
-    return
+const userName = computed(() => userStore.userInfo?.nickname || '校园小助手');
+const userPhone = computed(() => {
+  if (userStore.userInfo?.phone) {
+    return userStore.userInfo.phone.replace(/(\d{3})\d{4}(\d{4})/, '$1****$2');
   }
-  await userStore.fetchUserInfo()
-  userInfo.value = userStore.userInfo
-})
+  return '未登录';
+});
+const userAvatar = computed(() => {
+  return userStore.userInfo?.nickname?.charAt(0) || '用';
+});
 
-async function handleLogout() {
-  try {
-    await userStore.logout()
-    alert('已退出登录')
-    router.push('/login')
-  } catch (error) {
-    alert('退出失败')
-  }
+const mainMenuItems = [
+  { label: '编辑资料', route: '/profile/edit' },
+];
+
+const contentMenuItems = [
+  { label: '我的帖子', route: '/profile/posts' },
+  { label: '我的闲置', route: '/profile/items' },
+  { label: '我的收藏', route: '/profile/collections' },
+];
+
+const otherMenuItems = [
+  { label: '消息通知', route: '/profile/messages' },
+  { label: '设置', route: '/settings' },
+];
+
+function handleMenuClick(route: string) {
+  router.push(route);
 }
 </script>
+
+<style scoped>
+.profile-page {
+  min-height: 100vh;
+  background-color: var(--bg-secondary);
+}
+
+.profile-header {
+  padding: var(--space-6) var(--space-4) var(--space-4);
+  background: linear-gradient(180deg, var(--color-primary-50) 0%, var(--bg-card) 100%);
+}
+
+.profile-user-info {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+}
+
+.profile-avatar {
+  width: 72px;
+  height: 72px;
+  border-radius: var(--radius-full);
+  background-color: var(--color-primary-100);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: var(--text-2xl);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-primary-700);
+  box-shadow: var(--shadow-md);
+}
+
+.profile-user-details {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.profile-name {
+  font-size: var(--text-xl);
+  font-weight: var(--font-weight-semibold);
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.profile-phone {
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+  margin: 0;
+}
+
+.profile-menu {
+  padding: var(--space-4);
+}
+
+.profile-menu-group {
+  margin-bottom: var(--space-4);
+  background-color: var(--bg-card);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-card);
+  border: 1px solid var(--border-light);
+  overflow: hidden;
+}
+
+.profile-menu-title {
+  padding: var(--space-3) var(--space-4);
+  font-size: var(--text-xs);
+  font-weight: var(--font-weight-medium);
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  background-color: var(--bg-secondary);
+  border-bottom: 1px solid var(--border-light);
+}
+
+.profile-menu-item {
+  display: flex;
+  align-items: center;
+  padding: var(--space-4);
+  font-size: var(--text-base);
+  color: var(--text-primary);
+  border-bottom: 1px solid var(--border-light);
+  cursor: pointer;
+  transition: background-color var(--transition-fast);
+}
+
+.profile-menu-item:last-child {
+  border-bottom: none;
+}
+
+.profile-menu-item:active {
+  background-color: var(--bg-secondary);
+}
+
+.profile-menu-label {
+  flex: 1;
+}
+
+.profile-menu-arrow {
+  font-size: var(--text-lg);
+  color: var(--text-tertiary);
+}
+</style>

@@ -1,71 +1,96 @@
 <template>
-  <div class="create-post min-h-screen bg-gray-100">
-    <NavBar title="发布帖子" :left-arrow="true" @click-left="onClickLeft" />
-    
-    <form @submit.prevent="onSubmit" class="p-4">
-      <!-- Board Selection -->
-      <div class="mb-4">
-        <label class="block text-sm font-medium text-gray-700 mb-2">板块</label>
-        <div 
-          class="w-full border border-gray-300 rounded-md px-4 py-3 bg-white cursor-pointer flex justify-between items-center"
-          :class="{ 'border-danger': !form.boardId }"
-          @click="showBoardPicker = true"
-        >
-          <span :class="form.boardName ? 'text-gray-900' : 'text-gray-400'">
-            {{ form.boardName || '请选择板块' }}
-          </span>
-          <span class="text-gray-500">›</span>
-        </div>
-        <p v-if="!form.boardId && attemptedSubmit" class="text-danger text-sm mt-1">请选择板块</p>
-      </div>
-      
-      <!-- Title Input -->
-      <div class="mb-4">
-        <BaseInput
+  <div class="create-forum-page">
+    <!-- 状态栏 -->
+    <div class="create-status-bar">
+      <button class="create-back-btn" @click="goBack">‹</button>
+      <span class="create-page-title">发布帖子</span>
+      <button 
+        class="create-publish-btn" 
+        @click="publish"
+        :disabled="!isFormValid"
+      >
+        发布
+      </button>
+    </div>
+
+    <!-- 表单内容 -->
+    <div class="create-form-content">
+      <!-- 标题输入 -->
+      <div class="create-form-group">
+        <label class="create-form-label">帖子标题</label>
+        <input 
           v-model="form.title"
-          label="标题"
-          placeholder="请输入帖子标题"
-          :error="!form.title && attemptedSubmit"
-          error-message="请输入标题"
+          type="text"
+          class="create-form-input"
+          placeholder="请输入标题（5-30字）"
         />
       </div>
-      
-      <!-- Content Input -->
-      <div class="mb-6">
-        <label class="block text-sm font-medium text-gray-700 mb-2">内容</label>
-        <textarea
-          v-model="form.content"
-          rows="6"
-          placeholder="请输入帖子内容"
-          class="w-full border rounded-md px-4 py-3 text-base outline-none transition-colors duration-200 resize-none"
-          :class="[
-            !form.content && attemptedSubmit ? 'border-danger focus:border-danger focus:ring-1 focus:ring-danger' : 'border-gray-300 focus:border-primary focus:ring-1 focus:ring-primary'
-          ]"
-        ></textarea>
-        <p v-if="!form.content && attemptedSubmit" class="text-danger text-sm mt-1">请输入内容</p>
-      </div>
-      
-      <!-- Submit Button -->
-      <BaseButton type="primary" block round :loading="submitting" @click="onSubmit">
-        发布帖子
-      </BaseButton>
-    </form>
-    
-    <!-- Simple Board Picker Modal -->
-    <div v-if="showBoardPicker" class="fixed inset-0 bg-black/50 z-50 flex items-end">
-      <div class="w-full bg-white rounded-t-xl pb-safe">
-        <div class="flex justify-between items-center p-4 border-b">
-          <span class="text-gray-500" @click="showBoardPicker = false">取消</span>
-          <span class="font-medium">选择板块</span>
-          <span class="text-primary" @click="onBoardConfirm">确定</span>
+
+      <!-- 版块选择 -->
+      <div class="create-form-group">
+        <label class="create-form-label">选择版块</label>
+        <div class="create-selector" @click="showBoardPicker = true">
+          <span :class="{ 'create-selector-placeholder': !form.boardName }">
+            {{ form.boardName || '请选择' }}
+          </span>
+          <span class="create-selector-arrow">›</span>
         </div>
-        <div class="max-h-64 overflow-y-auto">
+      </div>
+
+      <!-- 内容输入 -->
+      <div class="create-form-group">
+        <label class="create-form-label">帖子内容</label>
+        <textarea 
+          v-model="form.content"
+          class="create-form-textarea"
+          placeholder="分享你的想法、经验或求助..."
+          rows="8"
+        ></textarea>
+      </div>
+
+      <!-- 图片上传 -->
+      <div class="create-form-group">
+        <label class="create-form-label">添加图片（最多9张）</label>
+        <div class="create-image-upload">
+          <div class="create-upload-btn">
+            <span class="create-upload-icon">+</span>
+            <span class="create-upload-text">点击上传图片</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- 标签 -->
+      <div class="create-form-group">
+        <label class="create-form-label">添加标签</label>
+        <input 
+          v-model="form.tags"
+          type="text"
+          class="create-form-input"
+          placeholder="输入标签后按回车"
+        />
+      </div>
+
+      <!-- 提示 -->
+      <div class="create-tips">
+        提示：描述越详细，越容易获得帮助哦
+      </div>
+    </div>
+
+    <!-- 板块选择器 -->
+    <div v-if="showBoardPicker" class="create-picker-overlay" @click.self="showBoardPicker = false">
+      <div class="create-picker-content">
+        <div class="create-picker-header">
+          <span class="create-picker-cancel" @click="showBoardPicker = false">取消</span>
+          <span class="create-picker-title">选择板块</span>
+          <span class="create-picker-confirm" @click="confirmBoard">确定</span>
+        </div>
+        <div class="create-picker-list">
           <div 
-            v-for="(board, index) in boardColumns" 
+            v-for="(board, index) in boards" 
             :key="board.value"
-            class="p-4 border-b last:border-b-0 cursor-pointer"
-            :class="selectedBoardIndex === index ? 'bg-blue-50' : ''"
-            @click="selectedBoardIndex = index"
+            class="create-picker-item"
+            :class="{ 'create-picker-item--active': selectedBoard === index }"
+            @click="selectedBoard = index"
           >
             {{ board.text }}
           </div>
@@ -75,72 +100,288 @@
   </div>
 </template>
 
-<script setup>
-import { ref, onMounted } from 'vue'
-import { useRouter } from 'vue-router'
-import NavBar from '@/components/navigation/NavBar.vue'
-import BaseInput from '@/components/base/Input.vue'
-import BaseButton from '@/components/base/Button.vue'
-import { getBoards, createPost } from '@/api/modules'
+<script setup lang="ts">
+import { ref, reactive, computed } from 'vue';
+import { useRouter } from 'vue-router';
 
-const router = useRouter()
-const showBoardPicker = ref(false)
-const submitting = ref(false)
-const attemptedSubmit = ref(false)
-const boards = ref([])
-const boardColumns = ref([])
-const selectedBoardIndex = ref(0)
+const router = useRouter();
 
-const form = ref({
-  boardId: 0,
-  boardName: '',
+const showBoardPicker = ref(false);
+const selectedBoard = ref(0);
+
+const boards = [
+  { value: 1, text: '交流' },
+  { value: 2, text: '学习' },
+  { value: 3, text: '搭子' },
+  { value: 4, text: '闲置' },
+];
+
+const form = reactive({
   title: '',
-  content: ''
-})
+  boardName: '',
+  boardId: 0,
+  content: '',
+  tags: '',
+});
 
-function onClickLeft() {
-  router.back()
+const isFormValid = computed(() => {
+  return form.title.length >= 5 && 
+         form.title.length <= 30 && 
+         form.boardId > 0 && 
+         form.content.length > 0;
+});
+
+function goBack() {
+  router.back();
 }
 
-function onBoardConfirm() {
-  if (boardColumns.value[selectedBoardIndex.value]) {
-    form.value.boardId = boardColumns.value[selectedBoardIndex.value].value
-    form.value.boardName = boardColumns.value[selectedBoardIndex.value].text
+function confirmBoard() {
+  if (boards[selectedBoard.value]) {
+    form.boardName = boards[selectedBoard.value].text;
+    form.boardId = boards[selectedBoard.value].value;
   }
-  showBoardPicker.value = false
+  showBoardPicker.value = false;
 }
 
-async function onSubmit() {
-  attemptedSubmit.value = true
-
-  if (!form.value.boardId || !form.value.title || !form.value.content) {
-    return
-  }
-
-  try {
-    submitting.value = true
-    // 使用新的API层创建帖子
-    // 新API会自动：显示Toast、显示Loading
-    await createPost({
-      boardId: form.value.boardId,
-      title: form.value.title,
-      content: form.value.content
-    })
-    router.back()
-  } catch (error) {
-    // 错误已被新API层自动处理并显示Toast
-    console.error('发布帖子失败:', error)
-  } finally {
-    submitting.value = false
-  }
+function publish() {
+  console.log('发布帖子:', form);
+  router.back();
 }
-
-onMounted(async () => {
-  try {
-    boards.value = await getBoards()
-    boardColumns.value = boards.value.map(b => ({ text: b.name, value: b.id }))
-  } catch (error) {
-    console.error('获取板块列表失败:', error)
-  }
-})
 </script>
+
+<style scoped>
+.create-forum-page {
+  min-height: 100vh;
+  background-color: var(--bg-secondary);
+}
+
+.create-status-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-3) var(--space-4);
+  background-color: var(--bg-card);
+  border-bottom: 1px solid var(--border-light);
+}
+
+.create-back-btn {
+  font-size: 28px;
+  color: var(--text-primary);
+  background: none;
+  border: none;
+  cursor: pointer;
+}
+
+.create-back-btn:active {
+  opacity: 0.7;
+}
+
+.create-page-title {
+  font-size: var(--text-lg);
+  font-weight: var(--font-weight-semibold);
+  color: var(--text-primary);
+}
+
+.create-publish-btn {
+  width: 64px;
+  height: 32px;
+  font-size: var(--text-sm);
+  font-weight: var(--font-weight-medium);
+  color: var(--text-inverse);
+  background-color: var(--color-primary-700);
+  border: none;
+  border-radius: var(--radius-full);
+  cursor: pointer;
+}
+
+.create-publish-btn:active {
+  background-color: var(--color-primary-800);
+}
+
+.create-publish-btn:disabled {
+  background-color: var(--color-gray-300);
+  cursor: not-allowed;
+}
+
+.create-form-content {
+  padding: var(--space-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.create-form-group {
+  background-color: var(--bg-card);
+  border-radius: var(--radius-lg);
+  padding: var(--space-3);
+}
+
+.create-form-label {
+  display: block;
+  font-size: var(--text-sm);
+  font-weight: var(--font-weight-medium);
+  color: var(--text-primary);
+  margin-bottom: var(--space-2);
+}
+
+.create-form-input {
+  width: 100%;
+  border: none;
+  background: transparent;
+  font-size: var(--text-base);
+  color: var(--text-primary);
+  outline: none;
+}
+
+.create-form-input::placeholder {
+  color: var(--text-tertiary);
+}
+
+.create-selector {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  cursor: pointer;
+}
+
+.create-selector span:first-child {
+  font-size: var(--text-base);
+  color: var(--text-primary);
+}
+
+.create-selector-placeholder {
+  color: var(--text-tertiary) !important;
+}
+
+.create-selector-arrow {
+  font-size: var(--text-lg);
+  color: var(--text-tertiary);
+}
+
+.create-form-textarea {
+  width: 100%;
+  border: none;
+  background: transparent;
+  font-size: var(--text-base);
+  color: var(--text-primary);
+  resize: none;
+  outline: none;
+  font-family: inherit;
+  line-height: var(--line-height-relaxed);
+}
+
+.create-form-textarea::placeholder {
+  color: var(--text-tertiary);
+}
+
+.create-image-upload {
+  display: flex;
+  gap: var(--space-3);
+}
+
+.create-upload-btn {
+  width: 100px;
+  height: 100px;
+  border: 1px dashed var(--border-default);
+  border-radius: var(--radius-md);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.create-upload-btn:active {
+  border-color: var(--color-primary-400);
+  background-color: var(--color-primary-50);
+}
+
+.create-upload-icon {
+  font-size: 36px;
+  color: var(--text-tertiary);
+}
+
+.create-upload-text {
+  font-size: var(--text-sm);
+  color: var(--text-tertiary);
+  margin-top: var(--space-1);
+}
+
+.create-tips {
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+  padding: var(--space-2) 0;
+}
+
+.create-picker-overlay {
+  position: fixed;
+  inset: 0;
+  background-color: var(--bg-overlay);
+  display: flex;
+  align-items: flex-end;
+  z-index: var(--z-modal);
+}
+
+.create-picker-content {
+  width: 100%;
+  max-height: 60vh;
+  background-color: var(--bg-card);
+  border-radius: var(--radius-xl) var(--radius-xl) 0 0;
+}
+
+.create-picker-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--space-4);
+  border-bottom: 1px solid var(--border-light);
+}
+
+.create-picker-cancel {
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+  cursor: pointer;
+}
+
+.create-picker-cancel:active {
+  opacity: 0.7;
+}
+
+.create-picker-title {
+  font-size: var(--text-lg);
+  font-weight: var(--font-weight-semibold);
+  color: var(--text-primary);
+}
+
+.create-picker-confirm {
+  font-size: var(--text-sm);
+  color: var(--color-primary-700);
+  cursor: pointer;
+}
+
+.create-picker-confirm:active {
+  opacity: 0.7;
+}
+
+.create-picker-list {
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+.create-picker-item {
+  padding: var(--space-4);
+  text-align: center;
+  cursor: pointer;
+  transition: background-color var(--transition-fast);
+}
+
+.create-picker-item:active {
+  background-color: var(--bg-secondary);
+}
+
+.create-picker-item--active {
+  color: var(--color-primary-700);
+  font-weight: var(--font-weight-medium);
+}
+</style>

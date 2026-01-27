@@ -7,13 +7,22 @@ export {}
 
 declare module 'vue' {
   export interface GlobalComponents {
+    BottomNav: typeof import('./components/BottomNav.vue')['default']
     Button: typeof import('./components/base/Button.vue')['default']
     Card: typeof import('./components/base/Card.vue')['default']
+    CategoryCard: typeof import('./components/CategoryCard.vue')['default']
     Cell: typeof import('./components/base/Cell.vue')['default']
+    Dialog: typeof import('./components/interactive/Dialog.vue')['default']
     Input: typeof import('./components/base/Input.vue')['default']
     NavBar: typeof import('./components/navigation/NavBar.vue')['default']
+    PostCard: typeof import('./components/PostCard.vue')['default']
+    ProductCard: typeof import('./components/ProductCard.vue')['default']
     RouterLink: typeof import('vue-router')['RouterLink']
     RouterView: typeof import('vue-router')['RouterView']
+    SearchBar: typeof import('./components/SearchBar.vue')['default']
+    Skeleton: typeof import('./components/feedback/Skeleton.vue')['default']
+    SkeletonItem: typeof import('./components/feedback/SkeletonItem.vue')['default']
     TabBar: typeof import('./components/navigation/TabBar.vue')['default']
+    Toast: typeof import('./components/interactive/Toast.vue')['default']
   }
 }

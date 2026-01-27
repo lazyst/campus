@@ -1,6 +1,7 @@
 // frontend-user/src/api/modules/auth.js
 
 import request from '../request'
+import axios from 'axios'
 
 /**
  * 用户登录
@@ -10,7 +11,10 @@ import request from '../request'
  * @returns {Promise<string>} JWT token
  */
 export function login(data) {
-  return request.post('/auth/login', data)
+  return request.post('/auth/login', data, {
+    showSuccess: false,  // 由组件手动控制提示
+    showError: true
+  })
 }
 
 /**
@@ -22,18 +26,9 @@ export function login(data) {
  * @returns {Promise<Object>} { user: Object, token: string }
  */
 export function register(data) {
-  // 注册成功后自动保存token到localStorage
-  const rawAxios = axios.create({
-    baseURL: '/api',
-    timeout: 10000
-  })
-
-  return rawAxios.post('/auth/register', data).then(response => {
-    const { data: user, token } = response.data
-    if (token) {
-      localStorage.setItem('token', token)
-    }
-    return { user, token }
+  return request.post('/auth/register', data, {
+    showSuccess: false,  // 我们手动控制提示
+    showError: true
   })
 }
 

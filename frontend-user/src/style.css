@@ -1,9 +1,27 @@
-@import "tailwindcss";
+/**
+ * Global Styles - 引入 Design Token 系统
+ * 
+ * 样式加载顺序：
+ * 1. Design Tokens（设计令牌）
+ * 2. TailwindCSS（工具类）
+ * 3. 自定义基础样式
+ */
 
-/* Custom base styles */
+/* 1. Design Tokens - 设计令牌系统 */
+@import "./styles/design-tokens.css";
+
+/* 2. TailwindCSS - 工具类库 */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* 3. Custom base styles - 自定义基础样式 */
 body {
-  background-color: #f9fafb;
-  color: #1f2937;
+  background-color: var(--bg-page);
+  color: var(--text-primary);
+  font-family: var(--font-family-sans);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 /* Safe area for iPhone */
@@ -13,18 +31,18 @@ body {
 
 /* Mobile-first typography */
 .text-body {
-  font-size: 0.875rem;
-  color: #4b5563;
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
 }
 
 .text-title {
-  font-size: 1rem;
-  font-weight: 600;
-  color: #1f2937;
+  font-size: var(--text-base);
+  font-weight: var(--font-weight-semibold);
+  color: var(--text-primary);
 }
 
 .text-heading {
-  font-size: 1.125rem;
-  font-weight: 700;
-  color: #111827;
+  font-size: var(--text-lg);
+  font-weight: var(--font-weight-bold);
+  color: var(--text-primary);
 }

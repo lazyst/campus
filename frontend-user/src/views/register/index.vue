@@ -1,65 +1,73 @@
 <template>
-  <div class="min-h-screen bg-white px-5 py-10">
+  <div class="register-page">
     <!-- Header with Back Button -->
     <NavBar title="注册" :left-arrow="true" @click-left="handleBack" />
     
     <!-- Content -->
-    <div class="mt-8">
+    <div class="register-content">
       <!-- Header -->
-      <div class="text-center mb-10">
-        <h1 class="text-2xl text-primary font-bold mb-2.5">校园互助</h1>
-        <p class="text-gray-400">注册账号</p>
+      <div class="register-header">
+        <h1 class="register-title">校园互助</h1>
+        <p class="register-subtitle">注册账号</p>
       </div>
       
       <!-- Register Form -->
-      <form @submit.prevent="handleSubmit">
-        <div class="space-y-4">
-          <BaseInput 
-            v-model="form.phone" 
-            label="手机号" 
-            placeholder="请输入手机号"
-            :error="!isPhoneValid && form.phone.length > 0"
-          />
+      <form @submit.prevent="handleSubmit" class="register-form">
+        <div class="form-fields">
+          <div class="form-field">
+            <label class="form-label">手机号</label>
+            <input 
+              v-model="form.phone"
+              type="tel"
+              class="input"
+              placeholder="请输入手机号"
+            />
+          </div>
           
-          <BaseInput 
-            v-model="form.nickname" 
-            label="昵称" 
-            placeholder="请输入昵称(2-20位)"
-            :error="!isNicknameValid && form.nickname.length > 0"
-          />
+          <div class="form-field">
+            <label class="form-label">昵称</label>
+            <input 
+              v-model="form.nickname"
+              type="text"
+              class="input"
+              placeholder="请输入昵称(2-20位)"
+            />
+          </div>
           
-          <BaseInput 
-            v-model="form.password" 
-            type="password" 
-            label="密码" 
-            placeholder="请输入密码(6-20位)"
-            :error="!isPasswordValid && form.password.length > 0"
-          />
+          <div class="form-field">
+            <label class="form-label">密码</label>
+            <input 
+              v-model="form.password"
+              type="password"
+              class="input"
+              placeholder="请输入密码(6-20位)"
+            />
+          </div>
           
-          <BaseInput 
-            v-model="form.confirmPassword" 
-            type="password" 
-            label="确认密码" 
-            placeholder="请再次输入密码"
-            :error="!isConfirmPasswordValid && form.confirmPassword.length > 0"
-          />
+          <div class="form-field">
+            <label class="form-label">确认密码</label>
+            <input 
+              v-model="form.confirmPassword"
+              type="password"
+              class="input"
+              placeholder="请再次输入密码"
+            />
+          </div>
         </div>
         
-        <div class="mt-8">
-          <BaseButton 
-            block 
-            :loading="loading"
-            :disabled="!isFormValid"
-          >
-            注册
-          </BaseButton>
-        </div>
+        <button 
+          type="submit"
+          class="btn btn-primary register-submit"
+          :disabled="!isFormValid"
+        >
+          注册
+        </button>
       </form>
       
       <!-- Footer -->
-      <div class="text-center mt-8 text-gray-400">
-        已有账号？
-        <router-link to="/login" @click.native="goToLogin" class="text-primary ml-1">立即登录</router-link>
+      <div class="register-footer">
+        <span class="register-login-text">已有账号？</span>
+        <router-link to="/login" class="register-login-link">立即登录</router-link>
       </div>
     </div>
   </div>
@@ -68,12 +76,11 @@
 <script setup>
 import { ref, reactive, computed } from 'vue'
 import { useRouter } from 'vue-router'
-import { register } from '@/api/modules'
+import { useUserStore } from '@/stores/user'
 import NavBar from '@/components/navigation/NavBar.vue'
-import BaseInput from '@/components/base/Input.vue'
-import BaseButton from '@/components/base/Button.vue'
 
 const router = useRouter()
+const userStore = useUserStore()
 
 const loading = ref(false)
 const form = reactive({
@@ -115,11 +122,6 @@ function handleBack() {
   router.back()
 }
 
-function goToLogin() {
-  event.preventDefault()
-  router.replace('/login')
-}
-
 async function handleSubmit() {
   if (!isFormValid.value) {
     return
@@ -127,21 +129,105 @@ async function handleSubmit() {
 
   loading.value = true
   try {
-    // 使用新的API层注册
-    // 新API会自动：显示Toast、保存Token、显示Loading
-    await register({
+    await userStore.register({
       phone: form.phone,
       password: form.password,
       nickname: form.nickname
     })
-
-    // 注册成功后，跳转到首页
     router.replace('/')
   } catch (error) {
-    // 错误已被新API层自动处理并显示Toast
     console.error('注册失败', error)
   } finally {
     loading.value = false
   }
 }
 </script>
+
+<style scoped>
+.register-page {
+  min-height: 100vh;
+  background-color: var(--bg-page);
+  display: flex;
+  flex-direction: column;
+}
+
+.register-content {
+  flex: 1;
+  padding: var(--space-8) var(--space-4) var(--space-4);
+  display: flex;
+  flex-direction: column;
+}
+
+.register-header {
+  text-align: center;
+  margin-bottom: var(--space-10);
+}
+
+.register-title {
+  font-size: var(--text-2xl);
+  font-weight: var(--font-weight-bold);
+  color: var(--color-primary-700);
+  margin: 0 0 var(--space-2) 0;
+}
+
+.register-subtitle {
+  font-size: var(--text-sm);
+  color: var(--text-tertiary);
+  margin: 0;
+}
+
+.register-form {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.form-fields {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.form-field {
+  display: flex;
+  flex-direction: column;
+}
+
+.form-label {
+  font-size: var(--text-sm);
+  font-weight: var(--font-weight-medium);
+  color: var(--text-primary);
+  margin-bottom: var(--space-2);
+}
+
+.register-submit {
+  width: 100%;
+  height: 48px;
+  font-size: var(--text-base);
+  font-weight: var(--font-weight-semibold);
+  border-radius: var(--radius-lg);
+  margin-top: var(--space-6);
+}
+
+.register-footer {
+  text-align: center;
+  margin-top: var(--space-8);
+  padding-bottom: var(--space-4);
+}
+
+.register-login-text {
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+}
+
+.register-login-link {
+  color: var(--color-primary-700);
+  font-weight: var(--font-weight-medium);
+  text-decoration: none;
+  margin-left: var(--space-1);
+}
+
+.register-login-link:active {
+  opacity: 0.7;
+}
+</style>

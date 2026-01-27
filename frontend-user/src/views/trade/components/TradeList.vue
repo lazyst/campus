@@ -1,68 +1,64 @@
 <template>
   <div class="trade-list">
     <!-- Category Tabs -->
-    <div class="flex gap-3 px-4 py-3 bg-white overflow-x-auto whitespace-nowrap border-b border-gray-100">
-      <span 
-        :class="[
-          'px-3 py-1.5 rounded-full text-sm cursor-pointer transition-colors flex-shrink-0',
-          activeTab === 0 ? 'bg-primary text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-        ]"
-        @click="activeTab = 0"
+    <div class="trade-tabs">
+      <button
+        class="trade-tab"
+        :class="{ 'trade-tab--active': activeTab === 0 }"
+        @click="onTabChange(0)"
       >
         出售
-      </span>
-      <span 
-        :class="[
-          'px-3 py-1.5 rounded-full text-sm cursor-pointer transition-colors flex-shrink-0',
-          activeTab === 1 ? 'bg-primary text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-        ]"
-        @click="activeTab = 1"
+      </button>
+      <button
+        class="trade-tab"
+        :class="{ 'trade-tab--active': activeTab === 1 }"
+        @click="onTabChange(1)"
       >
         收购
-      </span>
+      </button>
     </div>
     
     <!-- Item List -->
-    <div class="p-3">
+    <div class="trade-content">
       <!-- Empty State -->
-      <div v-if="list.length === 0 && !loading" class="text-center py-8">
-        <span class="text-gray-400">暂无闲置物品</span>
+      <div v-if="list.length === 0 && !loading" class="trade-state">
+        <span class="trade-state-text">暂无闲置物品</span>
       </div>
       
       <!-- Item Cards -->
       <div 
         v-for="item in list" 
         :key="item.id" 
-        class="bg-white rounded-lg p-3 mb-2.5 flex cursor-pointer"
+        class="trade-card"
         @click="onItemClick(item)"
       >
-        <!-- Item Image/Type Badge -->
+        <!-- Item Type Badge -->
         <div 
-          class="w-20 h-20 rounded-lg flex items-center justify-center text-white font-bold text-lg mr-3 flex-shrink-0"
-          :class="item.type === 1 ? 'bg-success' : 'bg-primary'"
+          class="trade-card__badge"
+          :class="{ 'trade-card__badge--buy': item.type === 1 }"
         >
-          {{ item.type === 1 ? '收' : '售' }}
+          {{ item.type === 1 ? '收购' : '出售' }}
         </div>
         
         <!-- Item Content -->
-        <div class="flex-1 min-w-0">
-          <div class="font-semibold text-gray-800 mb-1 truncate">{{ item.title }}</div>
-          <div class="text-lg font-bold text-danger mb-1">¥{{ item.price }}</div>
-          <div class="flex justify-between text-xs text-gray-400">
-            <span>{{ item.nickname }}</span>
-            <span>浏览 {{ item.viewCount }}</span>
+        <div class="trade-card__content">
+          <h3 class="trade-card__title">{{ item.title }}</h3>
+          <p class="trade-card__price">¥{{ item.price }}</p>
+          <div class="trade-card__footer">
+            <span class="trade-card__author">{{ item.nickname }}</span>
+            <span class="trade-card__views">浏览 {{ item.viewCount }}</span>
           </div>
         </div>
       </div>
       
       <!-- Loading -->
-      <div v-if="loading" class="text-center py-4">
-        <span class="text-gray-400">加载中...</span>
+      <div v-if="loading" class="trade-state">
+        <span class="trade-state-text">加载中...</span>
       </div>
       
       <!-- Finished -->
-      <div v-if="finished && list.length > 0" class="text-center py-4">
-        <span class="text-gray-400 text-sm">没有更多了</span>
+      <div v-if="finished && list.length > 0" class="trade-state">
+        <span class="trade-state-text trade-state-text--muted">没有更多了</span>
       </div>
     </div>
   </div>
@@ -106,7 +102,8 @@ function onLoad() {
   }, 500)
 }
 
-function onTabChange() {
+function onTabChange(tab: number) {
+  activeTab.value = tab
   list.value = []
   finished.value = false
   onLoad()
@@ -119,3 +116,145 @@ function onItemClick(item: TradeItem) {
 // Initial load
 onLoad()
 </script>
+
+<style scoped>
+.trade-list {
+  background-color: var(--bg-page);
+}
+
+.trade-tabs {
+  display: flex;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--page-padding);
+  background-color: var(--bg-card);
+  border-bottom: 1px solid var(--border-light);
+  overflow-x: auto;
+  white-space: nowrap;
+  -webkit-overflow-scrolling: touch;
+}
+
+.trade-tabs::-webkit-scrollbar {
+  display: none;
+}
+
+.trade-tab {
+  flex-shrink: 0;
+  padding: var(--space-2) var(--space-3);
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+  background-color: var(--bg-tertiary);
+  border: none;
+  border-radius: var(--radius-full);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.trade-tab:active {
+  background-color: var(--color-primary-100);
+}
+
+.trade-tab--active {
+  color: var(--text-inverse);
+  background-color: var(--color-primary-700);
+}
+
+.trade-tab--active:active {
+  background-color: var(--color-primary-800);
+}
+
+.trade-content {
+  padding: var(--space-3);
+}
+
+.trade-state {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-8) 0;
+}
+
+.trade-state-text {
+  font-size: var(--text-sm);
+  color: var(--text-tertiary);
+}
+
+.trade-state-text--muted {
+  font-size: var(--text-xs);
+}
+
+.trade-card {
+  display: flex;
+  align-items: flex-start;
+  padding: var(--space-3);
+  margin-bottom: var(--space-3);
+  background-color: var(--bg-card);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-card);
+  border: 1px solid var(--border-light);
+  cursor: pointer;
+  transition: all var(--transition-normal);
+  position: relative;
+}
+
+.trade-card:active {
+  transform: scale(0.98);
+  box-shadow: var(--shadow-sm);
+}
+
+.trade-card__badge {
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: var(--text-xs);
+  font-weight: var(--font-weight-bold);
+  color: var(--text-inverse);
+  border-radius: var(--radius-md);
+  flex-shrink: 0;
+  margin-right: var(--space-3);
+  background-color: var(--color-primary-600);
+}
+
+.trade-card__badge--buy {
+  background-color: var(--color-success-500);
+}
+
+.trade-card__content {
+  flex: 1;
+  min-width: 0;
+}
+
+.trade-card__title {
+  font-size: var(--text-base);
+  font-weight: var(--font-weight-semibold);
+  color: var(--text-primary);
+  margin-bottom: var(--space-1);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.trade-card__price {
+  font-size: var(--text-lg);
+  font-weight: var(--font-weight-bold);
+  color: var(--color-error-600);
+  margin-bottom: var(--space-2);
+}
+
+.trade-card__footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: var(--text-xs);
+  color: var(--text-tertiary);
+}
+
+.trade-card__author {
+  font-weight: var(--font-weight-medium);
+}
+
+.trade-card__views {
+  color: var(--text-tertiary);
+}
+</style>

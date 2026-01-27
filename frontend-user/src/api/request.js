@@ -61,10 +61,15 @@ request.interceptors.response.use(
 
       // 成功提示（可选）
       if (response.config.showSuccess !== false && response.method !== 'get') {
-        showToast(message || '操作成功', 'success')
+        try {
+          showToast(message || '操作成功', 'success')
+        } catch (toastError) {
+          console.warn('Toast error:', toastError)
+        }
       }
 
-      return data
+      // 返回data,确保不返回undefined
+      return data !== undefined ? data : response.data
     }
 
     // 业务错误
