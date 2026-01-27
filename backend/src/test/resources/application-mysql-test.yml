@@ -5,9 +5,9 @@ spring:
   application:
     name: campus-helping-platform-mysql-test
 
-  # 使用真实的MySQL数据库进行测试
+  # 使用独立的MySQL测试数据库
   datasource:
-    url: jdbc:mysql://localhost:3306/campus?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai&useSSL=false&allowPublicKeyRetrieval=true
+    url: jdbc:mysql://localhost:3306/campus_test?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai&useSSL=false&allowPublicKeyRetrieval=true
     username: root
     password: '123'
     driver-class-name: com.mysql.cj.jdbc.Driver

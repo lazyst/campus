@@ -48,6 +48,20 @@ public class JwtConfig {
     }
 
     /**
+     * 从令牌中获取角色
+     */
+    public Integer getRoleFromToken(String token) {
+        Claims claims = getAllClaimsFromToken(token);
+        Object role = claims.get("role");
+        if (role instanceof Integer) {
+            return (Integer) role;
+        } else if (role instanceof String) {
+            return Integer.parseInt((String) role);
+        }
+        return null;
+    }
+
+    /**
      * 从令牌中获取过期时间
      */
     public Date getExpirationFromToken(String token) {

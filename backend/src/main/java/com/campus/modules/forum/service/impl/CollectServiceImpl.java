@@ -72,7 +72,7 @@ public class CollectServiceImpl extends ServiceImpl<CollectMapper, Collect> impl
                         Notification notification = new Notification();
                         notification.setUserId(post.getUserId()); // 通知给帖子作者
                         notification.setFromUserId(userId); // 收藏者
-                        notification.setTargetId(postId); // 使用targetId存储帖子ID
+                        notification.setPostId(postId); // 使用targetId存储帖子ID
                         notification.setType(3); // 3=收藏通知
                         notification.setIsRead(0);
                         notification.setContent("收藏了你的帖子");

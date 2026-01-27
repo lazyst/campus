@@ -31,6 +31,7 @@ public class Notification extends BaseEntity {
     /**
      * 相关帖子ID
      */
+    @TableField("target_id")
     private Long postId;
 
     /**

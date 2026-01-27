@@ -231,3 +231,89 @@ When implementing a new feature:
 - **JWT Expiration**: 7 days (604800000 ms) for users, configurable in `application.yml`
 - **WebSocket**: Endpoint at `/ws`, uses STOMP protocol with `/topic/messages` and `/queue/messages`
 - **Default Admin**: username `admin`, password `admin123` (see `backend/sql/init.sql`)
+
+---
+
+## Critical Integration Points
+
+### JWT Token Flow (Backend ↔ Frontend)
+
+**Backend Requirements**:
+- Login API **must** return token at root level: `Result.success(token).setToken(token)`
+- If only returning `Result.success(token)`, frontend cannot save token from `data` field
+- See [`AuthController.java:39`](backend/src/main/java/com/campus/modules/auth/controller/AuthController.java)
+
+**Frontend Auto-Handling** ([`request.js`](frontend-user/src/api/request.js)):
+- Request interceptor adds `Authorization: Bearer ${token}` from localStorage
+- Response interceptor auto-saves token from root-level `token` field
+- 401 errors auto-clear token and redirect to `/login`
+
+### SecurityConfig API Allowlist
+
+**Critical**: Add new API paths to [`SecurityConfig.java`](backend/src/main/java/com/campus/config/SecurityConfig.java) or they return 403:
+
+```java
+.requestMatchers("/api/comments/**").permitAll()  // Required for comment APIs
+.requestMatchers("/api/items/**").permitAll()    // Required for trade APIs
+```
+
+Pattern: If controller uses `@RequestHeader("Authorization")`, the path must be in allowlist OR use `.authenticated()` instead of `.permitAll()`.
+
+### MyBatis-Plus Field Mapping
+
+When entity field names differ from database columns, use `@TableField`:
+
+```java
+// Database column: target_id
+// Entity field: postId
+@TableField("target_id")
+private Long postId;
+```
+
+See [`Notification.java:34`](backend/src/main/java/com/campus/modules/forum/entity/Notification.java) for example.
+
+### API Module Exports
+
+Frontend API modules must be re-exported from [`frontend-user/src/api/modules/index.js`](frontend-user/src/api/modules/index.js) or imports fail:
+
+```javascript
+export * from './auth'
+export * from './post'
+// ... other modules
+```
+
+---
+
+## Common Issues and Solutions
+
+### Issue: "Missing request header 'Authorization'"
+
+**Cause**: API endpoint not in SecurityConfig allowlist or token not in localStorage
+
+**Fix**:
+1. Check login API returns `.setToken(token)`
+2. Add API path to `SecurityConfig` permitAll
+3. Verify localStorage has token: `localStorage.getItem('token')`
+
+### Issue: "Unknown column 'post_id' in field list"
+
+**Cause**: Entity field name doesn't match database column name
+
+**Fix**: Add `@TableField("actual_column_name")` annotation to entity field
+
+### Issue: Frontend cannot resolve `@/api/modules`
+
+**Cause**: Missing barrel export in `frontend-user/src/api/modules/index.js`
+
+**Fix**: Add export statement for the new API module
+
+### Issue: Tests fail with "Port 8080 already in use"
+
+**Fix**:
+```bash
+# Windows
+TASKkill //F //PID <process_id>
+
+# Or use Maven to stop
+mvn spring-boot:stop
+```

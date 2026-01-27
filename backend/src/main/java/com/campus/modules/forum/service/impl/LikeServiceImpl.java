@@ -80,7 +80,7 @@ public class LikeServiceImpl extends ServiceImpl<LikeMapper, Like> implements Li
                     Notification notification = new Notification();
                     notification.setUserId(post.getUserId()); // 通知给帖子作者
                     notification.setFromUserId(userId); // 点赞者
-                    notification.setTargetId(postId); // 使用targetId存储帖子ID
+                    notification.setPostId(postId); // 使用targetId存储帖子ID
                     notification.setType(2); // 2=点赞通知
                     notification.setIsRead(0);
                     notification.setContent("点赞了你的帖子");

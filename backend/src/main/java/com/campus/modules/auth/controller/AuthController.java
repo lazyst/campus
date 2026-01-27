@@ -36,7 +36,7 @@ public class AuthController {
     @PostMapping("/login")
     public Result<String> login(@Valid @RequestBody LoginRequest request) {
         String token = authService.login(request.getPhone(), request.getPassword());
-        return Result.success(token);
+        return Result.success(token).setToken(token);
     }
 
     @Operation(summary = "用户登出")
