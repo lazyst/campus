@@ -1,6 +1,7 @@
 package com.campus.modules.trade.item;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.campus.config.TestUtils;
 import com.campus.modules.trade.entity.Item;
 import com.campus.modules.trade.mapper.ItemMapper;
 import com.campus.modules.trade.service.impl.ItemServiceImpl;
@@ -38,6 +39,9 @@ class ItemServiceTest {
 
     @BeforeEach
     void setUp() {
+        // 注入baseMapper
+        TestUtils.setBaseMapper(itemService, itemMapper);
+
         testItem = new Item();
         testItem.setId(1L);
         testItem.setUserId(1L);

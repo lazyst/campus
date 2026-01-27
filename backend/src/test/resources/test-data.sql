@@ -32,46 +32,47 @@ ALTER TABLE message AUTO_INCREMENT = 1;
 
 -- =====================================================
 -- 测试用户数据
--- 密码统一为: Test123456
--- BCrypt加密后的密码
+-- 密码: Test123456
+-- BCrypt加密后的密码 (60字符)
 -- =====================================================
 INSERT INTO user (id, phone, password, nickname, avatar, gender, bio, status, created_at, deleted) VALUES
-(1, 'testuser1', '$2a$10$N.zmdr9k7uOCQb376NoUnuTJ8iAt6Z5EH', '测试用户1', 'https://example.com/avatar1.jpg', 1, '测试用户1', 1, NOW(), 0),
-(2, 'testuser2', '$2a$10$N.zmdr9k7uOCQb376NoUnuTJ8iAt6Z5EH', '测试用户2', 'https://example.com/avatar2.jpg', 2, '测试用户2', 1, NOW(), 0),
-(3, 'testuser3', '$2a$10$N.zmdr9k7uOCQb376NoUnuTJ8iAt6Z5EH', '测试用户3', 'https://example.com/avatar3.jpg', 0, '测试用户3', 1, NOW(), 0);
+(1, '13800000001', '$2b$12$MU1C3Wvn9tbQGXL6orMWa.pj2BFV5sNAhuESRSq6mEO.dhvfu/X/i', 'User1', 'https://example.com/avatar1.jpg', 1, 'User1 Bio', 1, NOW(), 0),
+(2, '13800000002', '$2b$12$MU1C3Wvn9tbQGXL6orMWa.pj2BFV5sNAhuESRSq6mEO.dhvfu/X/i', 'User2', 'https://example.com/avatar2.jpg', 2, 'User2 Bio', 1, NOW(), 0),
+(3, '13800000003', '$2b$12$MU1C3Wvn9tbQGXL6orMWa.pj2BFV5sNAhuESRSq6mEO.dhvfu/X/i', 'User3', 'https://example.com/avatar3.jpg', 0, 'User3 Bio', 1, NOW(), 0);
 
 -- =====================================================
 -- 测试管理员数据
--- 密码统一为: Admin123456
+-- 密码: Admin123456
+-- BCrypt加密后的密码 (60字符)
 -- =====================================================
 INSERT INTO admin (id, username, password, nickname, role, status, created_at, deleted) VALUES
-(1, 'testadmin', '$2a$10$N.zmdr9k7uOCQb376NoUn', '测试管理员', 1, 1, NOW(), 0);
+(1, 'testadmin', '$2b$12$5OcjzeCdyFKAFuKnHcIM/ubOW92OlZi6HuDKZ9C9Gx66K060rLRBu', 'Admin', 1, 1, NOW(), 0);
 
 -- =====================================================
 -- 测试板块数据
 -- =====================================================
 INSERT INTO board (id, name, description, sort, status, created_at, deleted) VALUES
-(1, '测试板块1', '这是测试板块1的描述', 1, 1, NOW(), 0),
-(2, '测试板块2', '这是测试板块2的描述', 2, 1, NOW(), 0),
-(3, '测试板块3', '这是测试板块3的描述', 3, 1, NOW(), 0);
+(1, 'Board1', 'Board 1 desc', 1, 1, NOW(), 0),
+(2, 'Board2', 'Board 2 desc', 2, 1, NOW(), 0),
+(3, 'Board3', 'Board 3 desc', 3, 1, NOW(), 0);
 
 -- =====================================================
 -- 测试帖子数据
 -- =====================================================
 INSERT INTO post (id, user_id, board_id, title, content, images, view_count, like_count, comment_count, collect_count, created_at, deleted) VALUES
-(1, 1, 1, '测试帖子1标题', '这是测试帖子1的内容', '["https://example.com/image1.jpg"]', 0, 0, 0, 0, NOW(), 0),
-(2, 1, 1, '测试帖子2标题', '这是测试帖子2的内容', '[]', 0, 0, 0, 0, NOW(), 0),
-(3, 2, 2, '测试帖子3标题', '这是测试帖子3的内容', '[]', 0, 0, 0, 0, NOW(), 0),
-(4, 2, 2, '测试帖子4标题', '这是测试帖子4的内容', '[]', 0, 0, 0, 0, NOW(), 0),
-(5, 3, 3, '测试帖子5标题', '这是测试帖子5的内容', '[]', 0, 0, 0, 0, NOW(), 0);
+(1, 1, 1, 'Post Title 1', 'Post content 1', '[]', 0, 0, 0, 0, NOW(), 0),
+(2, 1, 1, 'Post Title 2', 'Post content 2', '[]', 0, 0, 0, 0, NOW(), 0),
+(3, 2, 2, 'Post Title 3', 'Post content 3', '[]', 0, 0, 0, 0, NOW(), 0),
+(4, 2, 2, 'Post Title 4', 'Post content 4', '[]', 0, 0, 0, 0, NOW(), 0),
+(5, 3, 3, 'Post Title 5', 'Post content 5', '[]', 0, 0, 0, 0, NOW(), 0);
 
 -- =====================================================
 -- 测试评论数据
 -- =====================================================
 INSERT INTO comment (id, user_id, post_id, content, created_at, deleted) VALUES
-(1, 2, 1, '这是测试评论1', NOW(), 0),
-(2, 3, 1, '这是测试评论2', NOW(), 0),
-(3, 1, 3, '这是测试评论3', NOW(), 0);
+(1, 2, 1, 'Comment 1', NOW(), 0),
+(2, 3, 1, 'Comment 2', NOW(), 0),
+(3, 1, 3, 'Comment 3', NOW(), 0);
 
 -- =====================================================
 -- 测试点赞数据
@@ -92,18 +93,18 @@ INSERT INTO collect (id, user_id, post_id, created_at, deleted) VALUES
 -- =====================================================
 -- 测试通知数据
 -- =====================================================
-INSERT INTO notification (id, user_id, type, content, target_id, is_read, created_at, deleted) VALUES
-(1, 1, 1, '用户2评论了你的帖子', 1, 0, NOW(), 0),
-(2, 1, 2, '用户2点赞了你的帖子', 1, 0, NOW(), 0),
-(3, 1, 3, '用户2收藏了你的帖子', 2, 1, NOW(), 0);
+INSERT INTO notification (id, user_id, type, from_user_id, target_id, content, is_read, created_at, deleted) VALUES
+(1, 1, 1, 2, 1, 'User2 commented', 0, NOW(), 0),
+(2, 1, 2, 2, 1, 'User2 liked', 0, NOW(), 0),
+(3, 1, 3, 2, 2, 'User2 collected', 1, NOW(), 0);
 
 -- =====================================================
 -- 测试商品数据
 -- =====================================================
 INSERT INTO item (id, user_id, type, title, description, price, images, status, view_count, contact_count, created_at, deleted) VALUES
-(1, 1, 2, '测试商品1', '这是测试商品1的描述', 99.99, '["https://example.com/item1.jpg"]', 1, 0, 0, NOW(), 0),
-(2, 2, 2, '测试商品2', '这是测试商品2的描述', 199.99, '[]', 1, 0, 0, NOW(), 0),
-(3, 3, 1, '测试商品3', '这是测试商品3的描述', 299.99, '[]', 1, 0, 0, NOW(), 0);
+(1, 1, 2, 'Item 1', 'Item 1 desc', 99.99, '[]', 1, 0, 0, NOW(), 0),
+(2, 2, 2, 'Item 2', 'Item 2 desc', 199.99, '[]', 1, 0, 0, NOW(), 0),
+(3, 3, 1, 'Item 3', 'Item 3 desc', 299.99, '[]', 1, 0, 0, NOW(), 0);
 
 -- =====================================================
 -- 测试商品收藏数据
@@ -124,6 +125,6 @@ INSERT INTO conversation (id, user_id_1, user_id_2, last_message_id, created_at,
 -- 测试消息数据
 -- =====================================================
 INSERT INTO message (id, conversation_id, sender_id, receiver_id, content, type, created_at, deleted) VALUES
-(1, 1, 1, 2, '这是测试消息1', 1, NOW(), 0),
-(2, 1, 2, 1, '这是测试消息2', 1, NOW(), 0),
-(3, 2, 2, 3, '这是测试消息3', 1, NOW(), 0);
+(1, 1, 1, 2, 'Message 1', 1, NOW(), 0),
+(2, 1, 2, 1, 'Message 2', 1, NOW(), 0),
+(3, 2, 2, 3, 'Message 3', 1, NOW(), 0);

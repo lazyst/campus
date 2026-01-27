@@ -1,6 +1,7 @@
 package com.campus.modules.forum.comment;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.campus.config.TestUtils;
 import com.campus.modules.forum.entity.Comment;
 import com.campus.modules.forum.mapper.CommentMapper;
 import com.campus.modules.forum.service.impl.CommentServiceImpl;
@@ -37,6 +38,9 @@ class CommentServiceTest {
 
     @BeforeEach
     void setUp() {
+        // 注入baseMapper
+        TestUtils.setBaseMapper(commentService, commentMapper);
+
         testComment = new Comment();
         testComment.setId(1L);
         testComment.setUserId(1L);

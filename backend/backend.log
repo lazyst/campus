@@ -78,3 +78,111 @@ This generated password is for development use only. Your security configuration
 2026-01-27 07:51:41 [main] INFO  com.campus.CampusApplication - Started CampusApplication in 3.475 seconds (process running for 3.866)
 2026-01-27 07:51:41 [main] DEBUG c.b.m.a.DdlApplicationRunner -   ...  DDL start create  ...  
 2026-01-27 07:51:41 [main] DEBUG c.b.m.a.DdlApplicationRunner -   ...  DDL end create  ...  
+2026-01-27 07:52:11 [http-nio-8080-exec-1] INFO  o.a.c.c.C.[Tomcat].[localhost].[/] - Initializing Spring DispatcherServlet 'dispatcherServlet'
+2026-01-27 07:52:11 [http-nio-8080-exec-1] INFO  o.s.web.servlet.DispatcherServlet - Initializing Servlet 'dispatcherServlet'
+2026-01-27 07:52:11 [http-nio-8080-exec-1] INFO  o.s.web.servlet.DispatcherServlet - Completed initialization in 1 ms
+2026-01-27 07:52:11 [http-nio-8080-exec-1] WARN  o.s.w.s.h.HandlerMappingIntrospector - Cache miss for REQUEST dispatch to '/api/posts/2012' (previous null). Performing CorsConfiguration lookup. This is logged once only at WARN level, and every time at TRACE.
+2026-01-27 07:52:11 [http-nio-8080-exec-1] WARN  o.s.w.s.h.HandlerMappingIntrospector - Cache miss for REQUEST dispatch to '/api/posts/2012' (previous null). Performing MatchableHandlerMapping lookup. This is logged once only at WARN level, and every time at TRACE.
+Creating a new SqlSession
+SqlSession [org.apache.ibatis.session.defaults.DefaultSqlSession@5c8016fb] was not registered for synchronization because synchronization is not active
+2026-01-27 07:52:11 [http-nio-8080-exec-1] INFO  com.zaxxer.hikari.HikariDataSource - CampusHikariCP - Starting...
+2026-01-27 07:52:12 [http-nio-8080-exec-1] INFO  com.zaxxer.hikari.pool.HikariPool - CampusHikariCP - Added connection com.mysql.cj.jdbc.ConnectionImpl@73187999
+2026-01-27 07:52:12 [http-nio-8080-exec-1] INFO  com.zaxxer.hikari.HikariDataSource - CampusHikariCP - Start completed.
+JDBC Connection [HikariProxyConnection@1989682382 wrapping com.mysql.cj.jdbc.ConnectionImpl@73187999] will not be managed by Spring
+==>  Preparing: SELECT id,user_id,board_id,title,content,images,view_count,like_count,comment_count,collect_count,status,created_at,updated_at,created_by,updated_by,deleted FROM post WHERE id=? AND deleted=0
+==> Parameters: 2012(Long)
+<==    Columns: id, user_id, board_id, title, content, images, view_count, like_count, comment_count, collect_count, status, created_at, updated_at, created_by, updated_by, deleted
+<==        Row: 2012, 5154, 1, 点赞测试帖子, <<BLOB>>, <<BLOB>>, 4, 2, 0, 1, 1, 2026-01-27 05:27:08, 2026-01-26 21:27:08, null, null, 0
+<==      Total: 1
+Closing non transactional SqlSession [org.apache.ibatis.session.defaults.DefaultSqlSession@5c8016fb]
+Creating a new SqlSession
+Registering transaction synchronization for SqlSession [org.apache.ibatis.session.defaults.DefaultSqlSession@791faa8e]
+JDBC Connection [HikariProxyConnection@2107526983 wrapping com.mysql.cj.jdbc.ConnectionImpl@73187999] will be managed by Spring
+==>  Preparing: SELECT id,user_id,board_id,title,content,images,view_count,like_count,comment_count,collect_count,status,created_at,updated_at,created_by,updated_by,deleted FROM post WHERE id=? AND deleted=0
+==> Parameters: 2012(Long)
+<==    Columns: id, user_id, board_id, title, content, images, view_count, like_count, comment_count, collect_count, status, created_at, updated_at, created_by, updated_by, deleted
+<==        Row: 2012, 5154, 1, 点赞测试帖子, <<BLOB>>, <<BLOB>>, 4, 2, 0, 1, 1, 2026-01-27 05:27:08, 2026-01-26 21:27:08, null, null, 0
+<==      Total: 1
+Releasing transactional SqlSession [org.apache.ibatis.session.defaults.DefaultSqlSession@791faa8e]
+Fetched SqlSession [org.apache.ibatis.session.defaults.DefaultSqlSession@791faa8e] from current transaction
+==>  Preparing: UPDATE post SET user_id=?, board_id=?, title=?, content=?, view_count=?, like_count=?, comment_count=?, collect_count=?, status=?, created_at=?, updated_at=?, updated_by=? WHERE id=? AND deleted=0
+==> Parameters: 5154(Long), 1(Long), 点赞测试帖子(String), 内容(String), 5(Integer), 2(Integer), 0(Integer), 1(Integer), 1(Integer), 2026-01-27T05:27:08(LocalDateTime), 2026-01-26T21:27:08(LocalDateTime), null, 2012(Long)
+<==    Updates: 1
+Releasing transactional SqlSession [org.apache.ibatis.session.defaults.DefaultSqlSession@791faa8e]
+Transaction synchronization committing SqlSession [org.apache.ibatis.session.defaults.DefaultSqlSession@791faa8e]
+Transaction synchronization deregistering SqlSession [org.apache.ibatis.session.defaults.DefaultSqlSession@791faa8e]
+Transaction synchronization closing SqlSession [org.apache.ibatis.session.defaults.DefaultSqlSession@791faa8e]
+Creating a new SqlSession
+SqlSession [org.apache.ibatis.session.defaults.DefaultSqlSession@17be9424] was not registered for synchronization because synchronization is not active
+JDBC Connection [HikariProxyConnection@401768504 wrapping com.mysql.cj.jdbc.ConnectionImpl@73187999] will not be managed by Spring
+==>  Preparing: SELECT id,user_id,post_id,parent_id,content,status,created_at,updated_at,created_by,updated_by,deleted FROM comment WHERE deleted=0 AND (post_id = ? AND status = ?) ORDER BY created_at ASC
+==> Parameters: 2012(Long), 1(Integer)
+<==      Total: 0
+Closing non transactional SqlSession [org.apache.ibatis.session.defaults.DefaultSqlSession@17be9424]
+Creating a new SqlSession
+Creating a new SqlSession
+SqlSession [org.apache.ibatis.session.defaults.DefaultSqlSession@46e4b1bc] was not registered for synchronization because synchronization is not active
+SqlSession [org.apache.ibatis.session.defaults.DefaultSqlSession@51d60329] was not registered for synchronization because synchronization is not active
+JDBC Connection [HikariProxyConnection@405361193 wrapping com.mysql.cj.jdbc.ConnectionImpl@73187999] will not be managed by Spring
+JDBC Connection [HikariProxyConnection@1490615354 wrapping com.mysql.cj.jdbc.ConnectionImpl@2b4e885b] will not be managed by Spring
+==>  Preparing: SELECT id,phone,password,nickname,avatar,gender,bio,status,created_at,updated_at,created_by,updated_by,deleted FROM `user` WHERE deleted=0 AND (phone = ?)
+==>  Preparing: SELECT id,phone,password,nickname,avatar,gender,bio,status,created_at,updated_at,created_by,updated_by,deleted FROM `user` WHERE deleted=0 AND (phone = ?)
+==> Parameters: 13888888888(String)
+==> Parameters: 13888888888(String)
+<==    Columns: id, phone, password, nickname, avatar, gender, bio, status, created_at, updated_at, created_by, updated_by, deleted
+<==    Columns: id, phone, password, nickname, avatar, gender, bio, status, created_at, updated_at, created_by, updated_by, deleted
+<==        Row: 5189, 13888888888, $2a$10$dXJ3SW6G7P50lGmMkkmwe.20cQQubK3.HZWzG3YB1tlRy.fqvM/BG, 娴嬭瘯鐢ㄦ埛, null, 1, null, 1, 2026-01-26 23:07:45, 2026-01-26 23:07:45, null, null, 0
+<==        Row: 5189, 13888888888, $2a$10$dXJ3SW6G7P50lGmMkkmwe.20cQQubK3.HZWzG3YB1tlRy.fqvM/BG, 娴嬭瘯鐢ㄦ埛, null, 1, null, 1, 2026-01-26 23:07:45, 2026-01-26 23:07:45, null, null, 0
+<==      Total: 1
+Closing non transactional SqlSession [org.apache.ibatis.session.defaults.DefaultSqlSession@46e4b1bc]
+<==      Total: 1
+Closing non transactional SqlSession [org.apache.ibatis.session.defaults.DefaultSqlSession@51d60329]
+Creating a new SqlSession
+Creating a new SqlSession
+SqlSession [org.apache.ibatis.session.defaults.DefaultSqlSession@29cccd1] was not registered for synchronization because synchronization is not active
+SqlSession [org.apache.ibatis.session.defaults.DefaultSqlSession@630fc07] was not registered for synchronization because synchronization is not active
+JDBC Connection [HikariProxyConnection@2025954546 wrapping com.mysql.cj.jdbc.ConnectionImpl@73187999] will not be managed by Spring
+==>  Preparing: SELECT COUNT( * ) AS total FROM `like` WHERE deleted=0 AND (user_id = ? AND post_id = ? AND deleted = ?)
+JDBC Connection [HikariProxyConnection@448348617 wrapping com.mysql.cj.jdbc.ConnectionImpl@2b4e885b] will not be managed by Spring
+==>  Preparing: SELECT COUNT( * ) AS total FROM `collect` WHERE deleted=0 AND (user_id = ? AND post_id = ? AND deleted = ?)
+==> Parameters: 5189(Long), 2012(Long), false(Boolean)
+==> Parameters: 5189(Long), 2012(Long), false(Boolean)
+<==    Columns: total
+<==    Columns: total
+<==        Row: 1
+<==        Row: 1
+<==      Total: 1
+<==      Total: 1
+Closing non transactional SqlSession [org.apache.ibatis.session.defaults.DefaultSqlSession@29cccd1]
+Closing non transactional SqlSession [org.apache.ibatis.session.defaults.DefaultSqlSession@630fc07]
+Creating a new SqlSession
+SqlSession [org.apache.ibatis.session.defaults.DefaultSqlSession@7a6f0711] was not registered for synchronization because synchronization is not active
+JDBC Connection [HikariProxyConnection@1134278344 wrapping com.mysql.cj.jdbc.ConnectionImpl@73187999] will not be managed by Spring
+==>  Preparing: SELECT id,phone,password,nickname,avatar,gender,bio,status,created_at,updated_at,created_by,updated_by,deleted FROM `user` WHERE deleted=0 AND (phone = ?)
+==> Parameters: 13888888888(String)
+<==    Columns: id, phone, password, nickname, avatar, gender, bio, status, created_at, updated_at, created_by, updated_by, deleted
+<==        Row: 5189, 13888888888, $2a$10$dXJ3SW6G7P50lGmMkkmwe.20cQQubK3.HZWzG3YB1tlRy.fqvM/BG, 娴嬭瘯鐢ㄦ埛, null, 1, null, 1, 2026-01-26 23:07:45, 2026-01-26 23:07:45, null, null, 0
+<==      Total: 1
+Closing non transactional SqlSession [org.apache.ibatis.session.defaults.DefaultSqlSession@7a6f0711]
+Creating a new SqlSession
+SqlSession [org.apache.ibatis.session.defaults.DefaultSqlSession@188242a0] was not registered for synchronization because synchronization is not active
+JDBC Connection [HikariProxyConnection@441948462 wrapping com.mysql.cj.jdbc.ConnectionImpl@73187999] will not be managed by Spring
+==>  Preparing: SELECT id,user_id,board_id,title,content,images,view_count,like_count,comment_count,collect_count,status,created_at,updated_at,created_by,updated_by,deleted FROM post WHERE id=? AND deleted=0
+==> Parameters: 2012(Long)
+<==    Columns: id, user_id, board_id, title, content, images, view_count, like_count, comment_count, collect_count, status, created_at, updated_at, created_by, updated_by, deleted
+<==        Row: 2012, 5154, 1, 点赞测试帖子, <<BLOB>>, <<BLOB>>, 5, 2, 0, 1, 1, 2026-01-27 05:27:08, 2026-01-26 21:27:08, null, null, 0
+<==      Total: 1
+Closing non transactional SqlSession [org.apache.ibatis.session.defaults.DefaultSqlSession@188242a0]
+Creating a new SqlSession
+SqlSession [org.apache.ibatis.session.defaults.DefaultSqlSession@4352b743] was not registered for synchronization because synchronization is not active
+JDBC Connection [HikariProxyConnection@1134734216 wrapping com.mysql.cj.jdbc.ConnectionImpl@73187999] will not be managed by Spring
+==>  Preparing: INSERT INTO comment ( user_id, post_id, content, status, created_at, updated_at, created_by, updated_by, deleted ) VALUES ( ?, ?, ?, ?, ?, ?, ?, ?, ? )
+==> Parameters: 5189(Long), 2012(Long), 这是修复后的测试评论！(String), 1(Integer), 2026-01-27T07:52:31.869654300(LocalDateTime), 2026-01-27T07:52:31.869654300(LocalDateTime), null, null, 0(Integer)
+<==    Updates: 1
+Closing non transactional SqlSession [org.apache.ibatis.session.defaults.DefaultSqlSession@4352b743]
+2026-01-27 07:52:41 [MessageBroker-1] INFO  o.s.w.s.c.WebSocketMessageBrokerStats - WebSocketSession[0 current WS(0)-HttpStream(0)-HttpPoll(0), 0 total, 0 closed abnormally (0 connect failure, 0 send limit, 0 transport error)], stompSubProtocol[processed CONNECT(0)-CONNECTED(0)-DISCONNECT(0)], stompBrokerRelay[null], inboundChannel[pool size = 0, active threads = 0, queued tasks = 0, completed tasks = 0], outboundChannel[pool size = 0, active threads = 0, queued tasks = 0, completed tasks = 0], sockJsScheduler[pool size = 1, active threads = 1, queued tasks = 0, completed tasks = 0]
+2026-01-27 08:22:41 [MessageBroker-1] INFO  o.s.w.s.c.WebSocketMessageBrokerStats - WebSocketSession[0 current WS(0)-HttpStream(0)-HttpPoll(0), 0 total, 0 closed abnormally (0 connect failure, 0 send limit, 0 transport error)], stompSubProtocol[processed CONNECT(0)-CONNECTED(0)-DISCONNECT(0)], stompBrokerRelay[null], inboundChannel[pool size = 0, active threads = 0, queued tasks = 0, completed tasks = 0], outboundChannel[pool size = 0, active threads = 0, queued tasks = 0, completed tasks = 0], sockJsScheduler[pool size = 2, active threads = 1, queued tasks = 0, completed tasks = 1]
+2026-01-27 08:52:41 [MessageBroker-2] INFO  o.s.w.s.c.WebSocketMessageBrokerStats - WebSocketSession[0 current WS(0)-HttpStream(0)-HttpPoll(0), 0 total, 0 closed abnormally (0 connect failure, 0 send limit, 0 transport error)], stompSubProtocol[processed CONNECT(0)-CONNECTED(0)-DISCONNECT(0)], stompBrokerRelay[null], inboundChannel[pool size = 0, active threads = 0, queued tasks = 0, completed tasks = 0], outboundChannel[pool size = 0, active threads = 0, queued tasks = 0, completed tasks = 0], sockJsScheduler[pool size = 3, active threads = 1, queued tasks = 0, completed tasks = 2]
+2026-01-27 09:22:41 [MessageBroker-1] INFO  o.s.w.s.c.WebSocketMessageBrokerStats - WebSocketSession[0 current WS(0)-HttpStream(0)-HttpPoll(0), 0 total, 0 closed abnormally (0 connect failure, 0 send limit, 0 transport error)], stompSubProtocol[processed CONNECT(0)-CONNECTED(0)-DISCONNECT(0)], stompBrokerRelay[null], inboundChannel[pool size = 0, active threads = 0, queued tasks = 0, completed tasks = 0], outboundChannel[pool size = 0, active threads = 0, queued tasks = 0, completed tasks = 0], sockJsScheduler[pool size = 4, active threads = 1, queued tasks = 0, completed tasks = 3]
+2026-01-27 09:52:41 [MessageBroker-3] INFO  o.s.w.s.c.WebSocketMessageBrokerStats - WebSocketSession[0 current WS(0)-HttpStream(0)-HttpPoll(0), 0 total, 0 closed abnormally (0 connect failure, 0 send limit, 0 transport error)], stompSubProtocol[processed CONNECT(0)-CONNECTED(0)-DISCONNECT(0)], stompBrokerRelay[null], inboundChannel[pool size = 0, active threads = 0, queued tasks = 0, completed tasks = 0], outboundChannel[pool size = 0, active threads = 0, queued tasks = 0, completed tasks = 0], sockJsScheduler[pool size = 5, active threads = 1, queued tasks = 0, completed tasks = 4]
+2026-01-27 10:22:41 [MessageBroker-2] INFO  o.s.w.s.c.WebSocketMessageBrokerStats - WebSocketSession[0 current WS(0)-HttpStream(0)-HttpPoll(0), 0 total, 0 closed abnormally (0 connect failure, 0 send limit, 0 transport error)], stompSubProtocol[processed CONNECT(0)-CONNECTED(0)-DISCONNECT(0)], stompBrokerRelay[null], inboundChannel[pool size = 0, active threads = 0, queued tasks = 0, completed tasks = 0], outboundChannel[pool size = 0, active threads = 0, queued tasks = 0, completed tasks = 0], sockJsScheduler[pool size = 6, active threads = 1, queued tasks = 0, completed tasks = 5]

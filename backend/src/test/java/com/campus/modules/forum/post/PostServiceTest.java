@@ -1,6 +1,7 @@
 package com.campus.modules.forum.post;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.campus.config.TestUtils;
 import com.campus.modules.forum.entity.Post;
 import com.campus.modules.forum.mapper.PostMapper;
 import com.campus.modules.forum.service.impl.PostServiceImpl;
@@ -37,6 +38,9 @@ class PostServiceTest {
 
     @BeforeEach
     void setUp() {
+        // 注入baseMapper
+        TestUtils.setBaseMapper(postService, postMapper);
+
         testPost = new Post();
         testPost.setId(1L);
         testPost.setUserId(1L);
