@@ -15,4 +15,8 @@ public class UpdateProfileRequest {
     private String bio;
 
     private String avatar;
+
+    private String grade;
+
+    private String major;
 }

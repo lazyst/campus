@@ -31,4 +31,19 @@ public interface ChatService {
      * 获取或创建会话
      */
     com.campus.modules.chat.entity.Conversation getOrCreateConversation(Long userId, Long otherUserId);
+
+    /**
+     * 清空会话的未读消息数
+     */
+    void clearUnreadCount(Long userId, Long conversationId);
+
+    /**
+     * 通过用户ID清除与某个用户的未读消息数
+     */
+    void clearUnreadCountByUserIds(Long userId, Long otherUserId);
+
+    /**
+     * 获取用户的总未读消息数
+     */
+    Integer getTotalUnreadCount(Long userId);
 }

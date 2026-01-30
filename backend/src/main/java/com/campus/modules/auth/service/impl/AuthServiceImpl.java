@@ -68,8 +68,13 @@ public class AuthServiceImpl implements AuthService {
 
     @Override
     public Long getUserIdFromToken(String token) {
-        String phone = jwtConfig.getUsernameFromToken(token);
-        User user = userService.getByPhone(phone);
-        return user != null ? user.getId() : null;
+        try {
+            String phone = jwtConfig.getUsernameFromToken(token);
+            User user = userService.getByPhone(phone);
+            return user != null ? user.getId() : null;
+        } catch (Exception e) {
+            // Token无效或解析失败
+            return null;
+        }
     }
 }

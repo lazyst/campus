@@ -27,4 +27,14 @@ public interface UserService extends IService<User> {
      * 更新用户信息
      */
     void updateProfile(Long userId, String nickname, Integer gender, String bio, String avatar);
+
+    /**
+     * 更新用户信息（包含年级和专业）
+     */
+    void updateProfile(Long userId, String nickname, Integer gender, String bio, String avatar, String grade, String major);
+
+    /**
+     * 更新用户头像
+     */
+    void updateAvatar(Long userId, String avatarUrl);
 }

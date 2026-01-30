@@ -65,4 +65,47 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
 
         baseMapper.updateById(user);
     }
+
+    @Override
+    public void updateProfile(Long userId, String nickname, Integer gender, String bio, String avatar, String grade, String major) {
+        System.out.println("=== DEBUG UserServiceImpl === userId=" + userId + ", nickname=" + nickname + ", gender=" + gender);
+        
+        User user = baseMapper.selectById(userId);
+        System.out.println("=== DEBUG UserServiceImpl === selectById result: " + (user == null ? "null" : "user found"));
+        
+        if (user == null) {
+            throw new IllegalArgumentException("用户不存在");
+        }
+
+        if (nickname != null) {
+            user.setNickname(nickname);
+        }
+        if (gender != null) {
+            user.setGender(gender);
+        }
+        if (bio != null) {
+            user.setBio(bio);
+        }
+        if (avatar != null) {
+            user.setAvatar(avatar);
+        }
+        if (grade != null) {
+            user.setGrade(grade);
+        }
+        if (major != null) {
+            user.setMajor(major);
+        }
+
+        baseMapper.updateById(user);
+    }
+
+    @Override
+    public void updateAvatar(Long userId, String avatarUrl) {
+        User user = baseMapper.selectById(userId);
+        if (user == null) {
+            throw new IllegalArgumentException("用户不存在");
+        }
+        user.setAvatar(avatarUrl);
+        baseMapper.updateById(user);
+    }
 }

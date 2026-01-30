@@ -23,7 +23,7 @@ import java.util.stream.Collectors;
  * 聊天服务实现
  */
 @Service
-public class ChatServiceImpl extends ServiceImpl<MessageMapper, Message> 
+public class ChatServiceImpl extends ServiceImpl<MessageMapper, Message>
         implements ChatService {
 
     private final ConversationMapper conversationMapper;
@@ -39,7 +39,7 @@ public class ChatServiceImpl extends ServiceImpl<MessageMapper, Message>
     public Message saveMessage(Long senderId, Long receiverId, String content) {
         // 获取或创建会话
         Conversation conversation = getOrCreateConversation(senderId, receiverId);
-        
+
         // 创建消息
         Message message = new Message();
         message.setConversationId(conversation.getId());
@@ -48,16 +48,70 @@ public class ChatServiceImpl extends ServiceImpl<MessageMapper, Message>
         message.setContent(content);
         message.setType(1);  // 文本消息
         message.setSendTime(LocalDateTime.now());
-        
+
         this.save(message);
-        
+
         // 更新会话的最后消息
         conversation.setLastMessageId(message.getId());
         conversation.setLastMessageContent(content);
         conversation.setLastMessageTime(message.getCreatedAt());
+
+        // 增加接收者的未读消息数量
+        conversation.incrementUnreadCount(receiverId);
+
         conversationMapper.updateById(conversation);
-        
+
         return message;
+    }
+
+    @Override
+    public void clearUnreadCount(Long userId, Long conversationId) {
+        Conversation conversation = conversationMapper.selectById(conversationId);
+        if (conversation == null) {
+            return;
+        }
+
+        // 判断用户是 userId1 还是 userId2
+        if (conversation.getUserId1() != null && conversation.getUserId1().equals(userId)) {
+            conversation.setUnreadCount1(0);
+        } else if (conversation.getUserId2() != null && conversation.getUserId2().equals(userId)) {
+            conversation.setUnreadCount2(0);
+        }
+
+        conversationMapper.updateById(conversation);
+    }
+
+    /**
+     * 通过两个用户ID清除某个用户的未读消息数
+     */
+    @Override
+    public void clearUnreadCountByUserIds(Long userId, Long otherUserId) {
+        Conversation conversation = findConversation(userId, otherUserId);
+        if (conversation == null) {
+            return;
+        }
+
+        clearUnreadCount(userId, conversation.getId());
+    }
+
+    @Override
+    public Integer getTotalUnreadCount(Long userId) {
+        // 查询用户参与的所有会话
+        LambdaQueryWrapper<Conversation> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(Conversation::getDeleted, false)
+               .and(w -> w.eq(Conversation::getUserId1, userId)
+                          .or()
+                          .eq(Conversation::getUserId2, userId));
+
+        List<Conversation> conversations = conversationMapper.selectList(wrapper);
+
+        // 计算总未读数
+        int totalUnread = 0;
+        for (Conversation conversation : conversations) {
+            totalUnread += conversation.getUnreadCount(userId);
+        }
+
+        return totalUnread;
     }
 
     @Override
@@ -69,25 +123,51 @@ public class ChatServiceImpl extends ServiceImpl<MessageMapper, Message>
                           .or()
                           .eq(Conversation::getUserId2, userId))
                .orderByDesc(Conversation::getUpdatedAt);
-        
+
         List<Conversation> conversations = conversationMapper.selectList(wrapper);
-        
+
         // 填充会话信息
         for (Conversation conversation : conversations) {
             // 获取对方用户ID
-            Long otherUserId = conversation.getUserId1().equals(userId) 
-                    ? conversation.getUserId2() 
+            Long otherUserId = conversation.getUserId1().equals(userId)
+                    ? conversation.getUserId2()
                     : conversation.getUserId1();
-            
+
+            // 设置对方用户ID
+            conversation.setOtherUserId(otherUserId);
+
             // 获取对方用户信息
             User otherUser = userService.getById(otherUserId);
             if (otherUser != null) {
                 conversation.setOtherUserNickname(otherUser.getNickname());
                 conversation.setOtherUserAvatar(otherUser.getAvatar());
             }
+
+            // 获取最新一条消息
+            Message lastMessage = getLastMessage(conversation.getId());
+            if (lastMessage != null) {
+                conversation.setLastMessageContent(lastMessage.getContent());
+                conversation.setLastMessageTime(lastMessage.getCreatedAt());
+            }
+
+            // 设置当前用户的未读消息数量
+            conversation.setUnreadCount(conversation.getUnreadCount(userId));
         }
-        
+
         return conversations;
+    }
+
+    /**
+     * 获取会话的最后一条消息
+     */
+    private Message getLastMessage(Long conversationId) {
+        LambdaQueryWrapper<Message> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(Message::getConversationId, conversationId)
+               .eq(Message::getDeleted, false)
+               .orderByDesc(Message::getCreatedAt)
+               .last("LIMIT 1");
+
+        return this.baseMapper.selectOne(wrapper);
     }
 
     @Override
