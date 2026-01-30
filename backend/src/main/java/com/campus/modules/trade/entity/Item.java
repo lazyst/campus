@@ -2,16 +2,17 @@ package com.campus.modules.trade.entity;
 
 import com.baomidou.mybatisplus.annotation.*;
 import com.campus.entity.BaseEntity;
-import lombok.Data;
-import lombok.EqualsAndHashCode;
+import lombok.Getter;
+import lombok.Setter;
 
 import java.math.BigDecimal;
 
 /**
  * 闲置物品实体类
+ * 注意：JPA/Hibernate 实体使用 @Getter/@Setter，不使用 @Data
  */
-@Data
-@EqualsAndHashCode(callSuper = true)
+@Getter
+@Setter
 @TableName("item")
 public class Item extends BaseEntity {
 
@@ -24,6 +25,11 @@ public class Item extends BaseEntity {
      * 类型：1收购 2出售
      */
     private Integer type;
+
+    /**
+     * 分类
+     */
+    private String category;
 
     /**
      * 物品标题
@@ -61,6 +67,11 @@ public class Item extends BaseEntity {
     private Integer contactCount;
 
     /**
+     * 交易地点
+     */
+    private String location;
+
+    /**
      * 发布者昵称（非数据库字段）
      */
     @TableField(exist = false)
@@ -71,4 +82,16 @@ public class Item extends BaseEntity {
      */
     @TableField(exist = false)
     private String userAvatar;
+    
+    /**
+     * 兼容前端字段名：卖家昵称
+     */
+    @TableField(exist = false)
+    private String sellerName;
+    
+    /**
+     * 兼容前端字段名：卖家头像
+     */
+    @TableField(exist = false)
+    private String sellerAvatar;
 }

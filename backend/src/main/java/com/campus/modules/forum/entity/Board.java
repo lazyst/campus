@@ -2,14 +2,15 @@ package com.campus.modules.forum.entity;
 
 import com.baomidou.mybatisplus.annotation.*;
 import com.campus.entity.BaseEntity;
-import lombok.Data;
-import lombok.EqualsAndHashCode;
+import lombok.Getter;
+import lombok.Setter;
 
 /**
  * 板块实体类
+ * 注意：JPA/Hibernate 实体使用 @Getter/@Setter，不使用 @Data
  */
-@Data
-@EqualsAndHashCode(callSuper = true)
+@Getter
+@Setter
 @TableName("board")
 public class Board extends BaseEntity {
 

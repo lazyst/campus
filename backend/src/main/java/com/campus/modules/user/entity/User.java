@@ -3,14 +3,14 @@ package com.campus.modules.user.entity;
 import com.baomidou.mybatisplus.annotation.*;
 import com.campus.entity.BaseEntity;
 import lombok.Data;
-import lombok.EqualsAndHashCode;
+
+import java.time.LocalDateTime;
 
 /**
  * 用户实体类
  */
 @Data
-@EqualsAndHashCode(callSuper = true)
-@TableName("`user`")
+@TableName("user")
 public class User extends BaseEntity {
 
     /**
@@ -47,4 +47,14 @@ public class User extends BaseEntity {
      * 状态：0禁用 1正常
      */
     private Integer status;
+
+    /**
+     * 年级
+     */
+    private String grade;
+
+    /**
+     * 专业
+     */
+    private String major;
 }

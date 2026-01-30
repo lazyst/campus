@@ -2,16 +2,17 @@ package com.campus.modules.admin.entity;
 
 import com.baomidou.mybatisplus.annotation.*;
 import com.campus.entity.BaseEntity;
-import lombok.Data;
-import lombok.EqualsAndHashCode;
+import lombok.Getter;
+import lombok.Setter;
 
 import java.time.LocalDateTime;
 
 /**
  * 管理员实体类
+ * 注意：JPA/Hibernate 实体使用 @Getter/@Setter，不使用 @Data
  */
-@Data
-@EqualsAndHashCode(callSuper = true)
+@Getter
+@Setter
 @TableName("admin")
 public class Admin extends BaseEntity {
 

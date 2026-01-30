@@ -1,15 +1,19 @@
 package com.campus.entity;
 
 import com.baomidou.mybatisplus.annotation.*;
-import lombok.Data;
+import lombok.Getter;
+import lombok.Setter;
 
 import java.time.LocalDateTime;
+import java.util.Objects;
 
 /**
  * 基础实体类
  * 所有业务实体类的父类，包含公共字段
+ * 注意：MyBatis-Plus 实体使用 @Getter/@Setter，不使用 @Data
  */
-@Data
+@Getter
+@Setter
 public abstract class BaseEntity {
 
     /**
@@ -48,4 +52,24 @@ public abstract class BaseEntity {
     @TableLogic
     @TableField(fill = FieldFill.INSERT)
     private Integer deleted;
+
+    /**
+     * 基于 ID 的 equals 实现
+     * 避免使用懒加载字段导致的问题
+     */
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        BaseEntity that = (BaseEntity) o;
+        return id != null && Objects.equals(id, that.id);
+    }
+
+    /**
+     * 基于 ID 的 hashCode 实现
+     */
+    @Override
+    public int hashCode() {
+        return getClass().hashCode();
+    }
 }
