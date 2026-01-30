@@ -11,7 +11,8 @@ USE campus;
 ALTER TABLE `notification`
 ADD COLUMN `updated_at` DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间' AFTER `created_at`,
 ADD COLUMN `created_by` BIGINT DEFAULT NULL COMMENT '创建者ID' AFTER `updated_at`,
-ADD COLUMN `updated_by` BIGINT DEFAULT NULL COMMENT '更新者ID' AFTER `created_by`;
+ADD COLUMN `updated_by` BIGINT DEFAULT NULL COMMENT '更新者ID' AFTER `created_by`,
+ADD COLUMN `comment_id` BIGINT DEFAULT NULL COMMENT '相关评论ID' AFTER `target_id`;
 
 -- =====================================================
 -- 帖子点赞表 (like) - 添加缺失字段
