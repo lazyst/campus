@@ -68,19 +68,19 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue';
+import { ref, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
-import SearchBar from '@/components/SearchBar.vue';
-import CategoryCard from '@/components/CategoryCard.vue';
-import PostCard from '@/components/PostCard.vue';
+import { getPosts } from '@/api/modules/post';
+import { showToast } from '@/services/toastService';
 import BottomNav from '@/components/BottomNav.vue';
 
 const router = useRouter();
 
 const searchQuery = ref('');
 const activeNav = ref('home');
+const loading = ref(false);
 
-// 分类数据
+// 分类数据（UI配置，可保留）
 const categories = [
   { name: '交流', color: 'purple' },
   { name: '学习', color: 'amber' },
@@ -88,49 +88,38 @@ const categories = [
   { name: '闲置', color: 'green' },
 ];
 
-// 模拟帖子数据
-const posts = ref([
-  {
-    id: 1,
-    author: '小明学长',
-    avatar: '',
-    title: '出售MacBook Pro 13寸 2020款 M1芯片',
-    excerpt: '自用电脑，95新，无划痕，电池健康度98%。买来主要用于写论文，现在毕业了用不到。',
-    time: new Date(Date.now() - 1000 * 60 * 10), // 10分钟前
-    tags: ['电脑数码'],
-    likes: 42,
-    comments: 12,
-    views: 328,
-  },
-  {
-    id: 2,
-    author: '学习达人',
-    avatar: '',
-    title: '找一个一起考研的搭子，互相监督',
-    excerpt: '本人计算机专业，二战上岸学长，想找志同道合的研友一起学习，互相监督进步。',
-    time: new Date(Date.now() - 1000 * 60 * 60), // 1小时前
-    tags: ['考研搭子'],
-    likes: 128,
-    comments: 45,
-    views: 892,
-  },
-  {
-    id: 3,
-    author: '图书馆小助手',
-    avatar: '',
-    title: '高等数学辅导，期末考试辅导',
-    excerpt: '本人数学专业研究生，可以辅导高数上/下，期末冲刺，考研数学辅导。',
-    time: new Date(Date.now() - 1000 * 60 * 60 * 2), // 2小时前
-    tags: ['学习'],
-    likes: 56,
-    comments: 8,
-    views: 245,
-  },
-]);
+interface Post {
+  id: number;
+  author: string;
+  avatar: string;
+  title: string;
+  excerpt: string;
+  time: Date;
+  tags: string[];
+  likes: number;
+  comments: number;
+  views: number;
+}
+
+const posts = ref<Post[]>([]);
+
+async function loadPosts() {
+  loading.value = true;
+  
+  try {
+    const response = await getPosts({ size: 20 });
+    posts.value = response.records || [];
+  } catch (error: any) {
+    console.error('获取帖子列表失败:', error);
+    showToast(error.message || '加载失败');
+  } finally {
+    loading.value = false;
+  }
+}
 
 function handleSearch(query: string) {
-  console.log('搜索:', query);
   // TODO: 实现搜索功能
+  console.log('搜索:', query);
 }
 
 function handleCategoryClick(category: string) {
@@ -143,13 +132,17 @@ function goToMessages() {
 }
 
 function goToPostDetail(id: number | string) {
-  router.push(`/post/${id}`);
+  router.push(`/forum/detail/${id}`);
 }
 
 function handleNavChange(name: string) {
   activeNav.value = name;
   // TODO: 处理导航切换
 }
+
+onMounted(() => {
+  loadPosts();
+});
 </script>
 
 <style scoped>

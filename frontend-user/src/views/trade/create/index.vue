@@ -7,9 +7,9 @@
       <button 
         class="create-publish-btn" 
         @click="publish"
-        :disabled="!isFormValid"
+        :disabled="!isFormValid || isPublishing"
       >
-        发布
+        {{ isPublishing ? '发布中...' : '发布' }}
       </button>
     </div>
 
@@ -19,7 +19,7 @@
       <div class="create-form-group">
         <label class="create-form-label">物品名称</label>
         <input 
-          v-model="form.title"
+          v-model="title"
           type="text"
           class="create-form-input"
           placeholder="请输入物品名称"
@@ -32,13 +32,13 @@
         <div class="create-price-row">
           <span class="create-price-symbol">¥</span>
           <input 
-            v-model="form.price"
+            v-model="price"
             type="number"
             class="create-price-input"
             placeholder="0"
           />
-          <span v-if="form.originalPrice" class="create-original-price">
-            原价 ¥{{ form.originalPrice }}
+          <span v-if="originalPrice" class="create-original-price">
+            原价 ¥{{ originalPrice }}
           </span>
         </div>
       </div>
@@ -47,8 +47,8 @@
       <div class="create-form-group">
         <label class="create-form-label">分类</label>
         <div class="create-selector" @click="showCategoryPicker = true">
-          <span :class="{ 'create-selector-placeholder': !form.category }">
-            {{ form.category || '请选择' }}
+          <span :class="{ 'create-selector-placeholder': !category }">
+            {{ category || '请选择' }}
           </span>
           <span class="create-selector-arrow">›</span>
         </div>
@@ -59,13 +59,13 @@
         <label class="create-form-label">成色</label>
         <div class="create-condition-options">
           <button 
-            v-for="condition in conditions" 
-            :key="condition"
+            v-for="item in conditions" 
+            :key="item"
             class="create-condition-btn"
-            :class="{ 'create-condition-btn--active': form.condition === condition }"
-            @click="form.condition = condition"
+            :class="{ 'create-condition-btn--active': condition === item }"
+            @click="condition = item"
           >
-            {{ condition }}
+            {{ item }}
           </button>
         </div>
       </div>
@@ -74,7 +74,7 @@
       <div class="create-form-group">
         <label class="create-form-label">物品描述</label>
         <textarea 
-          v-model="form.description"
+          v-model="description"
           class="create-form-textarea"
           placeholder="描述物品的使用情况、新旧程度、入手渠道等..."
           rows="6"
@@ -84,24 +84,55 @@
       <!-- 图片上传 -->
       <div class="create-form-group">
         <label class="create-form-label">上传图片（最多9张）</label>
-        <div class="create-image-grid">
-          <div class="create-upload-btn">
+        <div class="create-image-upload">
+          <!-- 有图片时显示图片预览列表 -->
+          <template v-if="previewImages.length > 0">
+            <div 
+              v-for="(url, index) in previewImages" 
+              :key="index" 
+              class="create-image-preview"
+            >
+              <img :src="url" :alt="'图片' + (index + 1)" />
+              <button class="create-image-remove" @click="removeImage(index)">×</button>
+            </div>
+          </template>
+          
+          <!-- 无图片时显示商品描述预览 -->
+          <div v-else class="create-no-image-placeholder">
+            <div class="create-no-image-content">
+              <span class="create-no-image-label">商品描述</span>
+              <p class="create-no-image-description">{{ description || '暂无描述' }}</p>
+            </div>
+          </div>
+          
+          <!-- 上传按钮 -->
+          <div 
+            v-if="previewImages.length < 9" 
+            class="create-upload-btn" 
+            @click="triggerFileInput"
+          >
             <span class="create-upload-icon">+</span>
           </div>
-          <div class="create-image-placeholder"></div>
-          <div class="create-image-placeholder"></div>
         </div>
+        <input 
+          ref="fileInput"
+          type="file" 
+          accept="image/*" 
+          multiple 
+          style="display: none"
+          @change="handleFileChange"
+        />
       </div>
 
       <!-- 交易地点 -->
       <div class="create-form-group">
         <label class="create-form-label">交易地点</label>
-        <div class="create-selector" @click="showLocationPicker = true">
-          <span :class="{ 'create-selector-placeholder': !form.location }">
-            {{ form.location || '请选择' }}
-          </span>
-          <span class="create-selector-arrow">›</span>
-        </div>
+        <input 
+          v-model="location"
+          type="text"
+          class="create-form-input"
+          placeholder="请输入交易地点（如：东校区图书馆门口）"
+        />
       </div>
 
       <!-- 提示 -->
@@ -110,74 +141,168 @@
       </div>
     </div>
 
-    <!-- 分类选择器 -->
-    <div v-if="showCategoryPicker" class="create-picker-overlay" @click.self="showCategoryPicker = false">
-      <div class="create-picker-content">
-        <div class="create-picker-header">
-          <span class="create-picker-cancel" @click="showCategoryPicker = false">取消</span>
-          <span class="create-picker-title">选择分类</span>
-          <span class="create-picker-confirm" @click="confirmCategory">确定</span>
-        </div>
-        <div class="create-picker-list">
-          <div 
-            v-for="(category, index) in categories" 
-            :key="category"
-            class="create-picker-item"
-            :class="{ 'create-picker-item--active': selectedCategory === index }"
-            @click="selectedCategory = index"
-          >
-            {{ category }}
+      <!-- 分类选择器 -->
+      <div v-if="showCategoryPicker" class="create-picker-overlay" @click.self="showCategoryPicker = false">
+        <div class="create-picker-content">
+          <div class="create-picker-header">
+            <span class="create-picker-cancel" @click="showCategoryPicker = false">取消</span>
+            <span class="create-picker-title">选择分类</span>
+            <span class="create-picker-confirm" @click="confirmCategory">确定</span>
+          </div>
+          <div class="create-picker-list">
+            <div 
+              v-for="(cat, index) in categories" 
+              :key="cat"
+              class="create-picker-item"
+              :class="{ 'create-picker-item--active': category === cat }"
+              @click="selectCategory(cat)"
+            >
+              {{ cat }}
+            </div>
           </div>
         </div>
       </div>
-    </div>
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, reactive, computed } from 'vue';
 import { useRouter } from 'vue-router';
+import { createItem } from '@/api/modules/item';
+import { uploadImages } from '@/api/modules/upload';
+import { showToast } from '@/services/toastService';
 
 const router = useRouter();
+const fileInput = ref<HTMLInputElement | null>(null);
 
+const isPublishing = ref(false);
 const showCategoryPicker = ref(false);
-const showLocationPicker = ref(false);
-const selectedCategory = ref(0);
-const selectedLocation = ref(0);
+const previewImages = ref<string[]>([]);
+const uploadedImages = ref<string[]>([]);
 
 const categories = ['电脑数码', '学习资料', '生活用品', '出行工具', '服装鞋包', '书籍教材', '其他'];
 const conditions = ['全新', '99新', '95新', '9成新', '8成新'];
-const locations = ['东校区', '西校区', '南校区', '北校区', '图书馆', '体育馆'];
 
+// 使用独立的 ref 变量确保响应式更新正确工作
+const title = ref('');
+const price = ref('');
+const originalPrice = ref('');
+const category = ref('');
+const condition = ref('95新');
+const description = ref('');
+const location = ref('');
+
+// 统一的表单对象用于验证
 const form = reactive({
-  title: '',
-  price: '',
-  originalPrice: '',
-  category: '',
-  condition: '95新',
-  description: '',
-  location: '',
+  title,
+  price,
+  originalPrice,
+  category,
+  condition,
+  description,
+  location,
 });
 
 const isFormValid = computed(() => {
-  return form.title.length > 0 && 
-         form.price.length > 0 && 
-         form.category.length > 0 && 
-         form.description.length > 0;
+  const titleValid = title.value.length > 0;
+  const priceValid = price.value && price.value.toString().length > 0;
+  const categoryValid = category.value.length > 0;
+  const descriptionValid = description.value.length > 0;
+  const result = titleValid && priceValid && categoryValid && descriptionValid;
+  
+  console.log('Form validation:', {
+    title: title.value,
+    titleValid,
+    price: price.value,
+    priceValid,
+    category: category.value,
+    categoryValid,
+    description: description.value,
+    descriptionValid,
+    isPublishing: isPublishing.value,
+    result
+  });
+  
+  return result;
 });
 
 function goBack() {
   router.back();
 }
 
-function confirmCategory() {
-  form.category = categories[selectedCategory.value];
+function selectCategory(cat: string) {
+  category.value = cat;
   showCategoryPicker.value = false;
 }
 
-function publish() {
-  console.log('发布闲置:', form);
-  router.back();
+function triggerFileInput() {
+  if (fileInput.value) {
+    fileInput.value.click();
+  }
+}
+
+async function handleFileChange(event: Event) {
+  const input = event.target as HTMLInputElement;
+  const files = input.files;
+  
+  if (!files || files.length === 0) return;
+
+  // 检查总数量限制
+  const remaining = 9 - previewImages.value.length;
+  const filesToUpload = Array.from(files).slice(0, remaining);
+
+  // 本地预览
+  for (const file of filesToUpload) {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      previewImages.value.push(e.target?.result as string);
+    };
+    reader.readAsDataURL(file);
+  }
+
+  // 上传到服务器
+  try {
+    const urls = await uploadImages(filesToUpload);
+    uploadedImages.value.push(...urls);
+    showToast(`成功上传 ${filesToUpload.length} 张图片`);
+  } catch (error) {
+    console.error('上传失败:', error);
+    showToast('图片上传失败，请重试', 'error');
+  }
+
+  // 清空input以便再次选择相同文件
+  input.value = '';
+}
+
+function removeImage(index: number) {
+  previewImages.value.splice(index, 1);
+  uploadedImages.value.splice(index, 1);
+}
+
+async function publish() {
+  if (!isFormValid.value || isPublishing.value) return;
+  
+  isPublishing.value = true;
+  
+  try {
+    await createItem({
+      title: title.value,
+      description: description.value,
+      price: parseFloat(price.value),
+      type: 2,  // 出售
+      category: category.value,
+      images: JSON.stringify(uploadedImages.value),
+      location: location.value
+    });
+    
+    showToast('发布成功！');
+    router.back();
+  } catch (error: any) {
+    console.error('发布失败:', error);
+    showToast(error.message || '发布失败，请重试');
+  } finally {
+    isPublishing.value = false;
+  }
 }
 </script>
 
@@ -361,9 +486,46 @@ function publish() {
   color: var(--text-tertiary);
 }
 
-.create-image-grid {
+.create-image-upload {
   display: flex;
+  flex-wrap: wrap;
   gap: var(--space-3);
+}
+
+.create-image-preview {
+  position: relative;
+  width: 80px;
+  height: 80px;
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  box-shadow: var(--shadow-card);
+}
+
+.create-image-preview img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.create-image-remove {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background-color: rgba(0, 0, 0, 0.6);
+  color: white;
+  border: none;
+  cursor: pointer;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.create-image-remove:active {
+  background-color: rgba(0, 0, 0, 0.8);
 }
 
 .create-upload-btn {
@@ -388,11 +550,44 @@ function publish() {
   color: var(--text-tertiary);
 }
 
-.create-image-placeholder {
+/* 无图片时的占位符样式 */
+.create-no-image-placeholder {
   width: 80px;
   height: 80px;
-  background-color: var(--bg-tertiary);
+  border: 1px dashed var(--border-default);
   border-radius: var(--radius-md);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: var(--bg-tertiary);
+  overflow: hidden;
+}
+
+.create-no-image-content {
+  width: 100%;
+  height: 100%;
+  padding: var(--space-2);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: var(--space-1);
+}
+
+.create-no-image-label {
+  font-size: var(--text-xs);
+  color: var(--text-tertiary);
+}
+
+.create-no-image-description {
+  font-size: var(--text-xs);
+  color: var(--text-secondary);
+  line-height: var(--line-height-tight);
+  display: -webkit-box;
+  -webkit-line-clamp: 4;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin: 0;
 }
 
 .create-tips {

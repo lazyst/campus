@@ -25,18 +25,24 @@
           v-for="notif in notifications"
           :key="notif.id"
           class="profile-messages__item"
-          :class="{ 'profile-messages__item--unread': !notif.read }"
+          :class="{ 'profile-messages__item--unread': notif.isRead === 0 }"
           @click="onNotificationClick(notif)"
         >
-          <div class="profile-messages__item-icon">
-            {{ notif.type === 'system' ? '系' : '通' }}
+          <div class="profile-messages__item-avatar">
+            <img v-if="notif.fromUserAvatar" :src="getImageUrl(notif.fromUserAvatar)" alt="头像" />
+            <span v-else>{{ notif.fromUserNickname?.charAt(0) || notif.content?.charAt(0) || '通' }}</span>
           </div>
           <div class="profile-messages__item-content">
-            <div class="profile-messages__item-title">{{ notif.title }}</div>
-            <div class="profile-messages__item-desc">{{ notif.content }}</div>
+            <div class="profile-messages__item-title">
+              {{ notif.fromUserNickname || '某用户' }}
+              <span v-if="notif.type === 1">评论了你的帖子</span>
+              <span v-else-if="notif.type === 2">点赞了你的帖子</span>
+              <span v-else-if="notif.type === 3">收藏了你的帖子</span>
+              <span v-else>{{ notif.content }}</span>
+            </div>
             <div class="profile-messages__item-time">{{ formatDate(notif.createdAt) }}</div>
           </div>
-          <div v-if="!notif.read" class="profile-messages__unread-dot"></div>
+          <div v-if="notif.isRead === 0" class="profile-messages__unread-dot"></div>
         </div>
 
         <!-- Loading More -->
@@ -58,14 +64,18 @@ import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { getNotifications, markAsRead, markAllAsRead } from '@/api/modules'
 import NavBar from '@/components/navigation/NavBar.vue'
+import { getImageUrl } from '@/utils/imageUrl'
 
 interface Notification {
   id: number
-  title: string
+  type: number
   content: string
-  type: string
-  read: boolean
+  isRead: number  // 0未读 1已读，后端字段名
   createdAt: string
+  postId?: number
+  commentId?: number
+  fromUserNickname?: string
+  fromUserAvatar?: string
 }
 
 const router = useRouter()
@@ -107,13 +117,23 @@ async function loadNotifications() {
 }
 
 async function onNotificationClick(notification: Notification) {
-  if (!notification.read) {
+  // 标记已读
+  if (notification.isRead === 0) {
     try {
       await markAsRead(notification.id)
-      notification.read = true
+      notification.isRead = 1
     } catch (error) {
       console.error('标记已读失败:', error)
     }
+  }
+  // 跳转到原帖
+  if (notification.postId) {
+    // 如果有评论ID，带评论ID参数
+    const commentId = notification.commentId || notification.targetId
+    router.push({
+      path: `/forum/detail/${notification.postId}`,
+      query: commentId ? { commentId: String(commentId) } : {}
+    })
   }
 }
 
@@ -148,10 +168,16 @@ onMounted(() => {
 .profile-messages-page {
   min-height: 100vh;
   background-color: var(--bg-page);
+  display: flex;
+  flex-direction: column;
 }
 
 .profile-messages-container {
+  flex: 1;
   padding: var(--page-padding);
+  padding-top: calc(44px + var(--space-2) + env(safe-area-inset-top));
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
 }
 
 .profile-messages__mark-all {
@@ -210,19 +236,26 @@ onMounted(() => {
   transform: scale(0.98);
 }
 
-.profile-messages__item-icon {
+.profile-messages__item-avatar {
   width: 40px;
   height: 40px;
   background-color: var(--color-primary-700);
-  color: #FFFFFF;
   border-radius: var(--radius-full);
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: var(--text-sm);
   font-weight: var(--font-weight-medium);
+  color: #FFFFFF;
   margin-right: var(--space-3);
   flex-shrink: 0;
+  overflow: hidden;
+}
+
+.profile-messages__item-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 }
 
 .profile-messages__item-content {

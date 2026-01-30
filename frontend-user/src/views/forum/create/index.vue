@@ -7,9 +7,9 @@
       <button 
         class="create-publish-btn" 
         @click="publish"
-        :disabled="!isFormValid"
+        :disabled="!isFormValid || isPublishing"
       >
-        发布
+        {{ isPublishing ? '发布中...' : '发布' }}
       </button>
     </div>
 
@@ -52,11 +52,34 @@
       <div class="create-form-group">
         <label class="create-form-label">添加图片（最多9张）</label>
         <div class="create-image-upload">
-          <div class="create-upload-btn">
+          <!-- 图片预览列表 -->
+          <div 
+            v-for="(url, index) in previewImages" 
+            :key="index" 
+            class="create-image-preview"
+          >
+            <img :src="url" :alt="'图片' + (index + 1)" />
+            <button class="create-image-remove" @click="removeImage(index)">×</button>
+          </div>
+          
+          <!-- 上传按钮 -->
+          <div 
+            v-if="previewImages.length < 9" 
+            class="create-upload-btn" 
+            @click="triggerFileInput"
+          >
             <span class="create-upload-icon">+</span>
             <span class="create-upload-text">点击上传图片</span>
           </div>
         </div>
+        <input 
+          ref="fileInput"
+          type="file" 
+          accept="image/*" 
+          multiple 
+          style="display: none"
+          @change="handleFileChange"
+        />
       </div>
 
       <!-- 标签 -->
@@ -103,11 +126,17 @@
 <script setup lang="ts">
 import { ref, reactive, computed } from 'vue';
 import { useRouter } from 'vue-router';
+import { createPost } from '@/api/modules/post';
+import { uploadImages } from '@/api/modules/upload';
+import { showToast } from '@/services/toastService';
 
 const router = useRouter();
+const fileInput = ref<HTMLInputElement | null>(null);
 
+const isPublishing = ref(false);
 const showBoardPicker = ref(false);
-const selectedBoard = ref(0);
+const previewImages = ref<string[]>([]);
+const uploadedImages = ref<string[]>([]);
 
 const boards = [
   { value: 1, text: '交流' },
@@ -116,10 +145,13 @@ const boards = [
   { value: 4, text: '闲置' },
 ];
 
+// 默认选择第一个板块
+const selectedBoard = ref(0);
+
 const form = reactive({
   title: '',
-  boardName: '',
-  boardId: 0,
+  boardName: boards[0].text,  // 默认选择第一个板块
+  boardId: boards[0].value,   // 默认板块ID
   content: '',
   tags: '',
 });
@@ -143,9 +175,71 @@ function confirmBoard() {
   showBoardPicker.value = false;
 }
 
-function publish() {
-  console.log('发布帖子:', form);
-  router.back();
+function triggerFileInput() {
+  if (fileInput.value) {
+    fileInput.value.click();
+  }
+}
+
+async function handleFileChange(event: Event) {
+  const input = event.target as HTMLInputElement;
+  const files = input.files;
+  
+  if (!files || files.length === 0) return;
+
+  // 检查总数量限制
+  const remaining = 9 - previewImages.value.length;
+  const filesToUpload = Array.from(files).slice(0, remaining);
+
+  // 本地预览
+  for (const file of filesToUpload) {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      previewImages.value.push(e.target?.result as string);
+    };
+    reader.readAsDataURL(file);
+  }
+
+  // 上传到服务器
+  try {
+    const urls = await uploadImages(filesToUpload);
+    uploadedImages.value.push(...urls);
+    showToast(`成功上传 ${filesToUpload.length} 张图片`);
+  } catch (error) {
+    console.error('上传失败:', error);
+    showToast('图片上传失败，请重试', 'error');
+  }
+
+  // 清空input以便再次选择相同文件
+  input.value = '';
+}
+
+function removeImage(index: number) {
+  previewImages.value.splice(index, 1);
+  uploadedImages.value.splice(index, 1);
+}
+
+async function publish() {
+  if (!isFormValid.value || isPublishing.value) return;
+  
+  isPublishing.value = true;
+  
+  try {
+    await createPost({
+      boardId: form.boardId,
+      title: form.title,
+      content: form.content,
+      images: JSON.stringify(uploadedImages.value)
+    });
+    
+    showToast('发布成功！');
+    router.back();
+  } catch (error: any) {
+    console.error('发布失败:', error);
+    showToast(error.message || '发布失败，请重试');
+  } finally {
+    isPublishing.value = false;
+  }
 }
 </script>
 
@@ -276,7 +370,44 @@ function publish() {
 
 .create-image-upload {
   display: flex;
+  flex-wrap: wrap;
   gap: var(--space-3);
+}
+
+.create-image-preview {
+  position: relative;
+  width: 100px;
+  height: 100px;
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  box-shadow: var(--shadow-card);
+}
+
+.create-image-preview img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.create-image-remove {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background-color: rgba(0, 0, 0, 0.6);
+  color: white;
+  border: none;
+  cursor: pointer;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.create-image-remove:active {
+  background-color: rgba(0, 0, 0, 0.8);
 }
 
 .create-upload-btn {

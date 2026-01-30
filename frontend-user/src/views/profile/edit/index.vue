@@ -4,17 +4,26 @@
     <div class="status-bar">
       <span class="back-btn" @click="goBack">‹</span>
       <span class="page-title">编辑资料</span>
-      <span class="save-btn" @click="save">保存</span>
+      <span class="save-btn" :class="{ disabled: saving }" @click="save">{{ saving ? '保存中...' : '保存' }}</span>
     </div>
 
     <!-- 头像区域 -->
     <div class="avatar-section">
-      <div class="avatar-wrapper">
+      <div class="avatar-wrapper" @click="triggerAvatarInput">
         <div class="avatar">
-          <span>{{ form.nickname.charAt(0) || '用' }}</span>
+          <img v-if="avatarUrl" :src="avatarUrl" alt="头像" />
+          <span v-else>{{ form.nickname.charAt(0) || '用' }}</span>
         </div>
         <span class="avatar-action">点击更换头像</span>
       </div>
+      <!-- 隐藏的文件输入 -->
+      <input
+        ref="avatarInput"
+        type="file"
+        accept="image/*"
+        class="hidden-input"
+        @change="onAvatarChange"
+      />
     </div>
 
     <!-- 表单区域 -->
@@ -77,56 +86,130 @@
           placeholder="请输入专业"
         />
       </div>
-
-      <!-- 所在校区 -->
-      <div class="form-row">
-        <label class="form-label">所在校区</label>
-        <div class="selector">
-          <span>{{ form.campus || '东校区' }}</span>
-          <span class="selector-arrow">›</span>
-        </div>
-      </div>
-    </div>
-
-    <!-- 退出登录 -->
-    <div class="logout-section">
-      <button class="logout-btn" @click="logout">退出登录</button>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, reactive } from 'vue';
+import { ref, reactive, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
+import { useUserStore } from '@/stores/user';
+import { showToast } from '@/services/toastService';
+import { updateProfile, uploadAvatar } from '@/api/modules/user';
+import { getImageUrl } from '@/utils/imageUrl';
 
 const router = useRouter();
+const userStore = useUserStore();
+const saving = ref(false);
+const uploadingAvatar = ref(false);
+
+const avatarInput = ref<HTMLInputElement | null>(null);
+const avatarUrl = ref('');
 
 const genders = ['男', '女'];
 
 const form = reactive({
-  nickname: '校园小助手',
-  gender: '男',
-  bio: '热爱学习，喜欢交朋友的在校大学生~',
-  grade: '2023级',
-  major: '计算机科学与技术',
-  campus: '东校区',
+  nickname: '',
+  gender: '',
+  bio: '',
+  grade: '',
+  major: '',
 });
+
+// 触发文件选择
+function triggerAvatarInput() {
+  avatarInput.value?.click();
+}
+
+// 处理头像选择
+async function onAvatarChange(event: Event) {
+  const input = event.target as HTMLInputElement;
+  const file = input.files?.[0];
+  if (!file) return;
+
+  // 验证文件大小 (2MB)
+  if (file.size > 2 * 1024 * 1024) {
+    showToast('图片大小不能超过2MB', 'error');
+    input.value = '';
+    return;
+  }
+
+  // 验证文件类型
+  if (!file.type.startsWith('image/')) {
+    showToast('请选择图片文件', 'error');
+    input.value = '';
+    return;
+  }
+
+  try {
+    uploadingAvatar.value = true;
+    const url = await uploadAvatar(file);
+    avatarUrl.value = getImageUrl(url);
+    showToast('头像上传成功', 'success');
+  } catch (error: any) {
+    console.error('头像上传失败:', error);
+    showToast(error.message || '头像上传失败', 'error');
+  } finally {
+    uploadingAvatar.value = false;
+    input.value = '';
+  }
+}
 
 function goBack() {
   router.back();
 }
 
-function save() {
-  console.log('保存资料:', form);
-  // TODO: 实现保存功能
-  router.back();
+async function save() {
+  if (!form.nickname.trim()) {
+    showToast('请输入昵称');
+    return;
+  }
+
+  try {
+    saving.value = true;
+    
+    // 性别转换：男/女 -> 1/2
+    const genderMap: Record<string, number> = {
+      '男': 1,
+      '女': 2
+    };
+    
+    await updateProfile({
+      nickname: form.nickname,
+      gender: genderMap[form.gender] || 0,
+      bio: form.bio,
+      avatar: avatarUrl.value || undefined,
+      grade: form.grade,
+      major: form.major
+    });
+    
+    // 立即刷新用户信息到 store
+    await userStore.fetchUserInfo();
+    
+    showToast('保存成功', 'success');
+    router.back();
+  } catch (error: any) {
+    console.error('保存失败:', error);
+    showToast(error.message || '保存失败', 'error');
+  } finally {
+    saving.value = false;
+  }
 }
 
-function logout() {
-  console.log('退出登录');
-  // TODO: 实现退出登录
-  router.push('/login');
-}
+onMounted(() => {
+  // 从 Store 获取用户信息初始化表单
+  if (userStore.userInfo) {
+    form.nickname = userStore.userInfo.nickname || '';
+    form.gender = userStore.userInfo.gender === 1 ? '男' : userStore.userInfo.gender === 2 ? '女' : '';
+    form.bio = userStore.userInfo.bio || '';
+    form.grade = userStore.userInfo.grade || '';
+    form.major = userStore.userInfo.major || '';
+    // 初始化头像
+    if (userStore.userInfo.avatar) {
+      avatarUrl.value = getImageUrl(userStore.userInfo.avatar);
+    }
+  }
+});
 </script>
 
 <style scoped>
@@ -162,6 +245,11 @@ function logout() {
   cursor: pointer;
 }
 
+.save-btn.disabled {
+  color: #94A3B8;
+  cursor: not-allowed;
+}
+
 .avatar-section {
   display: flex;
   justify-content: center;
@@ -186,11 +274,30 @@ function logout() {
   justify-content: center;
   font-size: 32px;
   color: #64748B;
+  overflow: hidden;
+}
+
+.avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 }
 
 .avatar-action {
   font-size: 13px;
   color: #6366F1;
+}
+
+.avatar-wrapper {
+  cursor: pointer;
+}
+
+.avatar-wrapper:active {
+  opacity: 0.8;
+}
+
+.hidden-input {
+  display: none;
 }
 
 .form-section {

@@ -67,7 +67,7 @@
       <!-- Footer -->
       <div class="register-footer">
         <span class="register-login-text">已有账号？</span>
-        <router-link to="/login" class="register-login-link">立即登录</router-link>
+        <span class="register-login-link" @click="goToLogin">立即登录</span>
       </div>
     </div>
   </div>
@@ -119,7 +119,11 @@ const isFormValid = computed(() => {
 })
 
 function handleBack() {
-  router.back()
+  router.back();
+}
+
+function goToLogin() {
+  router.replace('/login');
 }
 
 async function handleSubmit() {
@@ -134,7 +138,7 @@ async function handleSubmit() {
       password: form.password,
       nickname: form.nickname
     })
-    router.replace('/')
+    router.replace('/login')
   } catch (error) {
     console.error('注册失败', error)
   } finally {
@@ -153,7 +157,7 @@ async function handleSubmit() {
 
 .register-content {
   flex: 1;
-  padding: var(--space-8) var(--space-4) var(--space-4);
+  padding: calc(var(--nav-height) + var(--space-6)) var(--space-4) var(--space-4);
   display: flex;
   flex-direction: column;
 }
