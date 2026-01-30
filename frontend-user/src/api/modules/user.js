@@ -28,7 +28,7 @@ export function updateProfile(data) {
  * @returns {Promise<Object>} 用户公开信息
  */
 export function getUserPublicInfo(userId) {
-  return request.get(`/users/${userId}`)
+  return request.get(`/user/public/${userId}`)
 }
 
 /**

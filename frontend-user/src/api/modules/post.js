@@ -40,6 +40,7 @@ export function getMyPosts(params = {}) {
  * @param {number} data.boardId - 板块ID
  * @param {string} data.title - 标题
  * @param {string} data.content - 内容
+ * @param {string} [data.images] - 图片JSON数组
  * @returns {Promise<Object>} 创建的帖子
  */
 export function createPost(data) {
@@ -92,7 +93,7 @@ export function checkPostLiked(id) {
 /**
  * 收藏/取消收藏帖子
  * @param {number} id - 帖子ID
- * @returns {Promise<Object>} { isCollected: boolean, collectCount: number }
+ * @returns {Promise<boolean>} true=收藏成功, false=取消收藏成功
  */
 export function toggleCollectPost(id) {
   return request.post(`/posts/${id}/collect`)
@@ -105,4 +106,12 @@ export function toggleCollectPost(id) {
  */
 export function checkPostCollected(id) {
   return request.get(`/posts/${id}/collect/check`, { showLoading: false })
+}
+
+/**
+ * 获取当前用户的收藏帖子列表
+ * @returns {Promise<Array>}
+ */
+export function getMyCollections() {
+  return request.get('/posts/collections', { showLoading: false })
 }

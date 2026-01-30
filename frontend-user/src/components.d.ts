@@ -13,6 +13,7 @@ declare module 'vue' {
     CategoryCard: typeof import('./components/CategoryCard.vue')['default']
     Cell: typeof import('./components/base/Cell.vue')['default']
     Dialog: typeof import('./components/interactive/Dialog.vue')['default']
+    ImagePreview: typeof import('./components/ImagePreview.vue')['default']
     Input: typeof import('./components/base/Input.vue')['default']
     NavBar: typeof import('./components/navigation/NavBar.vue')['default']
     PostCard: typeof import('./components/PostCard.vue')['default']

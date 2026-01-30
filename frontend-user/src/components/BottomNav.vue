@@ -53,33 +53,36 @@ function handleNavClick(item: NavItem) {
   bottom: 0;
   left: 0;
   right: 0;
-  height: 60px;
+  height: var(--tabbar-height);
   background: white;
   display: flex;
   align-items: center;
   justify-content: space-around;
-  padding: 8px 4px;
-  box-shadow: 0 -2px 8px rgba(99, 102, 241, 0.08);
+  padding: var(--space-2) var(--space-1);
+  box-shadow: var(--shadow-tabbar);
   z-index: 100;
+  border-top: 1px solid var(--border-light);
 }
 
 .nav-item {
   display: flex;
   flex-direction: column;
   align-items: center;
+  justify-content: center;
   gap: 2px;
   padding: 4px 12px;
   cursor: pointer;
   border-radius: 8px;
   transition: all 0.2s ease;
+  min-width: 60px;
 }
 
 .nav-item:hover {
-  background: #F8FAFC;
+  background: var(--color-primary-50);
 }
 
 .nav-item.active {
-  color: #6366F1;
+  color: var(--color-primary-700);
 }
 
 .nav-item.active .nav-icon {
@@ -87,12 +90,14 @@ function handleNavClick(item: NavItem) {
 }
 
 .nav-icon {
-  font-size: 20px;
+  font-size: 22px;
+  line-height: 1;
   transition: transform 0.2s ease;
 }
 
 .nav-name {
-  font-size: 11px;
-  font-weight: 500;
+  font-size: var(--text-xs);
+  font-weight: var(--font-weight-medium);
+  line-height: 1.2;
 }
 </style>

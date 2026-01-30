@@ -7,6 +7,10 @@
       :class="{ 'tab-bar__item--active': modelValue === item.name }"
       @click="select(item.name)"
     >
+      <!-- 消息图标显示未读数徽章 -->
+      <span v-if="item.name === 'Messages' && unreadCount > 0" class="tab-bar__badge">
+        {{ unreadCount > 99 ? '99+' : unreadCount }}
+      </span>
       <span class="tab-bar__label">{{ item.label }}</span>
     </button>
   </div>
@@ -21,11 +25,13 @@ interface TabItem {
 interface Props {
   modelValue?: string
   items: TabItem[]
+  unreadCount?: number
 }
 
 withDefaults(defineProps<Props>(), {
   modelValue: '',
-  items: () => []
+  items: () => [],
+  unreadCount: 0
 })
 
 const emit = defineEmits<{
@@ -58,15 +64,16 @@ function select(name: string) {
 .tab-bar__item {
   flex: 1;
   display: flex;
-  flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: var(--space-1);
+  padding: var(--space-2) var(--space-1);
   background: none;
   border: none;
   cursor: pointer;
   transition: all var(--transition-normal);
   color: var(--text-secondary);
+  position: relative;
+  min-height: var(--tabbar-height);
 }
 
 .tab-bar__item:active {
@@ -78,8 +85,27 @@ function select(name: string) {
   font-weight: var(--font-weight-medium);
 }
 
+.tab-bar__badge {
+  position: absolute;
+  top: 12px;
+  right: 50%;
+  transform: translateX(16px);
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  border-radius: var(--radius-full);
+  background-color: var(--color-error-500);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  font-weight: var(--font-weight-medium);
+  color: var(--text-inverse);
+}
+
 .tab-bar__label {
-  font-size: var(--text-xs);
-  line-height: 1.2;
+  font-size: var(--text-base);
+  font-weight: var(--font-weight-medium);
+  line-height: 1;
 }
 </style>

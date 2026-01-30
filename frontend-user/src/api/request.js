@@ -113,11 +113,12 @@ function handleBusinessError(code, message, config) {
         showToast(message || '请求参数错误', 'error')
         break
       case 401:
-        showToast('登录已过期，请重新登录', 'warning')
+        // 清除本地token
         localStorage.removeItem('token')
-        setTimeout(() => {
-          window.location.href = '/login'
-        }, 1500)
+        // 触发登录确认对话框（给用户选择权）
+        import('@/stores/loginConfirm').then(({ showLoginConfirm }) => {
+          showLoginConfirm()
+        })
         break
       case 403:
         showToast('没有权限执行此操作', 'error')

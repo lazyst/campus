@@ -13,6 +13,15 @@
       >
         {{ statusText }}
       </span>
+      <!-- 收藏按钮（文字版） -->
+      <button 
+        v-if="showCollect"
+        class="collect-btn"
+        :class="{ 'collect-btn--collected': isCollected }"
+        @click.stop="handleCollect"
+      >
+        {{ isCollected ? '已收藏' : '收藏' }}
+      </button>
     </div>
 
     <!-- 商品信息 -->
@@ -52,15 +61,20 @@ interface Props {
   originalPrice?: number;
   tags?: string[];
   status?: 'normal' | 'sold' | 'reserved';
+  showCollect?: boolean;
+  isCollected?: boolean;
 }
 
 const props = withDefaults(defineProps<Props>(), {
   status: 'normal',
   tags: () => [],
+  showCollect: false,
+  isCollected: false,
 });
 
 const emit = defineEmits<{
   click: [id: number | string];
+  toggleCollect: [id: number | string];
 }>();
 
 const statusText = computed(() => {
@@ -82,6 +96,10 @@ function getTagStyle(tag: string) {
 
 function handleClick() {
   emit('click', props.id);
+}
+
+function handleCollect() {
+  emit('toggleCollect', props.id);
 }
 </script>
 
@@ -140,6 +158,31 @@ function handleClick() {
 .product-status.reserved {
   background: #FEF3C7;
   color: #F59E0B;
+}
+
+/* 收藏按钮样式 */
+.collect-btn {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 500;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  background: rgba(255, 255, 255, 0.9);
+  color: #64748B;
+}
+
+.collect-btn:active {
+  transform: scale(0.95);
+}
+
+.collect-btn--collected {
+  background: #EEF2FF;
+  color: #6366F1;
 }
 
 .product-info {

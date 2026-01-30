@@ -31,3 +31,14 @@ export function getMessagesWithUser(userId, params = {}) {
     showLoading: false
   })
 }
+
+/**
+ * 发送消息给特定用户
+ * @param {number} userId - 对方用户ID
+ * @param {Object} data
+ * @param {string} data.content - 消息内容
+ * @returns {Promise<Object>} 发送的消息
+ */
+export function sendMessageToUser(userId, data) {
+  return request.post(`/messages/${userId}`, data)
+}

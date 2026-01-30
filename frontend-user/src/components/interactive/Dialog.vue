@@ -8,7 +8,7 @@
       >
         <div class="dialog" :class="dialogClass">
           <div class="dialog__header">
-            <div class="dialog__icon">
+            <div v-if="showIcon" class="dialog__icon">
               {{ iconText }}
             </div>
             <h3 class="dialog__title">{{ title }}</h3>
@@ -54,6 +54,7 @@ interface Props {
   cancelText?: string
   loading?: boolean
   closeOnClickOverlay?: boolean
+  showIcon?: boolean
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -62,7 +63,8 @@ const props = withDefaults(defineProps<Props>(), {
   confirmText: '确定',
   cancelText: '取消',
   loading: false,
-  closeOnClickOverlay: true
+  closeOnClickOverlay: true,
+  showIcon: false
 })
 
 const emit = defineEmits<{

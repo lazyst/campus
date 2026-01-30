@@ -1,10 +1,10 @@
 <template>
-  <div 
+  <div
     class="main-layout"
     :class="{ 'main-layout--with-top-padding': showTopPadding }"
   >
     <router-view class="main-layout__content" />
-    
+
     <!-- 浮动发布按钮 -->
     <button
       v-if="showFloatingButton"
@@ -13,19 +13,20 @@
     >
       发布
     </button>
-    
+
     <!-- 自定义 TabBar -->
     <TabBar
       v-show="showTabbar"
       :model-value="activeTab"
       :items="tabItems"
+      :unread-count="totalUnreadCount"
       @change="onTabChange"
     />
   </div>
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, inject, ref } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import TabBar from '../components/navigation/TabBar.vue'
 
@@ -36,6 +37,9 @@ interface TabItem {
 
 const router = useRouter()
 const route = useRoute()
+
+// 从 App.vue 注入全局未读数
+const totalUnreadCount = inject<ref<number>>('totalUnreadCount', ref(0))
 
 // Tab bar items configuration
 const tabItems: TabItem[] = [
@@ -48,37 +52,37 @@ const tabItems: TabItem[] = [
 // Route name to tab name mapping
 const routeToTabMap: Record<string, string> = {
   'Forum': 'Forum',
-  'Trade': 'Trade', 
+  'Trade': 'Trade',
   'Messages': 'Messages',
   'MyProfile': 'MyProfile'
 }
 
 // Routes where tabbar should be hidden
 const hiddenTabbarRoutes = [
-  'Login', 
-  'Register', 
-  'Profile', 
-  'ForumDetail', 
-  'TradeDetail', 
-  'TradeCreate', 
-  'ChatDetail', 
-  'ForumCreate', 
-  'ProfileEdit', 
-  'ProfilePosts', 
-  'ProfileItems', 
-  'ProfileCollections', 
+  'Login',
+  'Register',
+  'Profile',
+  'ForumDetail',
+  'TradeDetail',
+  'TradeCreate',
+  'ChatDetail',
+  'ForumCreate',
+  'ProfileEdit',
+  'ProfilePosts',
+  'ProfileItems',
+  'ProfileCollections',
   'ProfileNotifications'
 ]
 
 // Compute active tab based on current route
 const activeTab = computed(() => {
   const routeName = route.name as string || ''
-  
+
   // Direct match
   if (routeToTabMap[routeName]) {
     return routeToTabMap[routeName]
   }
-  
+
   // Match by path prefix
   const path = route.path
   if (path === '/' || path.startsWith('/?')) {
@@ -93,7 +97,7 @@ const activeTab = computed(() => {
   if (path === '/profile') {
     return 'MyProfile'
   }
-  
+
   return 'Forum' // Default
 })
 
@@ -128,7 +132,7 @@ const showTopPadding = computed(() => {
 const showFloatingButton = computed(() => {
   const routeName = route.name as string || ''
   const path = route.path
-  
+
   // Show only on forum and trade pages
   if (routeName === 'Forum' || path === '/' || path.startsWith('/?')) {
     return true
@@ -147,9 +151,9 @@ function onTabChange(name: string) {
     'Messages': '/messages',
     'MyProfile': '/profile'
   }
-  
+
   const targetPath = routeMap[name] || '/'
-  
+
   // Only navigate if target path is different from current path
   if (route.path !== targetPath) {
     router.push(targetPath)
@@ -160,7 +164,7 @@ function onTabChange(name: string) {
 function onCreate() {
   const routeName = route.name as string || ''
   const path = route.path
-  
+
   if (routeName === 'Trade' || path.startsWith('/trade')) {
     router.push('/trade/create')
   } else {
