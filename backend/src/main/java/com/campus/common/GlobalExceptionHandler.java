@@ -69,6 +69,7 @@ public class GlobalExceptionHandler {
     @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
     public Result<Void> handleException(Exception ex) {
         log.error("系统异常", ex);
-        return Result.error(ResultCode.SERVER_ERROR, "系统异常，请稍后重试");
+        // 临时调试：返回实际错误信息
+        return Result.error(ResultCode.SERVER_ERROR, "系统异常: " + ex.getMessage());
     }
 }
