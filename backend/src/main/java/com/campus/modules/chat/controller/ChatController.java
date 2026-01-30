@@ -95,11 +95,31 @@ public class ChatController {
             @PathVariable Long userId,
             @RequestParam(defaultValue = "1") Integer page,
             @RequestParam(defaultValue = "20") Integer size) {
-        
+
         String token = authHeader.replace("Bearer ", "");
         Long currentUserId = authService.getUserIdFromToken(token);
-        
+
         return Result.success(chatService.getMessagesWithUser(currentUserId, userId, page, size));
+    }
+
+    /**
+     * 发送消息给特定用户（REST API）
+     */
+    @PostMapping("/api/messages/{userId}")
+    public Result<?> sendMessageToUser(
+            @RequestHeader("Authorization") String authHeader,
+            @PathVariable Long userId,
+            @RequestBody Map<String, String> request) {
+
+        String token = authHeader.replace("Bearer ", "");
+        Long currentUserId = authService.getUserIdFromToken(token);
+        String content = request.get("content");
+
+        if (content == null || content.trim().isEmpty()) {
+            return Result.error("消息内容不能为空");
+        }
+
+        return Result.success(chatService.saveMessage(currentUserId, userId, content));
     }
 
     /**
@@ -109,11 +129,40 @@ public class ChatController {
     public Result<?> createConversation(
             @RequestHeader("Authorization") String authHeader,
             @RequestBody Map<String, Long> request) {
-        
+
         String token = authHeader.replace("Bearer ", "");
         Long userId = authService.getUserIdFromToken(token);
         Long otherUserId = request.get("userId");
-        
+
         return Result.success(chatService.getOrCreateConversation(userId, otherUserId));
+    }
+
+    /**
+     * 清除与指定用户的未读消息数
+     */
+    @PostMapping("/api/conversations/{userId}/read")
+    public Result<?> clearUnreadCount(
+            @RequestHeader("Authorization") String authHeader,
+            @PathVariable Long userId) {
+
+        String token = authHeader.replace("Bearer ", "");
+        Long currentUserId = authService.getUserIdFromToken(token);
+
+        chatService.clearUnreadCountByUserIds(currentUserId, userId);
+
+        return Result.success(null);
+    }
+
+    /**
+     * 获取用户的总未读消息数
+     */
+    @GetMapping("/api/conversations/unread/count")
+    public Result<?> getTotalUnreadCount(@RequestHeader("Authorization") String authHeader) {
+        String token = authHeader.replace("Bearer ", "");
+        Long userId = authService.getUserIdFromToken(token);
+
+        Integer totalUnread = chatService.getTotalUnreadCount(userId);
+
+        return Result.success(totalUnread);
     }
 }

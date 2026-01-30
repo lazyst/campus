@@ -1,6 +1,7 @@
 package com.campus.modules.forum.controller;
 
 import com.campus.common.Result;
+import com.campus.common.ResultCode;
 import com.campus.modules.auth.service.AuthService;
 import com.campus.modules.forum.service.LikeService;
 import com.campus.modules.forum.service.PostService;
@@ -29,29 +30,53 @@ public class LikeController {
     @Operation(summary = "点赞/取消点赞帖子")
     @PostMapping("/{postId}/like")
     public Result<Boolean> toggleLike(
-            @RequestHeader("Authorization") String authHeader,
+            @RequestHeader(value = "Authorization", required = false) String authHeader,
             @PathVariable Long postId) {
-        String token = authHeader.replace("Bearer ", "");
-        Long userId = authService.getUserIdFromToken(token);
-
-        // Verify post exists
-        if (postService.getById(postId) == null) {
-            return Result.error("帖子不存在");
+        // 处理未登录或token为空的情况
+        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+            return Result.error("请先登录后再点赞");
         }
+        
+        try {
+            String token = authHeader.replace("Bearer ", "");
+            Long userId = authService.getUserIdFromToken(token);
+            
+            if (userId == null) {
+                // Token无效或用户不存在
+                return Result.error(ResultCode.UNAUTHORIZED, "登录已过期，请重新登录");
+            }
 
-        boolean isLiked = likeService.toggleLike(userId, postId);
-        return Result.success(isLiked);
+            // Verify post exists
+            if (postService.getById(postId) == null) {
+                return Result.error("帖子不存在");
+            }
+
+            boolean isLiked = likeService.toggleLike(userId, postId);
+            return Result.success(isLiked);
+        } catch (Exception e) {
+            // Token无效时返回未授权错误
+            return Result.error(ResultCode.UNAUTHORIZED, "登录已过期，请重新登录");
+        }
     }
 
     @Operation(summary = "检查用户是否已点赞帖子")
     @GetMapping("/{postId}/like/check")
     public Result<Boolean> checkLiked(
-            @RequestHeader("Authorization") String authHeader,
+            @RequestHeader(value = "Authorization", required = false) String authHeader,
             @PathVariable Long postId) {
-        String token = authHeader.replace("Bearer ", "");
-        Long userId = authService.getUserIdFromToken(token);
+        // 处理未登录或token为空的情况
+        if (authHeader == null || authHeader.isEmpty() || !authHeader.startsWith("Bearer ")) {
+            return Result.success(false);
+        }
 
-        boolean hasLiked = likeService.hasLiked(userId, postId);
-        return Result.success(hasLiked);
+        try {
+            String token = authHeader.replace("Bearer ", "");
+            Long userId = authService.getUserIdFromToken(token);
+            boolean hasLiked = likeService.hasLiked(userId, postId);
+            return Result.success(hasLiked);
+        } catch (Exception e) {
+            // Token无效时返回未点赞状态
+            return Result.success(false);
+        }
     }
 }

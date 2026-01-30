@@ -2,7 +2,10 @@ package com.campus.modules.forum.controller;
 
 import com.campus.common.Result;
 import com.campus.modules.auth.service.AuthService;
+import com.campus.modules.forum.entity.Notification;
 import com.campus.modules.forum.service.NotificationService;
+import com.campus.modules.user.entity.User;
+import com.campus.modules.user.service.UserService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.web.bind.annotation.*;
@@ -21,20 +24,34 @@ public class NotificationController {
 
     private final NotificationService notificationService;
     private final AuthService authService;
+    private final UserService userService;
 
-    public NotificationController(NotificationService notificationService, AuthService authService) {
+    public NotificationController(NotificationService notificationService, AuthService authService, UserService userService) {
         this.notificationService = notificationService;
         this.authService = authService;
+        this.userService = userService;
     }
 
     @Operation(summary = "获取通知列表")
     @GetMapping
-    public Result<List<com.campus.modules.forum.entity.Notification>> getNotifications(
+    public Result<List<Notification>> getNotifications(
             @RequestHeader("Authorization") String authHeader) {
         String token = authHeader.replace("Bearer ", "");
         Long userId = authService.getUserIdFromToken(token);
 
-        List<com.campus.modules.forum.entity.Notification> notifications = notificationService.getByUserId(userId);
+        List<Notification> notifications = notificationService.getByUserId(userId);
+
+        // 填充触发用户的昵称和头像
+        for (Notification notification : notifications) {
+            if (notification.getFromUserId() != null) {
+                User fromUser = userService.getById(notification.getFromUserId());
+                if (fromUser != null) {
+                    notification.setFromUserNickname(fromUser.getNickname());
+                    notification.setFromUserAvatar(fromUser.getAvatar());
+                }
+            }
+        }
+
         return Result.success(notifications);
     }
 

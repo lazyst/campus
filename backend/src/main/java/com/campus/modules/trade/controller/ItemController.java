@@ -5,12 +5,19 @@ import com.campus.common.Result;
 import com.campus.modules.auth.service.AuthService;
 import com.campus.modules.trade.entity.Item;
 import com.campus.modules.trade.service.ItemService;
+import com.campus.modules.chat.websocket.ChatService;
+import com.campus.modules.user.entity.User;
+import com.campus.modules.user.service.UserService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.web.bind.annotation.*;
 
 import java.math.BigDecimal;
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * 物品控制器
@@ -22,10 +29,14 @@ public class ItemController {
 
     private final ItemService itemService;
     private final AuthService authService;
+    private final UserService userService;
+    private final ChatService chatService;
 
-    public ItemController(ItemService itemService, AuthService authService) {
+    public ItemController(ItemService itemService, AuthService authService, UserService userService, ChatService chatService) {
         this.itemService = itemService;
         this.authService = authService;
+        this.userService = userService;
+        this.chatService = chatService;
     }
 
     @Operation(summary = "发布物品")
@@ -39,10 +50,12 @@ public class ItemController {
         Item item = new Item();
         item.setUserId(userId);
         item.setType(request.getType());
+        item.setCategory(request.getCategory());
         item.setTitle(request.getTitle());
         item.setDescription(request.getDescription());
         item.setPrice(request.getPrice());
         item.setImages(request.getImages());
+        item.setLocation(request.getLocation());
         item.setStatus(1);  // 默认正常状态
         item.setViewCount(0);
         item.setContactCount(0);
@@ -76,6 +89,10 @@ public class ItemController {
         wrapper.orderByDesc(Item::getCreatedAt);
         
         Page<Item> result = itemService.page(pageParam, wrapper);
+        
+        // 填充用户信息
+        enrichItemsWithUserInfo(result.getRecords());
+        
         return Result.success(result);
     }
 
@@ -86,6 +103,10 @@ public class ItemController {
         if (item == null) {
             return Result.error("物品不存在");
         }
+        
+        // 填充用户信息
+        enrichItemsWithUserInfo(Collections.singletonList(item));
+        
         return Result.success(item);
     }
 
@@ -96,6 +117,10 @@ public class ItemController {
         Long userId = authService.getUserIdFromToken(token);
 
         List<Item> items = itemService.getByUserId(userId);
+        
+        // 填充用户信息
+        enrichItemsWithUserInfo(items);
+        
         return Result.success(items);
     }
 
@@ -229,7 +254,7 @@ public class ItemController {
 
     @Operation(summary = "联系物品发布者")
     @PostMapping("/{itemId}/contact")
-    public Result<Void> contact(
+    public Result<Map<String, Object>> contact(
             @RequestHeader("Authorization") String authHeader,
             @PathVariable Long itemId) {
         String token = authHeader.replace("Bearer ", "");
@@ -245,8 +270,20 @@ public class ItemController {
             return Result.error("不能联系自己");
         }
 
+        Long sellerId = item.getUserId();
+        
+        // 创建或获取会话
+        chatService.getOrCreateConversation(userId, sellerId);
+        
+        // 增加联系次数
         itemService.incrementContactCount(itemId);
-        return Result.success();
+        
+        // 返回卖家用户ID（简化返回格式）
+        Map<String, Object> result = new java.util.HashMap<>();
+        result.put("sellerId", sellerId);
+        result.put("sellerName", "用户" + sellerId);
+        
+        return Result.success(result);
     }
 
     /**
@@ -254,10 +291,12 @@ public class ItemController {
      */
     public static class ItemCreateRequest {
         private Integer type;
+        private String category;
         private String title;
         private String description;
         private BigDecimal price;
         private String images;
+        private String location;
 
         public Integer getType() {
             return type;
@@ -265,6 +304,14 @@ public class ItemController {
 
         public void setType(Integer type) {
             this.type = type;
+        }
+
+        public String getCategory() {
+            return category;
+        }
+
+        public void setCategory(String category) {
+            this.category = category;
         }
 
         public String getTitle() {
@@ -297,6 +344,14 @@ public class ItemController {
 
         public void setImages(String images) {
             this.images = images;
+        }
+
+        public String getLocation() {
+            return location;
+        }
+
+        public void setLocation(String location) {
+            this.location = location;
         }
     }
 
@@ -337,8 +392,52 @@ public class ItemController {
             return images;
         }
 
-        public void setImages(String images) {
+    public void setImages(String images) {
             this.images = images;
+        }
+    }
+
+    /**
+     * 填充物品的用户信息（昵称和头像）
+     */
+    private void enrichItemsWithUserInfo(List<Item> items) {
+        if (items == null || items.isEmpty()) {
+            return;
+        }
+
+        // 收集所有userId
+        Set<Long> userIds = items.stream()
+                .map(Item::getUserId)
+                .filter(id -> id != null)
+                .collect(Collectors.toSet());
+
+        if (userIds.isEmpty()) {
+            return;
+        }
+
+        // 批量查询用户信息
+        List<User> users = userService.listByIds(userIds);
+        Map<Long, User> userMap = users.stream()
+                .collect(Collectors.toMap(User::getId, user -> user));
+
+        // 填充到每个物品
+        for (Item item : items) {
+            if (item.getUserId() != null) {
+                User user = userMap.get(item.getUserId());
+                if (user != null) {
+                    item.setUserNickname(user.getNickname());
+                    item.setUserAvatar(user.getAvatar());
+                    // 兼容前端字段名
+                    item.setSellerName(user.getNickname());
+                    item.setSellerAvatar(user.getAvatar());
+                } else {
+                    item.setUserNickname("匿名用户");
+                    item.setSellerName("匿名用户");
+                }
+            } else {
+                item.setUserNickname("匿名用户");
+                item.setSellerName("匿名用户");
+            }
         }
     }
 }

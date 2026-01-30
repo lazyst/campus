@@ -9,10 +9,18 @@ import com.campus.modules.forum.dto.PostUpdateRequest;
 import com.campus.modules.forum.entity.Post;
 import com.campus.modules.forum.service.BoardService;
 import com.campus.modules.forum.service.PostService;
+import com.campus.modules.user.entity.User;
+import com.campus.modules.user.service.UserService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * 帖子控制器
@@ -25,11 +33,13 @@ public class PostController {
     private final PostService postService;
     private final BoardService boardService;
     private final AuthService authService;
+    private final UserService userService;
 
-    public PostController(PostService postService, BoardService boardService, AuthService authService) {
+    public PostController(PostService postService, BoardService boardService, AuthService authService, UserService userService) {
         this.postService = postService;
         this.boardService = boardService;
         this.authService = authService;
+        this.userService = userService;
     }
 
     @Operation(summary = "分页获取帖子列表")
@@ -44,6 +54,10 @@ public class PostController {
                .eq(boardId != null, Post::getBoardId, boardId)
                .orderByDesc(Post::getCreatedAt);
         postService.page(postPage, wrapper);
+
+        // 填充用户信息
+        enrichPostsWithUserInfo(postPage.getRecords());
+
         return Result.success(postPage);
     }
 
@@ -56,6 +70,10 @@ public class PostController {
         }
         // Increment view count
         postService.incrementViewCount(id);
+
+        // 填充用户信息
+        enrichPostsWithUserInfo(Collections.singletonList(post));
+
         return Result.success(post);
     }
 
@@ -85,6 +103,10 @@ public class PostController {
         post.setStatus(1);
 
         postService.save(post);
+
+        // 填充用户信息
+        enrichPostsWithUserInfo(Collections.singletonList(post));
+
         return Result.success(post);
     }
 
@@ -163,6 +185,49 @@ public class PostController {
                .eq(Post::getStatus, 1)
                .orderByDesc(Post::getCreatedAt);
         postService.page(postPage, wrapper);
+
+        // 填充用户信息
+        enrichPostsWithUserInfo(postPage.getRecords());
+
         return Result.success(postPage);
+    }
+
+    /**
+     * 填充帖子的用户信息（昵称和头像）
+     */
+    private void enrichPostsWithUserInfo(List<Post> posts) {
+        if (posts == null || posts.isEmpty()) {
+            return;
+        }
+
+        // 收集所有userId
+        Set<Long> userIds = posts.stream()
+                .map(Post::getUserId)
+                .filter(id -> id != null)
+                .collect(Collectors.toSet());
+
+        if (userIds.isEmpty()) {
+            return;
+        }
+
+        // 批量查询用户信息
+        List<User> users = userService.listByIds(userIds);
+        Map<Long, User> userMap = users.stream()
+                .collect(Collectors.toMap(User::getId, user -> user));
+
+        // 填充到每个帖子
+        for (Post post : posts) {
+            if (post.getUserId() != null) {
+                User user = userMap.get(post.getUserId());
+                if (user != null) {
+                    post.setUserNickname(user.getNickname());
+                    post.setUserAvatar(user.getAvatar());
+                } else {
+                    post.setUserNickname("匿名用户");
+                }
+            } else {
+                post.setUserNickname("匿名用户");
+            }
+        }
     }
 }
