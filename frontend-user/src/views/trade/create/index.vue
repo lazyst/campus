@@ -26,6 +26,27 @@
         />
       </div>
 
+      <!-- 闲置类型 -->
+      <div class="create-form-group">
+        <label class="create-form-label">闲置类型</label>
+        <div class="create-type-options">
+          <button
+            class="create-type-btn"
+            :class="{ 'create-type-btn--active': itemType === 2 }"
+            @click="itemType = 2"
+          >
+            出售
+          </button>
+          <button
+            class="create-type-btn"
+            :class="{ 'create-type-btn--active': itemType === 1 }"
+            @click="itemType = 1"
+          >
+            求购
+          </button>
+        </div>
+      </div>
+
       <!-- 价格 -->
       <div class="create-form-group">
         <label class="create-form-label">价格</label>
@@ -46,11 +67,16 @@
       <!-- 分类 -->
       <div class="create-form-group">
         <label class="create-form-label">分类</label>
-        <div class="create-selector" @click="showCategoryPicker = true">
-          <span :class="{ 'create-selector-placeholder': !category }">
-            {{ category || '请选择' }}
-          </span>
-          <span class="create-selector-arrow">›</span>
+        <div class="create-category-options">
+          <button
+            v-for="cat in categories"
+            :key="cat"
+            class="create-category-btn"
+            :class="{ 'create-category-btn--active': category === cat }"
+            @click="category = cat"
+          >
+            {{ cat }}
+          </button>
         </div>
       </div>
 
@@ -141,27 +167,6 @@
       </div>
     </div>
 
-      <!-- 分类选择器 -->
-      <div v-if="showCategoryPicker" class="create-picker-overlay" @click.self="showCategoryPicker = false">
-        <div class="create-picker-content">
-          <div class="create-picker-header">
-            <span class="create-picker-cancel" @click="showCategoryPicker = false">取消</span>
-            <span class="create-picker-title">选择分类</span>
-            <span class="create-picker-confirm" @click="confirmCategory">确定</span>
-          </div>
-          <div class="create-picker-list">
-            <div 
-              v-for="(cat, index) in categories" 
-              :key="cat"
-              class="create-picker-item"
-              :class="{ 'create-picker-item--active': category === cat }"
-              @click="selectCategory(cat)"
-            >
-              {{ cat }}
-            </div>
-          </div>
-        </div>
-      </div>
   </div>
 </template>
 
@@ -176,7 +181,6 @@ const router = useRouter();
 const fileInput = ref<HTMLInputElement | null>(null);
 
 const isPublishing = ref(false);
-const showCategoryPicker = ref(false);
 const previewImages = ref<string[]>([]);
 const uploadedImages = ref<string[]>([]);
 
@@ -185,6 +189,7 @@ const conditions = ['全新', '99新', '95新', '9成新', '8成新'];
 
 // 使用独立的 ref 变量确保响应式更新正确工作
 const title = ref('');
+const itemType = ref(2); // 1=求购, 2=出售
 const price = ref('');
 const originalPrice = ref('');
 const category = ref('');
@@ -228,11 +233,6 @@ const isFormValid = computed(() => {
 
 function goBack() {
   router.back();
-}
-
-function selectCategory(cat: string) {
-  category.value = cat;
-  showCategoryPicker.value = false;
 }
 
 function triggerFileInput() {
@@ -289,7 +289,7 @@ async function publish() {
       title: title.value,
       description: description.value,
       price: parseFloat(price.value),
-      type: 2,  // 出售
+      type: itemType.value,
       category: category.value,
       images: JSON.stringify(uploadedImages.value),
       location: location.value
@@ -466,6 +466,60 @@ async function publish() {
 }
 
 .create-condition-btn--active {
+  background-color: var(--color-primary-700);
+  color: var(--text-inverse);
+}
+
+.create-category-options {
+  display: flex;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+}
+
+.create-category-btn {
+  padding: var(--space-2) var(--space-3);
+  font-size: var(--text-sm);
+  border: none;
+  border-radius: var(--radius-full);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  background-color: var(--bg-tertiary);
+  color: var(--text-secondary);
+}
+
+.create-category-btn:active {
+  background-color: var(--color-primary-100);
+}
+
+.create-category-btn--active {
+  background-color: var(--color-primary-700);
+  color: var(--text-inverse);
+}
+
+.create-type-options {
+  display: flex;
+  gap: var(--space-3);
+}
+
+.create-type-btn {
+  flex: 1;
+  padding: var(--space-2) var(--space-3);
+  font-size: var(--text-sm);
+  font-weight: var(--font-weight-medium);
+  border: 2px solid var(--border-light);
+  border-radius: var(--radius-lg);
+  background-color: transparent;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.create-type-btn:active {
+  background-color: var(--bg-secondary);
+}
+
+.create-type-btn--active {
+  border-color: var(--color-primary-700);
   background-color: var(--color-primary-700);
   color: var(--text-inverse);
 }
