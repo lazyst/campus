@@ -8,7 +8,7 @@
         </div>
       </template>
 
-      <el-table :data="boardList" v-loading="loading" stripe>
+      <el-table :data="boardList" v-loading="loading" stripe style="width: 100%">
         <el-table-column prop="id" label="ID" width="80" />
         <el-table-column prop="name" label="板块名称" width="150" />
         <el-table-column prop="description" label="描述" min-width="200" show-overflow-tooltip />
@@ -21,7 +21,7 @@
           </template>
         </el-table-column>
         <el-table-column prop="createdAt" label="创建时间" width="180" />
-        <el-table-column label="操作" width="200" fixed="right">
+        <el-table-column label="操作" width="200">
           <template #default="{ row }">
             <el-button type="primary" size="small" @click="handleEdit(row)">编辑</el-button>
             <el-button type="danger" size="small" @click="handleDelete(row)">删除</el-button>
@@ -175,6 +175,223 @@ onMounted(() => {
     margin-top: 20px;
     display: flex;
     justify-content: flex-end;
+  }
+
+  :deep(.el-card) {
+    background: #FFFFFF;
+    border: 1px solid #E5E7EB;
+    border-radius: 12px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  }
+
+  :deep(.el-card__header) {
+    padding: 16px 20px;
+    border-bottom: 1px solid #F3F4F6;
+    background: #FAFAFA;
+    color: #374151;
+    font-size: 15px;
+    font-weight: 500;
+  }
+
+  :deep(.el-card__body) {
+    padding: 20px;
+  }
+
+  :deep(.el-table) {
+    background: transparent;
+
+    &::before {
+      display: none;
+    }
+
+    tr {
+      background: transparent;
+    }
+
+    th.el-table__cell {
+      background: #F9FAFB;
+      color: #374151;
+      font-weight: 600;
+      border-bottom: 1px solid #E5E7EB;
+    }
+
+    td.el-table__cell {
+      border-bottom: 1px solid #F3F4F6;
+      color: #374151;
+    }
+
+    .el-table__row:hover > td.el-table__cell {
+      background: #F3F4F6 !important;
+    }
+
+    .el-table__row:nth-child(even) > td.el-table__cell {
+      background: #FAFAFA;
+    }
+  }
+
+  :deep(.el-button--primary) {
+    background: #1E3A8A;
+    border: none;
+    border-radius: 8px;
+    font-weight: 500;
+
+    &:hover {
+      background: #1E40AF;
+    }
+  }
+
+  :deep(.el-button--danger) {
+    background: #FEE2E2;
+    border: 1px solid #FECACA;
+    color: #991B1B;
+    border-radius: 6px;
+
+    &:hover {
+      background: #FECACA;
+    }
+  }
+
+  :deep(.el-tag) {
+    border-radius: 6px;
+    border: none;
+    font-weight: 500;
+  }
+
+  :deep(.el-tag--success) {
+    background: #DCFCE7;
+    color: #166534;
+  }
+
+  :deep(.el-tag--danger) {
+    background: #FEE2E2;
+    color: #991B1B;
+  }
+
+  :deep(.el-pagination) {
+    color: #6B7280;
+
+    .el-pager li {
+      background: #FFFFFF;
+      border: 1px solid #E5E7EB;
+      color: #374151;
+      border-radius: 6px;
+      margin: 0 2px;
+
+      &:hover {
+        color: #1E3A8A;
+        border-color: #1E3A8A;
+      }
+
+      &.is-active {
+        background: #1E3A8A;
+        border-color: #1E3A8A;
+        color: #FFFFFF;
+      }
+    }
+
+    .btn-prev,
+    .btn-next {
+      background: #FFFFFF;
+      border: 1px solid #E5E7EB;
+      color: #374151;
+      border-radius: 6px;
+
+      &:hover {
+        color: #1E3A8A;
+        border-color: #1E3A8A;
+      }
+    }
+  }
+
+  :deep(.el-dialog) {
+    border-radius: 16px;
+    background: #FFFFFF;
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+
+    .el-dialog__header {
+      padding: 20px 24px;
+      border-bottom: 1px solid #E5E7EB;
+    }
+
+    .el-dialog__title {
+      color: #111827;
+      font-weight: 600;
+    }
+
+    .el-dialog__body {
+      padding: 24px;
+      color: #374151;
+    }
+
+    .el-dialog__footer {
+      padding: 16px 24px;
+      border-top: 1px solid #E5E7EB;
+    }
+  }
+
+  :deep(.el-form-item__label) {
+    color: #374151;
+    font-weight: 500;
+  }
+
+  :deep(.el-input__wrapper) {
+    background: #FFFFFF !important;
+    border: 1px solid #D1D5DB !important;
+    box-shadow: none !important;
+    border-radius: 8px;
+
+    &:hover {
+      border-color: #9CA3AF !important;
+    }
+
+    &.is-focus {
+      border-color: #1E3A8A !important;
+      box-shadow: 0 0 0 3px rgba(30, 58, 138, 0.1) !important;
+    }
+  }
+
+  :deep(.el-input__inner) {
+    color: #111827 !important;
+
+    &::placeholder {
+      color: #9CA3AF !important;
+    }
+  }
+
+  :deep(.el-textarea__inner) {
+    background: #FFFFFF !important;
+    border: 1px solid #D1D5DB !important;
+    color: #111827 !important;
+    border-radius: 8px;
+
+    &::placeholder {
+      color: #9CA3AF !important;
+    }
+  }
+
+  :deep(.el-input-number) {
+    .el-input-number__decrease,
+    .el-input-number__increase {
+      background: #F9FAFB;
+      border: 1px solid #E5E7EB;
+      color: #6B7280;
+
+      &:hover {
+        color: #1E3A8A;
+      }
+    }
+  }
+
+  :deep(.el-button--default) {
+    background: #FFFFFF;
+    border: 1px solid #D1D5DB;
+    color: #374151;
+    border-radius: 8px;
+
+    &:hover {
+      background: #F9FAFB;
+      border-color: #9CA3AF;
+    }
   }
 }
 </style>

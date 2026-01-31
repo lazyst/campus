@@ -5,7 +5,7 @@
         <el-card shadow="hover" class="stat-card">
           <template #header>
             <div class="stat-header">
-              <el-icon :size="24" color="#409EFF"><User /></el-icon>
+              <span class="stat-icon" style="color: #1E3A8A;">用</span>
               <span>用户总数</span>
             </div>
           </template>
@@ -20,7 +20,7 @@
         <el-card shadow="hover" class="stat-card">
           <template #header>
             <div class="stat-header">
-              <el-icon :size="24" color="#67C23A"><Document /></el-icon>
+              <span class="stat-icon" style="color: #16A34A;">帖</span>
               <span>帖子总数</span>
             </div>
           </template>
@@ -35,7 +35,7 @@
         <el-card shadow="hover" class="stat-card">
           <template #header>
             <div class="stat-header">
-              <el-icon :size="24" color="#E6A23C"><ShoppingCart /></el-icon>
+              <span class="stat-icon" style="color: #D97706;">物</span>
               <span>闲置物品</span>
             </div>
           </template>
@@ -50,7 +50,7 @@
         <el-card shadow="hover" class="stat-card">
           <template #header>
             <div class="stat-header">
-              <el-icon :size="24" color="#909399"><Grid /></el-icon>
+              <span class="stat-icon" style="color: #4B5563;">板</span>
               <span>板块数量</span>
             </div>
           </template>
@@ -94,33 +94,63 @@ onMounted(async () => {
 }
 
 .stat-card {
+  background: #FFFFFF;
+  border: 1px solid #E5E7EB;
+  border-radius: 12px;
+  transition: all 0.3s;
+
   :deep(.el-card__header) {
-    padding: 15px 20px;
+    padding: 16px 20px;
+    border-bottom: 1px solid #F3F4F6;
+    background: #FAFAFA;
+  }
+
+  :deep(.el-card__body) {
+    padding: 20px;
+  }
+
+  &:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 12px 24px rgba(0, 0, 0, 0.08);
+    border-color: #D1D5DB;
   }
 }
 
 .stat-header {
   display: flex;
   align-items: center;
-  gap: 10px;
-  font-size: 16px;
+  gap: 12px;
+  font-size: 15px;
   font-weight: 500;
+  color: #374151;
+}
+
+.stat-icon {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #F3F4F6;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
 }
 
 .stat-value {
   font-size: 36px;
   font-weight: bold;
-  color: #303133;
+  color: #111827;
   text-align: center;
-  padding: 20px 0;
+  padding: 16px 0;
 }
 
 .stat-footer {
   display: flex;
   justify-content: space-around;
-  font-size: 14px;
-  color: #909399;
-  padding-top: 10px;
-  border-top: 1px solid #ebeef5;
+  font-size: 13px;
+  color: #6B7280;
+  padding-top: 12px;
+  border-top: 1px solid #F3F4F6;
 }
 </style>
