@@ -26,7 +26,7 @@
     <template v-else-if="post">
       <div class="detail-content">
         <!-- 作者信息 -->
-        <div class="detail-author-section">
+        <div class="detail-author-section" @click="goToUserProfile">
           <div class="detail-author-avatar">
             <img v-if="post.userAvatar" :src="getImageUrl(post.userAvatar)" alt="头像" />
             <span v-else>{{ post.userNickname?.charAt(0) || '匿名' }}</span>
@@ -58,24 +58,33 @@
 
         <!-- 互动操作 -->
         <div class="detail-post-actions">
-          <button 
-            class="detail-action-item" 
+          <button
+            class="detail-action-item"
             :class="{ 'detail-action-item--active': isLiked }"
             @click="handleLike"
           >
-            <span class="detail-action-label">{{ isLiked ? '已赞' : '点赞' }}</span>
+            <!-- 点赞图标 - 大拇指 -->
+            <svg class="detail-action-icon" viewBox="0 0 24 24" :fill="isLiked ? 'currentColor' : 'none'" :stroke="isLiked ? 'currentColor' : 'currentColor'" stroke-width="2">
+              <path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3zM7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3" />
+            </svg>
             <span class="detail-action-count">{{ post.likeCount || 0 }}</span>
           </button>
           <button class="detail-action-item" @click="focusComment">
-            <span class="detail-action-label">评论</span>
+            <!-- 评论图标 - 气泡 -->
+            <svg class="detail-action-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z" />
+            </svg>
             <span class="detail-action-count">{{ comments.length }}</span>
           </button>
-          <button 
-            class="detail-action-item" 
-            :class="{ 'detail-action-item--active': isCollected }"
+          <button
+            class="detail-action-item"
+            :class="{ 'detail-action-item--collected': isCollected }"
             @click="handleCollect"
           >
-            <span class="detail-action-label">{{ isCollected ? '已收藏' : '收藏' }}</span>
+            <!-- 收藏图标 - 星星 -->
+            <svg class="detail-action-icon" viewBox="0 0 24 24" :fill="isCollected ? 'currentColor' : 'none'" :stroke="isCollected ? 'currentColor' : 'currentColor'" stroke-width="2">
+              <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+            </svg>
             <span class="detail-action-count">{{ post.collectCount || 0 }}</span>
           </button>
         </div>
@@ -205,6 +214,7 @@ const commentsLoading = ref(false);
 const showLoginDialog = ref(false);
 const showImagePreview = ref(false);
 const previewImageIndex = ref(0);
+const isCollecting = ref(false); // 防止重复点击
 
 // 记录需要登录的操作，用于对话框确认后执行
 let pendingAction: (() => void) | null = null;
@@ -340,6 +350,13 @@ function goBack() {
   router.back();
 }
 
+// 跳转到用户主页
+function goToUserProfile() {
+  if (post.value?.userId) {
+    router.push(`/profile/user/${post.value.userId}`);
+  }
+}
+
 // 处理点赞
 async function handleLike() {
   if (checkLogin(() => handleLike())) {
@@ -364,22 +381,37 @@ async function handleLike() {
 
   // 处理收藏
   async function handleCollect() {
+    // 防止重复点击
+    if (isCollecting.value) return;
+
     if (checkLogin(() => handleCollect())) {
+      isCollecting.value = true;
+
       // 乐观更新
       const previousCollected = isCollected.value;
       const previousCount = post.value?.collectCount || 0;
       isCollected.value = !isCollected.value;
       post.value.collectCount = isCollected.value ? previousCount + 1 : Math.max(0, previousCount - 1);
-      
+
       try {
         await toggleCollectPost(postId);
         // 重新获取帖子数据以同步收藏数
         await fetchPost();
-      } catch (error) {
+      } catch (error: any) {
         console.error('收藏失败:', error);
         // 回滚
         isCollected.value = previousCollected;
         post.value.collectCount = previousCount;
+
+        // 如果是401错误，说明未登录或token无效
+        if (error.message?.includes('登录已过期') || error.message?.includes('请先登录')) {
+          // token可能在其他地方被清除了，需要检查并重新引导登录
+          if (!userStore.token) {
+            showLoginDialog.value = true;
+          }
+        }
+      } finally {
+        isCollecting.value = false;
       }
     }
   }
@@ -575,7 +607,8 @@ const toggleCollect = handleCollect;
 
 .detail-post-actions {
   display: flex;
-  gap: var(--space-4);
+  justify-content: flex-end;
+  gap: var(--space-3);
   padding-top: var(--space-4);
   border-top: 1px solid var(--border-light);
 }
@@ -584,7 +617,7 @@ const toggleCollect = handleCollect;
   display: flex;
   align-items: center;
   gap: var(--space-2);
-  padding: var(--space-2) var(--space-3);
+  padding: var(--space-2) var(--space-4);
   background: none;
   border: none;
   border-radius: var(--radius-full);
@@ -597,12 +630,27 @@ const toggleCollect = handleCollect;
   background-color: var(--bg-secondary);
 }
 
+.detail-action-icon {
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+}
+
 .detail-action-item--active {
   color: var(--color-error-500);
 }
 
-.detail-action-label {
-  font-size: var(--text-sm);
+.detail-action-item--active .detail-action-icon {
+  fill: var(--color-error-500);
+}
+
+.detail-action-item--collected {
+  color: #F59E0B;
+}
+
+.detail-action-item--collected .detail-action-icon {
+  fill: #F59E0B;
+  stroke: #F59E0B;
 }
 
 .detail-action-count {
