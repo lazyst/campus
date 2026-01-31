@@ -87,12 +87,34 @@ public class UserController {
         if (user == null) {
             return Result.error("用户不存在");
         }
-        // 只返回公开信息
+        // 只返回公开信息（包含bio和gender）
         User publicUser = new User();
         publicUser.setId(user.getId());
         publicUser.setNickname(user.getNickname());
         publicUser.setAvatar(user.getAvatar());
+        publicUser.setGender(user.getGender());
+        publicUser.setBio(user.getBio());
         return Result.success(publicUser);
+    }
+
+    @Operation(summary = "获取用户详细信息（包含个人简介）")
+    @GetMapping("/profile/{userId}")
+    public Result<User> getUserDetailInfo(@PathVariable Long userId) {
+        User user = userService.getById(userId);
+        if (user == null) {
+            return Result.error("用户不存在");
+        }
+        // 返回完整用户信息（敏感信息除外）
+        User detailUser = new User();
+        detailUser.setId(user.getId());
+        detailUser.setNickname(user.getNickname());
+        detailUser.setAvatar(user.getAvatar());
+        detailUser.setGender(user.getGender());
+        detailUser.setBio(user.getBio());
+        detailUser.setGrade(user.getGrade());
+        detailUser.setMajor(user.getMajor());
+        detailUser.setCreatedAt(user.getCreatedAt());
+        return Result.success(detailUser);
     }
 
     @Operation(summary = "上传头像")

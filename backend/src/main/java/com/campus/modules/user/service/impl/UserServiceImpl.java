@@ -18,7 +18,10 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
 
     @Override
     public User getByPhone(String phone) {
-        return baseMapper.selectOne(new LambdaQueryWrapper<User>().eq(User::getPhone, phone));
+        System.out.println("=== UserServiceImpl.getByPhone === phone: " + phone);
+        User user = baseMapper.selectOne(new LambdaQueryWrapper<User>().eq(User::getPhone, phone));
+        System.out.println("=== UserServiceImpl.getByPhone === result: " + (user == null ? "null" : "id=" + user.getId() + ", status=" + user.getStatus()));
+        return user;
     }
 
     @Override

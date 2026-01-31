@@ -32,6 +32,15 @@ export function getUserPublicInfo(userId) {
 }
 
 /**
+ * 获取用户详细信息（包含个人简介）
+ * @param {number} userId - 用户ID
+ * @returns {Promise<Object>} 用户详细信息
+ */
+export function getUserDetailInfo(userId) {
+  return request.get(`/user/profile/${userId}`)
+}
+
+/**
  * 上传头像
  * @param {File} file - 头像文件
  * @returns {Promise<string>} 头像URL
