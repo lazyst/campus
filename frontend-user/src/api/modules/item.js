@@ -35,6 +35,15 @@ export function getMyItems(params = {}) {
 }
 
 /**
+ * 按用户ID获取物品
+ * @param {number} userId - 用户ID
+ * @returns {Promise<Array>} 物品列表
+ */
+export function getItemsByUserId(userId) {
+  return request.get(`/items/user/${userId}`, { showLoading: false })
+}
+
+/**
  * 发布物品
  * @param {Object} data - 物品数据
  * @param {number} data.type - 类型（1=求购，2=出售）

@@ -35,6 +35,18 @@ export function getMyPosts(params = {}) {
 }
 
 /**
+ * 按用户ID获取帖子
+ * @param {number} userId - 用户ID
+ * @param {Object} params
+ * @param {number} [params.page=1]
+ * @param {number} [params.size=10]
+ * @returns {Promise<{records: Array, total: number}>}
+ */
+export function getPostsByUserId(userId, params = {}) {
+  return request.get(`/posts/user/${userId}`, { params, showLoading: false })
+}
+
+/**
  * 发布帖子
  * @param {Object} data - 帖子数据
  * @param {number} data.boardId - 板块ID
@@ -78,7 +90,10 @@ export function deletePost(id) {
  * @returns {Promise<Object>} { isLiked: boolean, likeCount: number }
  */
 export function toggleLikePost(id) {
-  return request.post(`/posts/${id}/like`)
+  return request.post(`/posts/${id}/like`, null, {
+    showSuccess: false,
+    showError: false
+  })
 }
 
 /**
@@ -96,7 +111,10 @@ export function checkPostLiked(id) {
  * @returns {Promise<boolean>} true=收藏成功, false=取消收藏成功
  */
 export function toggleCollectPost(id) {
-  return request.post(`/posts/${id}/collect`)
+  return request.post(`/posts/${id}/collect`, null, {
+    showSuccess: false,
+    showError: false
+  })
 }
 
 /**

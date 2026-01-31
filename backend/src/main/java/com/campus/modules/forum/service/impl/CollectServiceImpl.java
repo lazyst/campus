@@ -3,9 +3,11 @@ package com.campus.modules.forum.service.impl;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.campus.modules.forum.entity.Collect;
+import com.campus.modules.forum.entity.CollectSimple;
 import com.campus.modules.forum.entity.Notification;
 import com.campus.modules.forum.entity.Post;
 import com.campus.modules.forum.mapper.CollectMapper;
+import com.campus.modules.forum.mapper.CollectSimpleMapper;
 import com.campus.modules.forum.service.CollectService;
 import com.campus.modules.forum.service.NotificationService;
 import com.campus.modules.forum.service.PostService;
@@ -24,34 +26,39 @@ public class CollectServiceImpl extends ServiceImpl<CollectMapper, Collect> impl
 
     private final PostService postService;
     private final NotificationService notificationService;
+    private final CollectSimpleMapper collectSimpleMapper;
 
-    public CollectServiceImpl(PostService postService, NotificationService notificationService) {
+    public CollectServiceImpl(PostService postService, NotificationService notificationService, CollectSimpleMapper collectSimpleMapper) {
         this.postService = postService;
         this.notificationService = notificationService;
+        this.collectSimpleMapper = collectSimpleMapper;
     }
 
     @Override
     public boolean hasCollected(Long userId, Long postId) {
-        // collect 表没有 deleted 字段，直接查询
-        LambdaQueryWrapper<Collect> wrapper = new LambdaQueryWrapper<>();
-        wrapper.eq(Collect::getUserId, userId)
-               .eq(Collect::getPostId, postId);
-        return this.count(wrapper) > 0;
+        // 使用 CollectSimpleMapper 查询，绕过 @TableLogic 逻辑删除
+        LambdaQueryWrapper<CollectSimple> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(CollectSimple::getUserId, userId)
+               .eq(CollectSimple::getPostId, postId);
+        return collectSimpleMapper.selectCount(wrapper) > 0;
     }
 
     @Override
-    @Transactional
+    // @Transactional  // 暂时移除事务注解测试
     public boolean toggleCollect(Long userId, Long postId) {
-        // 查找收藏记录（物理删除模式，无 deleted 字段）
-        LambdaQueryWrapper<Collect> wrapper = new LambdaQueryWrapper<>();
-        wrapper.eq(Collect::getUserId, userId)
-               .eq(Collect::getPostId, postId);
+        System.out.print(" S1");
+        // 使用 CollectSimpleMapper 查询，绕过 @TableLogic 逻辑删除
+        LambdaQueryWrapper<CollectSimple> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(CollectSimple::getUserId, userId)
+               .eq(CollectSimple::getPostId, postId);
 
-        Collect existingCollect = this.getOne(wrapper);
+        CollectSimple existingCollect = collectSimpleMapper.selectOne(wrapper);
+        System.out.print(" S2:" + (existingCollect != null));
 
         if (existingCollect != null) {
             // 已收藏，取消收藏（物理删除）
-            this.removeById(existingCollect.getId());
+            collectSimpleMapper.deleteById(existingCollect.getId());
+            System.out.print(" S3-uncollect");
 
             // 帖子收藏数减1
             Post post = postService.getById(postId);
@@ -63,10 +70,13 @@ public class CollectServiceImpl extends ServiceImpl<CollectMapper, Collect> impl
             return false;
         } else {
             // 未收藏，添加收藏（直接新建）
-            Collect collect = new Collect();
+            CollectSimple collect = new CollectSimple();
             collect.setUserId(userId);
             collect.setPostId(postId);
-            this.save(collect);
+            System.out.print(" S3-collect-save");
+            // 使用 CollectSimpleMapper 直接插入
+            collectSimpleMapper.insert(collect);
+            System.out.print(" S3.1-saved");
 
             // 帖子收藏数加1
             Post post = postService.getById(postId);
@@ -92,6 +102,7 @@ public class CollectServiceImpl extends ServiceImpl<CollectMapper, Collect> impl
                 }
             }
 
+            System.out.println(" S4-returntrue");
             return true;
         }
     }
@@ -124,19 +135,20 @@ public class CollectServiceImpl extends ServiceImpl<CollectMapper, Collect> impl
 
     @Override
     public List<Long> getCollectedPostIds(Long userId) {
-        LambdaQueryWrapper<Collect> wrapper = new LambdaQueryWrapper<>();
-        wrapper.select(Collect::getPostId);
-        wrapper.eq(Collect::getUserId, userId);
-        wrapper.orderByDesc(Collect::getCreatedAt);
-        
-        List<Collect> collects = this.list(wrapper);
-        
+        // 使用 CollectSimpleMapper 查询，绕过 @TableLogic 逻辑删除
+        LambdaQueryWrapper<CollectSimple> wrapper = new LambdaQueryWrapper<>();
+        wrapper.select(CollectSimple::getPostId);
+        wrapper.eq(CollectSimple::getUserId, userId);
+        wrapper.orderByDesc(CollectSimple::getId); // 按ID倒序等同于按创建时间倒序
+
+        List<CollectSimple> collects = collectSimpleMapper.selectList(wrapper);
+
         if (collects == null) {
             return Collections.emptyList();
         }
-        
+
         return collects.stream()
-                .map(Collect::getPostId)
+                .map(CollectSimple::getPostId)
                 .collect(Collectors.toList());
     }
 }
