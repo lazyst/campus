@@ -53,22 +53,13 @@
             {{ item.type === 1 ? '收购' : '出售' }}
           </span>
           <!-- 状态标签 -->
-          <span 
-            v-if="item.status && item.status !== 1" 
+          <span
+            v-if="item.status && item.status !== 1"
             class="item-status"
             :class="getStatusClass(item.status)"
           >
             {{ getStatusText(item.status) }}
           </span>
-          <!-- 删除按钮 -->
-          <button 
-            class="item-delete-btn"
-            @click.stop="showDeleteDialog(item)"
-          >
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
-            </svg>
-          </button>
         </div>
 
         <!-- 商品信息 -->
@@ -84,9 +75,33 @@
           <!-- 商品标题 -->
           <h3 class="item-title">{{ item.title }}</h3>
 
-          <!-- 价格 -->
+          <!-- 价格和操作按钮 -->
           <div class="item-footer">
             <span class="item-price">¥{{ item.price }}</span>
+            <div class="item-actions">
+              <!-- 完成按钮 -->
+              <button
+                v-if="item.status === 1"
+                class="item-action-btn item-action-btn--complete"
+                @click.stop="showCompleteDialog(item)"
+                title="标记为已卖出"
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M20 6L9 17l-5-5"></path>
+                </svg>
+              </button>
+              <!-- 删除按钮 -->
+              <button
+                v-if="item.status === 1 || item.status === 2"
+                class="item-action-btn item-action-btn--delete"
+                @click.stop="showDeleteDialog(item)"
+                title="删除"
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                </svg>
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -113,13 +128,25 @@
       @confirm="confirmDelete"
       @cancel="cancelDelete"
     />
+
+    <!-- 完成确认弹窗 -->
+    <Dialog
+      v-model:visible="completeDialogVisible"
+      title="标记已完成"
+      message="确定要将此物品标记为已卖出吗？"
+      theme="success"
+      confirm-text="确定"
+      :loading="completeLoading"
+      @confirm="confirmComplete"
+      @cancel="cancelComplete"
+    />
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { getMyItems, deleteItem } from '@/api/modules/item'
+import { getMyItems, deleteItem, completeItem } from '@/api/modules/item'
 import { showToast } from '@/services/toastService'
 import NavBar from '@/components/navigation/NavBar.vue'
 import Dialog from '@/components/interactive/Dialog.vue'
@@ -149,11 +176,16 @@ const deleteDialogVisible = ref(false)
 const deleteLoading = ref(false)
 const itemToDelete = ref<Item | null>(null)
 
+// 完成弹窗相关
+const completeDialogVisible = ref(false)
+const completeLoading = ref(false)
+const itemToComplete = ref<Item | null>(null)
+
 function getStatusText(status: number): string {
   const statusMap: Record<number, string> = {
     1: '在售',
-    2: '已下架',
-    3: '已完成'
+    2: '已完成',
+    3: '已下架'
   }
   return statusMap[status] || '未知'
 }
@@ -248,6 +280,38 @@ async function confirmDelete() {
     deleteLoading.value = false
     itemToDelete.value = null
     deleteDialogVisible.value = false
+  }
+}
+
+function showCompleteDialog(item: Item) {
+  itemToComplete.value = item
+  completeDialogVisible.value = true
+}
+
+function cancelComplete() {
+  itemToComplete.value = null
+  completeDialogVisible.value = false
+}
+
+async function confirmComplete() {
+  if (!itemToComplete.value) return
+
+  try {
+    completeLoading.value = true
+    await completeItem(itemToComplete.value.id)
+    // 更新本地状态
+    const item = items.value.find(i => i.id === itemToComplete.value!.id)
+    if (item) {
+      item.status = 3 // 3 = 已完成
+    }
+    showToast('操作成功，物品已标记为已卖出', 'success')
+  } catch (error) {
+    console.error('标记已完成失败:', error)
+    showToast('操作失败，请重试', 'error')
+  } finally {
+    completeLoading.value = false
+    itemToComplete.value = null
+    completeDialogVisible.value = false
   }
 }
 
@@ -478,33 +542,52 @@ onMounted(() => {
   text-shadow: 0 1px 0 rgba(255, 255, 255, 0.5);
 }
 
-/* 删除按钮 */
-.item-delete-btn {
-  position: absolute;
-  top: var(--space-2);
-  right: var(--space-2);
-  width: 28px;
-  height: 28px;
+/* 操作按钮组 */
+.item-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+/* 操作按钮 */
+.item-action-btn {
+  width: 24px;
+  height: 24px;
   display: flex;
   align-items: center;
   justify-content: center;
-  background-color: rgba(255, 255, 255, 0.9);
-  border: 1px solid var(--border-light);
-  border-radius: var(--radius-md);
-  color: var(--text-secondary);
+  border-radius: var(--radius-sm);
   cursor: pointer;
   transition: all var(--transition-fast);
-  z-index: 3;
+  flex-shrink: 0;
 }
 
-.item-delete-btn:hover {
-  background-color: var(--color-error-50);
-  border-color: var(--color-error-200);
+.item-action-btn--complete {
+  background-color: var(--color-success-100);
+  border: 1px solid var(--color-success-300);
+  color: var(--color-success-600);
+}
+
+.item-action-btn--complete:hover {
+  background-color: var(--color-success-200);
+  border-color: var(--color-success-400);
+  color: var(--color-success-700);
+}
+
+.item-action-btn--delete {
+  background-color: var(--color-error-100);
+  border: 1px solid var(--color-error-300);
   color: var(--color-error-600);
 }
 
-.item-delete-btn:active {
-  transform: scale(0.95);
+.item-action-btn--delete:hover {
+  background-color: var(--color-error-200);
+  border-color: var(--color-error-400);
+  color: var(--color-error-700);
+}
+
+.item-action-btn:active {
+  transform: scale(0.9);
 }
 
 /* 类型标签 */
@@ -601,6 +684,9 @@ onMounted(() => {
 
 /* 商品底部 */
 .item-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
   padding-top: var(--space-2);
   border-top: 1px solid var(--border-light);
   margin-top: var(--space-2);
