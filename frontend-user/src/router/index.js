@@ -94,6 +94,13 @@ const routes = [
     path: '/profile/messages',
     name: 'ProfileNotifications',
     component: () => import('@/views/profile/messages/index.vue')
+  },
+
+  // 用户主页
+  {
+    path: '/profile/user/:id',
+    name: 'UserProfile',
+    component: () => import('@/views/profile/user/index.vue')
   }
 ]
 

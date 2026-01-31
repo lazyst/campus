@@ -8,7 +8,7 @@
     </div>
 
     <!-- 聊天区域 -->
-    <div class="chat-messages">
+    <div ref="messagesContainer" class="chat-messages" @scroll="handleScroll">
       <div v-if="messages.length === 0" class="empty-chat">
         <span>暂无消息，开始聊天吧</span>
       </div>
@@ -19,30 +19,23 @@
         class="message-row"
         :class="{ sent: msg.senderId === currentUserId }"
       >
+        <!-- 对方头像：显示真实头像 -->
         <div v-if="msg.senderId !== currentUserId" class="message-avatar">
-          <span>{{ otherUserAvatar || '用' }}</span>
+          <img
+            v-if="otherUserAvatar"
+            :src="getImageUrl(otherUserAvatar)"
+            alt="头像"
+            class="avatar-img"
+          />
+          <span v-else>{{ otherUserNickname.charAt(0) || '用' }}</span>
         </div>
 
         <div class="message-bubble" :class="{ sent: msg.senderId === currentUserId }">
           {{ msg.content }}
         </div>
 
-        <div v-if="msg.senderId === currentUserId" class="message-avatar my-avatar">
-          <span>我</span>
-        </div>
+        <!-- 自己头像：不显示 -->
       </div>
-    </div>
-
-    <!-- 快捷回复 -->
-    <div class="quick-replies">
-      <button
-        v-for="reply in quickReplies"
-        :key="reply"
-        class="quick-btn"
-        @click="sendQuickReply(reply)"
-      >
-        {{ reply }}
-      </button>
     </div>
 
     <!-- 输入区域 -->
@@ -54,21 +47,20 @@
         placeholder="发送消息..."
         @keyup.enter="handleSendMessage"
       />
-      <button class="emoji-btn">😊</button>
-      <button class="image-btn">🖼️</button>
       <button class="send-btn" @click="handleSendMessage">发送</button>
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted, inject } from 'vue'
+import { ref, onMounted, onUnmounted, inject, nextTick } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { getMessagesWithUser } from '@/api/modules/message'
 import { getUserPublicInfo } from '@/api/modules/user'
 import { clearUnreadCount } from '@/api/modules/conversation'
 import { useUserStore } from '@/stores/user'
 import { sendMessage as sendStompMessage, onMessage, connect as connectWs, getIsConnected } from '@/services/websocket'
+import { getImageUrl } from '@/utils/imageUrl'
 
 const route = useRoute()
 const router = useRouter()
@@ -84,18 +76,39 @@ const otherUserNickname = ref('')
 const otherUserId = ref(0)
 const currentUserId = ref(0)
 
+// 用户自己的头像
+const myAvatar = ref('')
+
+const messagesContainer = ref(null)
 const messages = ref([])
 let unsubscribeMessage = null
 
-const quickReplies = ['好的', '多少钱？', '在吗？', '可以便宜吗']
+// 滚动到底部
+function scrollToBottom() {
+  nextTick(() => {
+    if (messagesContainer.value) {
+      messagesContainer.value.scrollTop = messagesContainer.value.scrollHeight
+    }
+  })
+}
+
+// 滚动事件处理（检测是否已滚动到底部）
+function handleScroll() {
+  if (messagesContainer.value) {
+    const { scrollTop, scrollHeight, clientHeight } = messagesContainer.value
+    const isAtBottom = scrollHeight - scrollTop - clientHeight < 50
+    return isAtBottom
+  }
+  return false
+}
 
 async function loadMessages() {
   const targetUserId = Number(route.params.id)
   otherUserId.value = targetUserId
-  otherUserAvatar.value = targetUserId.toString().slice(-1)
 
-  // 获取当前用户ID
+  // 获取当前用户ID和头像
   currentUserId.value = userStore.userInfo?.id || 0
+  myAvatar.value = userStore.userInfo?.avatar || ''
 
   try {
     // 获取对方用户公开信息
@@ -103,18 +116,24 @@ async function loadMessages() {
     if (userInfo && userInfo.nickname) {
       otherUserNickname.value = userInfo.nickname
       chatName.value = userInfo.nickname
+      // 设置对方头像
+      otherUserAvatar.value = userInfo.avatar || ''
     } else {
       chatName.value = `用户${targetUserId}`
+      otherUserAvatar.value = ''
     }
   } catch (error) {
     console.error('获取用户信息失败:', error)
     chatName.value = `用户${targetUserId}`
+    otherUserAvatar.value = ''
   }
 
   try {
     // request.js 已解构返回 data，所以直接使用返回的数组
     const messagesData = await getMessagesWithUser(targetUserId)
     messages.value = Array.isArray(messagesData) ? messagesData : []
+    // 消息加载完成后滚动到底部
+    scrollToBottom()
   } catch (error) {
     console.error('获取消息失败:', error)
     messages.value = []
@@ -155,8 +174,9 @@ async function handleSendMessage() {
       createdAt: new Date().toISOString()
     })
 
-    // 清空输入框
+    // 清空输入框并滚动到底部
     inputMessage.value = ''
+    scrollToBottom()
   } catch (error) {
     console.error('发送消息失败:', error)
     showToast('消息发送失败，请稍后重试')
@@ -189,6 +209,9 @@ async function sendQuickReply(reply) {
       receiverId: receiverId,
       createdAt: new Date().toISOString()
     })
+
+    // 滚动到底部
+    scrollToBottom()
   } catch (error) {
     console.error('发送消息失败:', error)
     showToast('消息发送失败，请稍后重试')
@@ -197,6 +220,11 @@ async function sendQuickReply(reply) {
 
 onMounted(async () => {
   await loadMessages()
+
+  // 再次滚动到底部，确保所有内容加载完成后定位
+  nextTick(() => {
+    scrollToBottom()
+  })
 
   // 通知 App.vue 当前正在与哪个用户聊天（不增加该用户的未读数）
   if (typeof setCurrentChatUserId === 'function') {
@@ -229,6 +257,8 @@ onMounted(async () => {
         receiverId: data.receiverId,
         createdAt: data.createdAt || new Date().toISOString()
       })
+      // 收到新消息时滚动到底部
+      scrollToBottom()
     }
   })
 })
@@ -249,24 +279,21 @@ onUnmounted(() => {
 
 <style scoped>
 .chat-detail-page {
-  min-height: 100vh;
+  height: 100vh;
   background: #F8FAFC;
   display: flex;
   flex-direction: column;
-  padding-top: 44px;
+  overflow: hidden;
 }
 
 .status-bar {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
+  flex-shrink: 0;
   display: flex;
   align-items: center;
   justify-content: space-between;
   padding: 12px 16px;
   background: white;
-  z-index: 10;
+  border-bottom: 1px solid #E2E8F0;
 }
 
 .back-btn {
@@ -289,8 +316,9 @@ onUnmounted(() => {
 
 .chat-messages {
   flex: 1;
-  padding: 60px 16px 16px; /* 顶部留出空间避免被状态栏遮挡 */
   overflow-y: auto;
+  padding: 16px;
+  -webkit-overflow-scrolling: touch;
 }
 
 .empty-chat {
@@ -300,20 +328,6 @@ onUnmounted(() => {
   height: 100%;
   color: var(--text-tertiary);
   font-size: var(--text-sm);
-}
-
-.time-divider {
-  display: flex;
-  justify-content: center;
-  margin-bottom: 16px;
-}
-
-.time-divider span {
-  font-size: 12px;
-  color: #94A3B8;
-  background: white;
-  padding: 4px 12px;
-  border-radius: 12px;
 }
 
 .message-row {
@@ -338,6 +352,13 @@ onUnmounted(() => {
   font-size: 14px;
   color: #64748B;
   flex-shrink: 0;
+  overflow: hidden;
+}
+
+.avatar-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 }
 
 .message-avatar.my-avatar {
@@ -361,26 +382,8 @@ onUnmounted(() => {
   color: white;
 }
 
-.quick-replies {
-  display: flex;
-  gap: 12px;
-  padding: 12px 16px;
-  background: white;
-  overflow-x: auto;
-}
-
-.quick-btn {
-  padding: 8px 16px;
-  background: #F1F5F9;
-  border: none;
-  border-radius: 16px;
-  font-size: 13px;
-  color: #64748B;
-  cursor: pointer;
-  white-space: nowrap;
-}
-
 .input-area {
+  flex-shrink: 0;
   display: flex;
   align-items: center;
   gap: 12px;
@@ -391,10 +394,10 @@ onUnmounted(() => {
 
 .message-input {
   flex: 1;
-  height: 36px;
+  height: 40px;
   background: #F1F5F9;
   border: none;
-  border-radius: 18px;
+  border-radius: 20px;
   padding: 0 16px;
   font-size: 14px;
   outline: none;
@@ -405,22 +408,20 @@ onUnmounted(() => {
   box-shadow: 0 0 0 2px #6366F1;
 }
 
-.emoji-btn,
-.image-btn {
-  font-size: 24px;
-  background: none;
-  border: none;
-  cursor: pointer;
-}
-
 .send-btn {
-  width: 60px;
-  height: 36px;
+  width: 70px;
+  height: 40px;
   background: #6366F1;
   border: none;
-  border-radius: 18px;
+  border-radius: 20px;
   font-size: 14px;
+  font-weight: 500;
   color: white;
   cursor: pointer;
+  flex-shrink: 0;
+}
+
+.send-btn:active {
+  opacity: 0.8;
 }
 </style>
