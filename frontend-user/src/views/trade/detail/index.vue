@@ -59,7 +59,7 @@
       </div>
 
       <!-- 卖家信息 -->
-      <div class="detail-seller-card">
+      <div class="detail-seller-card" @click="goToUserProfile" @click.stop>
         <div class="detail-seller-avatar">
           <img v-if="product.userAvatar" :src="getImageUrl(product.userAvatar)" alt="头像" />
           <span v-else>{{ sellerInitial }}</span>
@@ -68,7 +68,7 @@
           <span class="detail-seller-name">{{ product.userNickname || '匿名用户' }}</span>
           <span class="detail-seller-meta">发帖 {{ product.sellerPostCount || 0 }} · 好评率 {{ product.sellerGoodRate || 100 }}%</span>
         </div>
-        <button class="detail-contact-btn" @click="contactSeller">联系TA</button>
+        <button class="detail-contact-btn" @click="contactSeller" @click.stop>联系TA</button>
       </div>
     </template>
 
@@ -80,13 +80,12 @@
 
     <!-- 底部操作栏 -->
     <div class="detail-bottom-actions" v-if="product">
-      <button class="detail-action-btn" @click="handleCollect">
+      <button class="detail-action-btn detail-action-btn--full" @click="handleCollect">
         <span class="detail-action-label">{{ isCollected ? '已收藏' : '收藏' }}</span>
       </button>
-      <button class="detail-action-btn" @click="goToChat">
+      <button class="detail-action-btn detail-action-btn--full" @click="goToChat">
         <span class="detail-action-label">私信</span>
       </button>
-      <button class="detail-buy-btn" @click="buyNow">立即购买</button>
     </div>
 
     <!-- 登录确认弹窗 -->
@@ -152,7 +151,7 @@ const itemTags = computed(() => {
   else if (product.value.type === 2) tags.push('出售');
   // 根据status显示
   if (product.value.status === 2) tags.push('已售');
-  else if (product.value.status === 3) tags.push('已预定');
+  else if (product.value.status === 3) tags.push('已下架');
   return tags;
 });
 
@@ -265,13 +264,15 @@ function goToChat() {
   window.location.href = `/messages/${product.value?.userId}`;
 }
 
-function buyNow() {
-  showToast('购买功能开发中', 'info');
-}
-
 function goToLogin() {
   dialogVisible.value = false;
   router.push('/login');
+}
+
+function goToUserProfile() {
+  if (product.value?.userId) {
+    router.push(`/profile/user/${product.value.userId}`);
+  }
 }
 
 function formatTime(time: string) {
@@ -659,6 +660,21 @@ function formatTime(time: string) {
   cursor: pointer;
 }
 
+.detail-action-btn--full {
+  flex: 1;
+  height: 44px;
+  background-color: var(--color-primary-700);
+  border: none;
+}
+
+.detail-action-btn--full .detail-action-label {
+  color: var(--text-inverse);
+}
+
+.detail-action-btn--full:active {
+  background-color: var(--color-primary-800);
+}
+
 .detail-action-btn:active {
   background-color: var(--bg-secondary);
 }
@@ -668,21 +684,7 @@ function formatTime(time: string) {
   color: var(--text-secondary);
 }
 
-.detail-buy-btn {
-  flex: 1;
-  height: 44px;
-  font-size: var(--text-base);
-  font-weight: var(--font-weight-semibold);
-  color: var(--text-inverse);
-  background-color: var(--color-error-500);
-  border: none;
-  border-radius: var(--radius-full);
-  cursor: pointer;
-}
 
-.detail-buy-btn:active {
-  background-color: var(--color-error-600);
-}
 
 /* 加载状态 */
 .detail-loading {
