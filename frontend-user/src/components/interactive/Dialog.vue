@@ -6,7 +6,7 @@
         class="dialog__backdrop"
         @click="handleBackdropClick"
       >
-        <div class="dialog" :class="dialogClass">
+        <div class="dialog" :class="dialogClass" @click.stop>
           <div class="dialog__header">
             <div v-if="showIcon" class="dialog__icon">
               {{ iconText }}

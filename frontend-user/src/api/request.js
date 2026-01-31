@@ -24,6 +24,8 @@ request.interceptors.request.use(
   (config) => {
     // 1. 自动添加Token
     const token = localStorage.getItem('token')
+    console.log('【请求拦截器】URL:', config.url, '| 存在token:', !!token, '| token前20字符:', token ? token.substring(0, 20) + '...' : 'null')
+
     if (token) {
       config.headers.Authorization = `Bearer ${token}`
     }
@@ -52,10 +54,13 @@ request.interceptors.response.use(
     // 2. 统一处理响应数据
     const { code, message, data, token } = response.data
 
+    console.log('【响应拦截器】URL:', response.config.url, '| HTTP:', response.status, '| 业务code:', code, '| message:', message)
+
     // 成功响应
     if (code === 200) {
       // 自动保存新token
       if (token) {
+        console.log('【响应拦截器】收到新token，保存到localStorage')
         localStorage.setItem('token', token)
       }
 
@@ -73,6 +78,7 @@ request.interceptors.response.use(
     }
 
     // 业务错误
+    console.log('【响应拦截器】业务错误，调用handleBusinessError，code:', code)
     handleBusinessError(code, message, response.config)
     return Promise.reject(new Error(message))
   },
@@ -113,12 +119,22 @@ function handleBusinessError(code, message, config) {
         showToast(message || '请求参数错误', 'error')
         break
       case 401:
-        // 清除本地token
-        localStorage.removeItem('token')
-        // 触发登录确认对话框（给用户选择权）
-        import('@/stores/loginConfirm').then(({ showLoginConfirm }) => {
-          showLoginConfirm()
-        })
+        // 只有在明确需要登录的操作才清除token并弹出登录对话框
+        // 对于点赞、收藏等操作，不自动清除token，只显示提示
+        const authRequiredUrls = ['/auth/', '/posts/my', '/posts/collections']
+        const isAuthRequired = authRequiredUrls.some(url => config.url?.includes(url))
+
+        if (isAuthRequired) {
+          // 清除本地token
+          localStorage.removeItem('token')
+          // 触发登录确认对话框（给用户选择权）
+          import('@/stores/loginConfirm').then(({ showLoginConfirm }) => {
+            showLoginConfirm()
+          })
+        } else {
+          // 其他401错误（如点赞、收藏），只打印警告不清除token
+          console.warn('操作需要登录:', message)
+        }
         break
       case 403:
         showToast('没有权限执行此操作', 'error')

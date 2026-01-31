@@ -7,11 +7,13 @@
       :class="{ 'tab-bar__item--active': modelValue === item.name }"
       @click="select(item.name)"
     >
-      <!-- 消息图标显示未读数徽章 -->
-      <span v-if="item.name === 'Messages' && unreadCount > 0" class="tab-bar__badge">
-        {{ unreadCount > 99 ? '99+' : unreadCount }}
+      <span class="tab-bar__label-wrapper">
+        <!-- 消息显示未读数徽章 -->
+        <span v-if="item.name === 'Messages' && unreadCount > 0" class="tab-bar__badge">
+          {{ unreadCount > 99 ? '99+' : unreadCount }}
+        </span>
+        <span class="tab-bar__label">{{ item.label }}</span>
       </span>
-      <span class="tab-bar__label">{{ item.label }}</span>
     </button>
   </div>
 </template>
@@ -53,7 +55,7 @@ function select(name: string) {
   right: 0;
   height: var(--tabbar-height);
   display: flex;
-  align-items: center;
+  align-items: stretch;
   background-color: var(--bg-card);
   border-top: 1px solid var(--border-light);
   box-shadow: var(--shadow-tabbar);
@@ -73,7 +75,6 @@ function select(name: string) {
   transition: all var(--transition-normal);
   color: var(--text-secondary);
   position: relative;
-  min-height: var(--tabbar-height);
 }
 
 .tab-bar__item:active {
@@ -82,14 +83,25 @@ function select(name: string) {
 
 .tab-bar__item--active {
   color: var(--color-primary-700);
+}
+
+.tab-bar__label-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.tab-bar__label {
+  font-size: var(--text-sm);
   font-weight: var(--font-weight-medium);
+  line-height: 1;
 }
 
 .tab-bar__badge {
   position: absolute;
-  top: 12px;
-  right: 50%;
-  transform: translateX(16px);
+  top: -8px;
+  right: -20px;
   min-width: 18px;
   height: 18px;
   padding: 0 5px;
@@ -101,11 +113,6 @@ function select(name: string) {
   font-size: 10px;
   font-weight: var(--font-weight-medium);
   color: var(--text-inverse);
-}
-
-.tab-bar__label {
-  font-size: var(--text-base);
-  font-weight: var(--font-weight-medium);
   line-height: 1;
 }
 </style>
