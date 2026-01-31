@@ -49,13 +49,16 @@
 
       <div class="profile-menu-group">
         <div class="profile-menu-title">其他</div>
-        <div 
-          v-for="(item, index) in otherMenuItems" 
+        <div
+          v-for="(item, index) in otherMenuItems"
           :key="index"
           class="profile-menu-item"
           @click="handleMenuClick(item.route)"
         >
           <span class="profile-menu-label">{{ item.label }}</span>
+          <span v-if="item.route === '/profile/messages' && unreadNotificationCount > 0" class="profile-menu-badge">
+            {{ unreadNotificationCount > 99 ? '99+' : unreadNotificationCount }}
+          </span>
           <span class="profile-menu-arrow">›</span>
         </div>
       </div>
@@ -79,21 +82,36 @@
   </div>
 </template>
 
-<script setup lang="ts">
+<script setup>
 import { computed, ref, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { useUserStore } from '@/stores/user';
 import Dialog from '@/components/interactive/Dialog.vue';
 import { getImageUrl } from '@/utils/imageUrl';
+import { getUnreadCount } from '@/api/modules/notification';
 
 const router = useRouter();
 const userStore = useUserStore();
+
+const unreadNotificationCount = ref(0);
+
+// 获取未读通知数量
+async function fetchUnreadCount() {
+  if (!userStore.token) return;
+  try {
+    const res = await getUnreadCount();
+    unreadNotificationCount.value = res.count || 0;
+  } catch (error) {
+    console.error('获取未读通知数失败:', error);
+  }
+}
 
 // 确保userStore已初始化
 onMounted(async () => {
   if (!userStore.isInitialized) {
     await userStore.initialize();
   }
+  await fetchUnreadCount();
 })
 
 const userName = computed(() => userStore.userInfo?.nickname || '校园小助手');
@@ -118,10 +136,9 @@ const contentMenuItems = [
 
 const otherMenuItems = [
   { label: '消息通知', route: '/profile/messages' },
-  { label: '设置', route: '/settings' },
 ];
 
-function handleMenuClick(route: string) {
+function handleMenuClick(route) {
   if (!userStore.token) {
     router.push('/login');
     return;
@@ -272,6 +289,21 @@ function cancelLogout() {
 
 .profile-menu-label {
   flex: 1;
+}
+
+.profile-menu-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 6px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #fff;
+  background-color: #ef4444;
+  border-radius: 10px;
+  margin-right: 8px;
 }
 
 .profile-menu-arrow {
