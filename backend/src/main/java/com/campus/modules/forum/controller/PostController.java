@@ -192,6 +192,25 @@ public class PostController {
         return Result.success(postPage);
     }
 
+    @Operation(summary = "按用户ID获取帖子列表")
+    @GetMapping("/user/{userId}")
+    public Result<Page<Post>> getPostsByUserId(
+            @PathVariable Long userId,
+            @RequestParam(defaultValue = "1") Integer page,
+            @RequestParam(defaultValue = "10") Integer size) {
+        Page<Post> postPage = new Page<>(page, size);
+        LambdaQueryWrapper<Post> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(Post::getUserId, userId)
+               .eq(Post::getStatus, 1)
+               .orderByDesc(Post::getCreatedAt);
+        postService.page(postPage, wrapper);
+
+        // 填充用户信息
+        enrichPostsWithUserInfo(postPage.getRecords());
+
+        return Result.success(postPage);
+    }
+
     /**
      * 填充帖子的用户信息（昵称和头像）
      */

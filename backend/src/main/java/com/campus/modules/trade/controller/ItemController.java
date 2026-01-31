@@ -71,28 +71,31 @@ public class ItemController {
             @RequestParam(defaultValue = "10") Integer size,
             @RequestParam(required = false) Integer type,
             @RequestParam(required = false) Integer status) {
-        
+
         Page<Item> pageParam = new Page<>(page, size);
-        
-        com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper<Item> wrapper = 
+
+        com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper<Item> wrapper =
             new com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper<>();
-        
+
         wrapper.eq(Item::getDeleted, false);
-        
+
         if (type != null) {
             wrapper.eq(Item::getType, type);
         }
         if (status != null) {
             wrapper.eq(Item::getStatus, status);
+        } else {
+            // 默认排除已完成的物品（status=2）
+            wrapper.ne(Item::getStatus, 2);
         }
-        
+
         wrapper.orderByDesc(Item::getCreatedAt);
-        
+
         Page<Item> result = itemService.page(pageParam, wrapper);
-        
+
         // 填充用户信息
         enrichItemsWithUserInfo(result.getRecords());
-        
+
         return Result.success(result);
     }
 
@@ -117,10 +120,21 @@ public class ItemController {
         Long userId = authService.getUserIdFromToken(token);
 
         List<Item> items = itemService.getByUserId(userId);
-        
+
         // 填充用户信息
         enrichItemsWithUserInfo(items);
-        
+
+        return Result.success(items);
+    }
+
+    @Operation(summary = "按用户ID获取物品列表")
+    @GetMapping("/user/{userId}")
+    public Result<List<Item>> getItemsByUserId(@PathVariable Long userId) {
+        List<Item> items = itemService.getByUserId(userId);
+
+        // 填充用户信息
+        enrichItemsWithUserInfo(items);
+
         return Result.success(items);
     }
 
