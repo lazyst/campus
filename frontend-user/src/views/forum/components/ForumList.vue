@@ -35,8 +35,8 @@
 
         <!-- Post Images (最多显示3张) -->
         <div v-if="post.images && post.images.length > 0" class="forum-list__card-images">
-          <div 
-            v-for="(img, index) in post.images.slice(0, 3)" 
+          <div
+            v-for="(img, index) in post.images.slice(0, 3)"
             :key="index"
             class="forum-list__card-image"
           >
@@ -50,8 +50,35 @@
         <!-- Post Footer -->
         <div class="forum-list__card-footer">
           <div class="forum-list__card-stats">
-            <span class="forum-list__stat">点赞 {{ post.likeCount }}</span>
-            <span class="forum-list__stat">评论 {{ post.commentCount }}</span>
+            <!-- 点赞 -->
+            <button
+              class="forum-list__action-btn"
+              :class="{ 'forum-list__action-btn--active': post.isLiked }"
+              @click.stop="handleLike(post)"
+            >
+              <svg class="forum-list__stat-icon" viewBox="0 0 24 24" :fill="post.isLiked ? 'currentColor' : 'none'" :stroke="post.isLiked ? 'currentColor' : 'currentColor'" stroke-width="2">
+                <path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3zM7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3" />
+              </svg>
+              {{ post.likeCount }}
+            </button>
+            <!-- 评论 -->
+            <button class="forum-list__action-btn" @click.stop="onPostClick(post)">
+              <svg class="forum-list__stat-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z" />
+              </svg>
+              {{ post.commentCount }}
+            </button>
+            <!-- 收藏 -->
+            <button
+              class="forum-list__action-btn"
+              :class="{ 'forum-list__action-btn--collected': post.isCollected }"
+              @click.stop="handleCollect(post)"
+            >
+              <svg class="forum-list__stat-icon" viewBox="0 0 24 24" :fill="post.isCollected ? 'currentColor' : 'none'" :stroke="post.isCollected ? 'currentColor' : 'currentColor'" stroke-width="2">
+                <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+              </svg>
+              {{ post.collectCount || 0 }}
+            </button>
           </div>
         </div>
       </div>
@@ -66,6 +93,18 @@
         <span class="forum-list__state-text forum-list__state-text--muted">没有更多了</span>
       </div>
     </div>
+
+    <!-- 登录确认弹窗 -->
+    <Dialog
+      v-model:visible="showLoginDialog"
+      title="提示"
+      message="该操作需要登录，是否前往登录？"
+      theme="warning"
+      confirmText="去登录"
+      cancelText="取消"
+      @confirm="goToLogin"
+      @cancel="showLoginDialog = false"
+    />
   </div>
 </template>
 
@@ -73,7 +112,10 @@
 import { ref, watch, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { getPosts } from '@/api/modules'
+import { toggleLikePost, checkPostLiked, toggleCollectPost, checkPostCollected } from '@/api/modules/post'
+import { useUserStore } from '@/stores/user'
 import Skeleton from '@/components/feedback/Skeleton.vue'
+import Dialog from '@/components/interactive/Dialog.vue'
 import { getImageUrl } from '@/utils/imageUrl'
 
 interface Post {
@@ -85,6 +127,9 @@ interface Post {
   userAvatar: string
   likeCount: number
   commentCount: number
+  collectCount?: number
+  isLiked?: boolean
+  isCollected?: boolean
 }
 
 interface Props {
@@ -96,10 +141,98 @@ const props = withDefaults(defineProps<Props>(), {
 })
 
 const router = useRouter()
+const userStore = useUserStore()
 const list = ref<Post[]>([])
 const loading = ref(false)
 const finished = ref(false)
 const page = ref(1)
+const showLoginDialog = ref(false)
+const isOperating = ref(false) // 防止重复点击
+
+// 待执行的操作
+let pendingAction: (() => void) | null = null
+
+// 检查登录状态
+function checkLogin(action: () => void) {
+  if (!userStore.token) {
+    pendingAction = action
+    showLoginDialog.value = true
+    return false
+  }
+  return true
+}
+
+// 前往登录
+function goToLogin() {
+  showLoginDialog.value = false
+  router.push('/login')
+}
+
+// 处理点赞
+async function handleLike(post: Post) {
+  // 防止重复点击
+  if (isOperating.value) return
+
+  if (checkLogin(() => handleLike(post))) {
+    isOperating.value = true
+    const previousLiked = post.isLiked || false
+    const previousCount = post.likeCount || 0
+
+    // 乐观更新
+    post.isLiked = !previousLiked
+    post.likeCount = post.isLiked ? previousCount + 1 : Math.max(0, previousCount - 1)
+
+    try {
+      await toggleLikePost(post.id)
+    } catch (error: any) {
+      // 检查是否是401错误（登录过期）
+      if (error.message?.includes('登录已过期') || error.message?.includes('请先登录')) {
+        // 401错误已经被全局处理清除了token，这里需要刷新页面恢复状态
+        // 暂时不做处理，让用户重新操作
+      } else {
+        console.error('点赞失败:', error)
+      }
+      // 回滚
+      post.isLiked = previousLiked
+      post.likeCount = previousCount
+    } finally {
+      isOperating.value = false
+    }
+  }
+}
+
+// 处理收藏
+async function handleCollect(post: Post) {
+  // 防止重复点击
+  if (isOperating.value) return
+
+  if (checkLogin(() => handleCollect(post))) {
+    isOperating.value = true
+    const previousCollected = post.isCollected || false
+    const previousCount = post.collectCount || 0
+
+    // 乐观更新
+    post.isCollected = !previousCollected
+    post.collectCount = post.isCollected ? previousCount + 1 : Math.max(0, previousCount - 1)
+
+    try {
+      await toggleCollectPost(post.id)
+    } catch (error: any) {
+      // 检查是否是401错误（登录过期）
+      if (error.message?.includes('登录已过期') || error.message?.includes('请先登录')) {
+        // 401错误已经被全局处理清除了token，这里需要刷新页面恢复状态
+        // 暂时不做处理，让用户重新操作
+      } else {
+        console.error('收藏失败:', error)
+      }
+      // 回滚
+      post.isCollected = previousCollected
+      post.collectCount = previousCount
+    } finally {
+      isOperating.value = false
+    }
+  }
+}
 
 async function loadPosts() {
   try {
@@ -258,7 +391,7 @@ onMounted(() => {
 .forum-list__card-footer {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: flex-end;
   font-size: var(--text-xs);
   color: var(--text-tertiary);
 }
@@ -266,11 +399,54 @@ onMounted(() => {
 .forum-list__card-stats {
   display: flex;
   align-items: center;
-  gap: var(--space-3);
+  gap: var(--space-2);
 }
 
 .forum-list__stat {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
   color: var(--text-tertiary);
+}
+
+.forum-list__stat-icon {
+  width: 14px;
+  height: 14px;
+}
+
+.forum-list__action-btn {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  padding: var(--space-1) var(--space-2);
+  background: none;
+  border: none;
+  border-radius: var(--radius-full);
+  font-size: var(--text-xs);
+  color: var(--text-tertiary);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.forum-list__action-btn:active {
+  background-color: var(--bg-secondary);
+}
+
+.forum-list__action-btn--active {
+  color: var(--color-error-500);
+}
+
+.forum-list__action-btn--active .forum-list__stat-icon {
+  fill: var(--color-error-500);
+}
+
+.forum-list__action-btn--collected {
+  color: #F59E0B;
+}
+
+.forum-list__action-btn--collected .forum-list__stat-icon {
+  fill: #F59E0B;
+  stroke: #F59E0B;
 }
 
 .forum-list__card-images {
