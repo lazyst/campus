@@ -11,15 +11,17 @@
         @click="activeBoard = 'all'"
       >
         全部
+        <div class="tab-underline"></div>
       </button>
       <button
-        v-for="board in boards" 
+        v-for="board in boards"
         :key="board.id"
         class="forum-tab"
         :class="{ 'forum-tab--active': activeBoard === board.id }"
         @click="activeBoard = board.id"
       >
         {{ board.name }}
+        <div class="tab-underline"></div>
       </button>
     </div>
     
@@ -58,8 +60,9 @@ onMounted(async () => {
 
 .forum-tabs {
   display: flex;
-  gap: var(--space-3);
+  gap: var(--space-4);
   padding: var(--space-3) var(--page-padding);
+  padding-bottom: 0;
   background-color: var(--bg-card);
   border-bottom: 1px solid var(--border-light);
   overflow-x: auto;
@@ -73,26 +76,39 @@ onMounted(async () => {
 
 .forum-tab {
   flex-shrink: 0;
-  padding: var(--space-2) var(--space-3);
-  font-size: var(--text-sm);
+  padding: var(--space-3) 0;
+  font-size: var(--text-base);
+  font-weight: var(--font-weight-medium);
   color: var(--text-secondary);
-  background-color: var(--bg-tertiary);
+  background: transparent;
   border: none;
-  border-radius: var(--radius-full);
   cursor: pointer;
-  transition: all var(--transition-fast);
+  transition: color var(--transition-fast);
+  position: relative;
+  z-index: 1;
 }
 
-.forum-tab:active {
-  background-color: var(--color-primary-100);
+.forum-tab:hover {
+  color: var(--text-primary);
 }
 
 .forum-tab--active {
-  color: var(--text-inverse);
-  background-color: var(--color-primary-700);
+  color: var(--color-primary-700);
 }
 
-.forum-tab--active:active {
-  background-color: var(--color-primary-800);
+.tab-underline {
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  width: 32px;
+  height: 2px;
+  background-color: var(--color-primary-700);
+  border-radius: 1px;
+  transform: translateX(-50%) scaleX(0);
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.forum-tab--active .tab-underline {
+  transform: translateX(-50%) scaleX(1);
 }
 </style>

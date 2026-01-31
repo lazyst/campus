@@ -4,20 +4,22 @@
 
     <!-- 分类标签 -->
     <div class="collections-tabs">
-      <div 
-        class="collections-tab" 
+      <button
+        class="collections-tab"
         :class="{ 'collections-tab--active': activeTab === 'posts' }"
         @click="activeTab = 'posts'"
       >
         帖子收藏
-      </div>
-      <div 
-        class="collections-tab" 
+        <div class="tab-underline"></div>
+      </button>
+      <button
+        class="collections-tab"
         :class="{ 'collections-tab--active': activeTab === 'items' }"
         @click="activeTab = 'items'"
       >
         闲置收藏
-      </div>
+        <div class="tab-underline"></div>
+      </button>
     </div>
 
     <!-- 加载中 -->
@@ -67,8 +69,20 @@
           <div class="collections-post-card-footer">
             <span class="collections-post-card-time">{{ formatTime(post.createdAt) }}</span>
             <div class="collections-post-card-stats">
-              <span class="collections-post-stat">点赞 {{ post.likeCount || 0 }}</span>
-              <span class="collections-post-stat">评论 {{ post.commentCount || 0 }}</span>
+              <!-- 点赞 -->
+              <span class="collections-post-stat">
+                <svg class="collections-post-stat-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3zM7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3" />
+                </svg>
+                {{ post.likeCount || 0 }}
+              </span>
+              <!-- 评论 -->
+              <span class="collections-post-stat">
+                <svg class="collections-post-stat-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z" />
+                </svg>
+                {{ post.commentCount || 0 }}
+              </span>
             </div>
           </div>
         </div>
@@ -222,7 +236,11 @@ async function loadData() {
   try {
     if (activeTab.value === 'posts') {
       const data = await getMyCollections()
-      collections.value = data || []
+      // 解析images字段（JSON字符串转数组）
+      collections.value = (data || []).map(post => ({
+        ...post,
+        images: parseImages(post.images)
+      }))
     } else if (activeTab.value === 'items') {
       const result = await getCollectedItems()
       items.value = (result || []).map(transformItem)
@@ -236,6 +254,17 @@ async function loadData() {
     }
   } finally {
     loading.value = false
+  }
+}
+
+// 解析images字段（JSON字符串转数组）
+function parseImages(images: string | null | undefined): string[] {
+  if (!images) return []
+  try {
+    const parsed = JSON.parse(images)
+    return Array.isArray(parsed) ? parsed : [parsed]
+  } catch {
+    return images ? [images] : []
   }
 }
 
@@ -304,6 +333,8 @@ function formatTime(time: string) {
 /* 分类标签 */
 .collections-tabs {
   display: flex;
+  gap: var(--space-2);
+  padding: 0 var(--page-padding);
   background-color: var(--bg-card);
   border-bottom: 1px solid var(--border-light);
   position: sticky;
@@ -313,32 +344,43 @@ function formatTime(time: string) {
 
 .collections-tab {
   flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   padding: var(--space-3) 0;
-  text-align: center;
   font-size: var(--text-base);
+  font-weight: var(--font-weight-medium);
   color: var(--text-secondary);
   cursor: pointer;
-  position: relative;
   transition: color var(--transition-fast);
   border: none;
   background: transparent;
+  position: relative;
+  z-index: 1;
+}
+
+.collections-tab:hover {
+  color: var(--text-primary);
 }
 
 .collections-tab--active {
   color: var(--color-primary-700);
-  font-weight: var(--font-weight-medium);
 }
 
-.collections-tab--active::after {
-  content: '';
+.tab-underline {
   position: absolute;
   bottom: 0;
   left: 50%;
-  transform: translateX(-50%);
   width: 40px;
   height: 2px;
   background-color: var(--color-primary-700);
   border-radius: 1px;
+  transform: translateX(-50%) scaleX(0);
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.collections-tab--active .tab-underline {
+  transform: translateX(-50%) scaleX(1);
 }
 
 /* 加载状态 */
@@ -490,7 +532,15 @@ function formatTime(time: string) {
 }
 
 .collections-post-stat {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
   color: var(--text-tertiary);
+}
+
+.collections-post-stat-icon {
+  width: 14px;
+  height: 14px;
 }
 
 .collections-post-card-time {

@@ -14,6 +14,7 @@
         @click="onTabChange(0)"
       >
         全部
+        <div class="tab-underline"></div>
       </button>
       <button
         class="trade-tab"
@@ -21,13 +22,15 @@
         @click="onTabChange(1)"
       >
         出售
+        <div class="tab-underline"></div>
       </button>
       <button
         class="trade-tab"
         :class="{ 'trade-tab--active': activeTab === 2 }"
         @click="onTabChange(2)"
       >
-        收购
+        求购
+        <div class="tab-underline"></div>
       </button>
     </div>
     
@@ -80,7 +83,7 @@
             class="item-type"
             :class="{ 'item-type--buy': item.type === 1 }"
           >
-            {{ item.type === 1 ? '收购' : '出售' }}
+            {{ item.type === 1 ? '求购' : '出售' }}
           </span>
           <!-- 状态标签 -->
           <span 
@@ -281,6 +284,7 @@ onMounted(() => {
   display: flex;
   gap: var(--space-2);
   padding: var(--space-3) var(--page-padding);
+  padding-bottom: 0;
   background-color: var(--bg-card);
   border-bottom: 1px solid var(--border-light);
   position: sticky;
@@ -289,30 +293,44 @@ onMounted(() => {
 }
 
 .trade-tab {
-  padding: var(--space-2) var(--space-4);
-  font-size: var(--text-sm);
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-3) 0;
+  font-size: var(--text-base);
   font-weight: var(--font-weight-medium);
   cursor: pointer;
-  transition: all var(--transition-fast);
+  transition: color var(--transition-fast);
   border: none;
-  background-color: var(--bg-tertiary);
+  background: transparent;
   color: var(--text-secondary);
-  border-radius: var(--radius-full);
+  position: relative;
+  z-index: 1;
 }
 
 .trade-tab:hover {
-  background-color: var(--color-primary-100);
-  color: var(--color-primary-700);
+  color: var(--text-primary);
 }
 
 .trade-tab--active {
-  background-color: var(--color-primary-700);
-  color: var(--text-inverse);
+  color: var(--color-primary-700);
 }
 
-.trade-tab--active:hover {
-  background-color: var(--color-primary-800);
-  color: var(--text-inverse);
+.tab-underline {
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  width: 32px;
+  height: 2px;
+  background-color: var(--color-primary-700);
+  border-radius: 1px;
+  transform: translateX(-50%) scaleX(0);
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.trade-tab--active .tab-underline {
+  transform: translateX(-50%) scaleX(1);
 }
 
 /* 加载状态 */
