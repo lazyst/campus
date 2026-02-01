@@ -294,6 +294,7 @@ INSERT INTO `admin` (`id`, `username`, `password`, `nickname`, `avatar`, `role`,
 
 -- 插入用户数据
 INSERT INTO `user` (`id`, `phone`, `password`, `nickname`, `gender`, `bio`, `avatar`, `status`, `created_at`, `updated_at`, `created_by`, `updated_by`, `deleted`, `grade`, `major`) VALUES
+(1, '13800000000', '$2a$10$N.zmdr9k7uOCQb376NoUnuTJ8iAt6Z5EHsM8lE9lBOsl7iAt6Z5EH', '测试用户', 1, '这是测试用户', NULL, 1, '2026-01-27 18:45:40', '2026-01-27 18:45:40', NULL, NULL, 0, NULL, NULL),
 (2, '13900000001', '$2a$10$N.zmdr9k7uOCQb376NoUnuTJ8iAt6Z5EHsM8lE9lBOsl7iAt6Z5EH', '校园小明', 1, '爱学习，喜欢交友的在校大学生', NULL, 1, '2026-01-27 18:45:40', '2026-01-27 18:45:40', NULL, NULL, 0, NULL, NULL),
 (3, '13900000002', '$2a$10$N.zmdr9k7uOCQb376NoUnuTJ8iAt6Z5EHsM8lE9lBOsl7iAt6Z5EH', '校园小花', 2, '大四学生，分享校园生活', NULL, 1, '2026-01-27 18:45:40', '2026-01-27 18:45:40', NULL, NULL, 0, NULL, NULL),
 (4, '13900000003', '$2a$10$N.zmdr9k7uOCQb376NoUnuTJ8iAt6Z5EHsM8lE9lBOsl7iAt6Z5EH', '学习达人', 1, '考研党，分享学习资料', NULL, 1, '2026-01-27 18:45:40', '2026-01-27 18:45:40', NULL, NULL, 0, NULL, NULL),
