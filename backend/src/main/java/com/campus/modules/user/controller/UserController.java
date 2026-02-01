@@ -71,8 +71,6 @@ public class UserController {
             @Valid @RequestBody UpdateProfileRequest request) {
         String token = authHeader.replace("Bearer ", "");
         Long userId = authService.getUserIdFromToken(token);
-        System.out.println("=== DEBUG === userId: " + userId);
-        System.out.println("=== DEBUG === request: " + request);
         if (userId == null) {
             return Result.error("无效的认证令牌");
         }

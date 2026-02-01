@@ -217,7 +217,7 @@ const fetchStats = async () => {
     const res = await getStorageStats()
     stats.value = res.data || {}
   } catch (error) {
-    console.error('获取统计数据失败:', error)
+    // 忽略错误
   }
 }
 
@@ -226,7 +226,7 @@ const fetchDateDirs = async () => {
     const res = await getDateDirs()
     dateDirs.value = res || []
   } catch (error) {
-    console.error('获取日期目录失败:', error)
+    // 忽略错误
   }
 }
 

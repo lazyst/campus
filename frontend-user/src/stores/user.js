@@ -15,7 +15,7 @@ function loadState() {
       }
     }
   } catch (e) {
-    console.warn('恢复用户状态失败:', e)
+    // 忽略状态恢复错误
   }
   return {
     token: localStorage.getItem('token'),
@@ -39,7 +39,7 @@ export const useUserStore = defineStore('user', () => {
       }
       localStorage.setItem('user', JSON.stringify(state))
     } catch (e) {
-      console.warn('保存用户状态失败:', e)
+      // 忽略状态保存错误
     }
   }, { deep: true })
 
@@ -85,7 +85,7 @@ export const useUserStore = defineStore('user', () => {
     try {
       await logoutApi()
     } catch (e) {
-      console.warn('登出API调用失败:', e)
+      // 忽略登出API错误
     }
     removeToken()
     router.push('/login')
@@ -95,8 +95,8 @@ export const useUserStore = defineStore('user', () => {
     try {
       const data = await getUserInfo()
       userInfo.value = data
-    } catch (error) {
-      console.warn('获取用户信息失败:', error)
+    } catch {
+      // 忽略获取用户信息错误
     }
   }
 

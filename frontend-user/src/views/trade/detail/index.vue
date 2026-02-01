@@ -188,7 +188,7 @@ async function loadItem() {
       product.value = data as Item;
     }
   } catch (error) {
-    console.error('获取商品详情失败:', error);
+    // 忽略错误
     showToast('获取商品详情失败', 'error');
   } finally {
     loading.value = false;
@@ -200,7 +200,7 @@ async function checkCollectStatus() {
     const collected = await checkItemCollected(itemId.value);
     isCollected.value = collected;
   } catch (error) {
-    console.error('检查收藏状态失败:', error);
+    // 忽略错误
   }
 }
 
@@ -224,7 +224,7 @@ async function handleCollect() {
   } catch (error) {
     // 回滚
     isCollected.value = previousState;
-    console.error('收藏操作失败:', error);
+    // 忽略错误
     showToast('操作失败，请重试', 'error');
   }
 }
@@ -237,7 +237,6 @@ async function contactSeller() {
 
   try {
     const response = await contactSellerApi(itemId.value);
-    console.log('联系API响应:', response);
     // 后端返回 { sellerId, sellerName }，sellerId 在 data 中
     const sellerId = response?.data?.sellerId || product.value?.userId;
     if (sellerId) {
@@ -246,8 +245,7 @@ async function contactSeller() {
       showToast('获取卖家信息失败', 'error');
     }
   } catch (error) {
-    console.error('联系卖家失败:', error);
-    // 即使API失败，也尝试直接跳转
+    // 忽略错误
     if (product.value?.userId) {
       window.location.href = `/messages/${product.value.userId}`;
     } else {

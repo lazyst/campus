@@ -70,24 +70,14 @@ public class AuthServiceImpl implements AuthService {
     public Long getUserIdFromToken(String token) {
         try {
             String phone = jwtConfig.getUsernameFromToken(token);
-            System.out.println("=== AuthServiceImpl.getUserIdFromToken ===");
-            System.out.println("token: " + token.substring(0, Math.min(30, token.length())) + "...");
-            System.out.println("解析出的phone: " + phone);
-
             User user = userService.getByPhone(phone);
-            System.out.println("查询到的user: " + (user == null ? "null" : "id=" + user.getId() + ", status=" + user.getStatus()));
 
             if (user == null) {
-                System.out.println("用户不存在，返回null");
                 return null;
             }
 
-            System.out.println("返回userId: " + user.getId());
             return user.getId();
         } catch (Exception e) {
-            // Token无效或解析失败
-            System.out.println("解析token异常: " + e.getMessage());
-            e.printStackTrace();
             return null;
         }
     }

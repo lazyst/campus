@@ -118,7 +118,6 @@ public class CommentController {
                     notificationService.save(notification);
                 } catch (Exception e) {
                     // 通知创建失败不影响评论功能
-                    System.err.println("Failed to create comment notification: " + e.getMessage());
                 }
             }
 

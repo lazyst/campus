@@ -327,18 +327,14 @@ public class UploadController {
 
             // 从用户表获取头像 - 使用MyBatis-Plus查询
             List<User> users = userService.list();
-            System.out.println("=== DEBUG: 查询到 " + users.size() + " 个用户");
             for (User user : users) {
                 String avatar = user.getAvatar();
-                System.out.println("=== DEBUG: 用户 " + user.getId() + " 的头像: " + avatar);
                 if (avatar != null && !avatar.isEmpty()) {
                     // 规范化URL：去除协议和域名，只保留路径部分
                     String normalizedUrl = normalizeUrl(avatar);
-                    System.out.println("=== DEBUG: 规范化后: " + normalizedUrl);
                     usedUrls.add(normalizedUrl);
                 }
             }
-            System.out.println("=== DEBUG: 总共 " + usedUrls.size() + " 个被使用的URL");
 
             // 从帖子表获取
             List<Post> posts = postMapper.selectList(null);

@@ -43,43 +43,28 @@ public class CollectController {
     public Result<Boolean> toggleCollect(
             @RequestHeader(value = "Authorization", required = false) String authHeader,
             @PathVariable Long postId) {
-        System.out.println("CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC 1");
-
         // 处理未登录或token为空的情况
         if (authHeader == null || authHeader.isEmpty() || !authHeader.startsWith("Bearer ")) {
-            System.out.println("CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC 2 - authHeader: " + authHeader);
             return Result.error(ResultCode.UNAUTHORIZED, "请先登录后再收藏");
         }
 
         try {
-            System.out.println("CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC 3");
             String token = authHeader.replace("Bearer ", "");
-            System.out.println("CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC 4 - postId: " + postId);
-
             Long userId = authService.getUserIdFromToken(token);
-            System.out.print(" C5:" + userId);
 
             // userId为null说明token无效
             if (userId == null) {
-                System.out.println(" C6-null");
                 return Result.error(ResultCode.UNAUTHORIZED, "登录已过期，请重新登录");
             }
 
-            System.out.print(" C6.1");
             // Verify post exists
             if (postService.getById(postId) == null) {
-                System.out.println(" C6.2-notfound");
                 return Result.error("帖子不存在");
             }
-            System.out.print(" C6.3");
 
             boolean isCollected = collectService.toggleCollect(userId, postId);
-            System.out.println(" C7:" + isCollected);
             return Result.success(isCollected);
         } catch (Exception e) {
-            // 打印详细错误日志
-            System.out.println("CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC 8 - 异常: " + e.getMessage());
-            e.printStackTrace();
             // Token无效时返回未授权错误
             return Result.error(ResultCode.UNAUTHORIZED, "登录已过期，请重新登录");
         }

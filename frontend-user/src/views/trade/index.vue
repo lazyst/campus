@@ -190,8 +190,6 @@ function getProductAvatar(product: Product): string {
 }
 
 function transformItem(item: Item): Product {
-  console.log('DEBUG_TRANSFORM_ITEM:', item.id, 'userAvatar:', item.userAvatar, 'sellerAvatar:', item.sellerAvatar);
-
   // 根据type显示不同标签
   const typeTags: Record<number, string[]> = {
     1: ['求购'],
@@ -218,8 +216,6 @@ function transformItem(item: Item): Product {
   const avatarUrl = item.userAvatar || item.sellerAvatar || '';
   const processedAvatar = avatarUrl ? getImageUrl(avatarUrl) : '';
 
-  console.log('DEBUG_AVATAR:', '原始:', avatarUrl, '处理后:', processedAvatar);
-
   return {
     id: item.id,
     image,
@@ -240,40 +236,29 @@ async function loadItems() {
   
   try {
     const type = activeTab.value === 'sell' ? 2 : activeTab.value === 'buy' ? 1 : undefined;
-    console.log('开始请求物品列表, type:', type);
-    
+
     const response = await getItems({ type, page: 1, size: 20 });
-    console.log('API响应完整:', response);
-    console.log('响应类型:', typeof response);
-    console.log('响应是否数组:', Array.isArray(response));
-    
+
     // 处理分页响应 - 支持多种数据格式
     let records = []
-    
+
     if (Array.isArray(response)) {
       // 直接返回数组格式
       records = response
-      console.log('使用数组格式, records数量:', records.length);
     } else if (response && typeof response === 'object') {
       // Page 对象格式
       records = response.records || response.items || response.list || []
-      console.log('使用对象格式, records数量:', records.length);
-      console.log('response.records:', response.records);
     } else {
-      console.warn('未知的响应格式:', response);
       records = [];
     }
-    
+
     // 确保 records 是数组
     if (!Array.isArray(records)) {
-      console.error('records 不是数组，尝试转换:', records);
       records = [];
     }
-    
+
     // 转换数据格式
     const transformedProducts = records.map(transformItem);
-    console.log('transformedProducts:', transformedProducts);
-    console.log('第一个product的userAvatar:', transformedProducts[0]?.userAvatar);
     
     // 检查收藏状态
     if (userStore.token) {

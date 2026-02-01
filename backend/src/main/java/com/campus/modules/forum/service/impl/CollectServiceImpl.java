@@ -46,19 +46,16 @@ public class CollectServiceImpl extends ServiceImpl<CollectMapper, Collect> impl
     @Override
     // @Transactional  // 暂时移除事务注解测试
     public boolean toggleCollect(Long userId, Long postId) {
-        System.out.print(" S1");
         // 使用 CollectSimpleMapper 查询，绕过 @TableLogic 逻辑删除
         LambdaQueryWrapper<CollectSimple> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq(CollectSimple::getUserId, userId)
                .eq(CollectSimple::getPostId, postId);
 
         CollectSimple existingCollect = collectSimpleMapper.selectOne(wrapper);
-        System.out.print(" S2:" + (existingCollect != null));
 
         if (existingCollect != null) {
             // 已收藏，取消收藏（物理删除）
             collectSimpleMapper.deleteById(existingCollect.getId());
-            System.out.print(" S3-uncollect");
 
             // 帖子收藏数减1
             Post post = postService.getById(postId);
@@ -73,10 +70,8 @@ public class CollectServiceImpl extends ServiceImpl<CollectMapper, Collect> impl
             CollectSimple collect = new CollectSimple();
             collect.setUserId(userId);
             collect.setPostId(postId);
-            System.out.print(" S3-collect-save");
             // 使用 CollectSimpleMapper 直接插入
             collectSimpleMapper.insert(collect);
-            System.out.print(" S3.1-saved");
 
             // 帖子收藏数加1
             Post post = postService.getById(postId);
@@ -97,12 +92,10 @@ public class CollectServiceImpl extends ServiceImpl<CollectMapper, Collect> impl
                         notificationService.save(notification);
                     } catch (Exception e) {
                         // 通知创建失败不影响收藏功能
-                        System.err.println("Failed to create collect notification: " + e.getMessage());
                     }
                 }
             }
 
-            System.out.println(" S4-returntrue");
             return true;
         }
     }

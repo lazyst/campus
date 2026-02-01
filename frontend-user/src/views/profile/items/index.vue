@@ -226,9 +226,6 @@ async function loadItems() {
       size: 20
     })
 
-    // 调试日志
-    console.log('API响应:', response)
-
     // 兼容两种格式：直接数组 或 Page 对象
     let records: any[] = []
     if (Array.isArray(response)) {
@@ -237,11 +234,7 @@ async function loadItems() {
       records = (response as { records?: any[] }).records || []
     }
 
-    console.log('records:', records)
-    console.log('第一个item:', records[0])
-
     const newList = records.map(transformItem)
-    console.log('transformed:', newList)
     items.value.push(...newList)
     page.value++
 
@@ -249,7 +242,7 @@ async function loadItems() {
       finished.value = true
     }
   } catch (error) {
-    console.error('获取物品列表失败:', error)
+    // 忽略错误
   } finally {
     loading.value = false
   }
@@ -274,7 +267,7 @@ async function confirmDelete() {
     items.value = items.value.filter(i => i.id !== itemToDelete.value!.id)
     showToast('删除成功', 'success')
   } catch (error) {
-    console.error('删除物品失败:', error)
+    // 忽略错误
     showToast('删除失败，请重试', 'error')
   } finally {
     deleteLoading.value = false
@@ -306,7 +299,7 @@ async function confirmComplete() {
     }
     showToast('操作成功，物品已标记为已卖出', 'success')
   } catch (error) {
-    console.error('标记已完成失败:', error)
+    // 忽略错误
     showToast('操作失败，请重试', 'error')
   } finally {
     completeLoading.value = false

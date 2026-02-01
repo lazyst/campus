@@ -87,7 +87,6 @@ public class LikeServiceImpl extends ServiceImpl<LikeMapper, Like> implements Li
                     notificationService.save(notification);
                 } catch (Exception e) {
                     // 通知创建失败不影响点赞功能
-                    System.err.println("Failed to create like notification: " + e.getMessage());
                 }
             }
 

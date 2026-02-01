@@ -50,27 +50,29 @@ public class ItemServiceImpl extends ServiceImpl<ItemMapper, Item> implements It
 
     @Override
     public void online(Long itemId) {
-        Item item = this.getById(itemId);
-        if (item != null && item.getStatus() == 3) {
-            item.setStatus(1);  // 上架
-            this.updateById(item);
-        }
+        changeStatus(itemId, 3, 1);
     }
 
     @Override
     public void offline(Long itemId) {
-        Item item = this.getById(itemId);
-        if (item != null && item.getStatus() == 1) {
-            item.setStatus(3);  // 下架
-            this.updateById(item);
-        }
+        changeStatus(itemId, 1, 3);
     }
 
     @Override
     public void complete(Long itemId) {
+        changeStatus(itemId, 1, 2);
+    }
+
+    /**
+     * 变更物品状态
+     * @param itemId 物品ID
+     * @param fromStatus 期望的当前状态
+     * @param toStatus 目标状态
+     */
+    private void changeStatus(Long itemId, int fromStatus, int toStatus) {
         Item item = this.getById(itemId);
-        if (item != null && item.getStatus() == 1) {
-            item.setStatus(2);  // 已完成
+        if (item != null && item.getStatus() == fromStatus) {
+            item.setStatus(toStatus);
             this.updateById(item);
         }
     }

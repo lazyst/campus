@@ -17,6 +17,7 @@ public class PostServiceImpl extends ServiceImpl<PostMapper, Post> implements Po
     @Override
     @Transactional(rollbackFor = Exception.class)
     public void incrementViewCount(Long postId) {
+        // VERSION 2026-02-01 FIXED - direct implementation
         Post post = this.getById(postId);
         if (post != null) {
             post.setViewCount(post.getViewCount() + 1);

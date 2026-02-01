@@ -123,7 +123,7 @@ async function loadMessages() {
       otherUserAvatar.value = ''
     }
   } catch (error) {
-    console.error('获取用户信息失败:', error)
+    // 忽略错误
     chatName.value = `用户${targetUserId}`
     otherUserAvatar.value = ''
   }
@@ -135,7 +135,7 @@ async function loadMessages() {
     // 消息加载完成后滚动到底部
     scrollToBottom()
   } catch (error) {
-    console.error('获取消息失败:', error)
+    // 忽略错误
     messages.value = []
   }
 }
@@ -155,7 +155,7 @@ async function handleSendMessage() {
     try {
       await connectWs(userStore.token)
     } catch (error) {
-      console.error('WebSocket 连接失败:', error)
+      // 忽略错误
       showToast('消息发送失败，请稍后重试')
       return
     }
@@ -178,7 +178,7 @@ async function handleSendMessage() {
     inputMessage.value = ''
     scrollToBottom()
   } catch (error) {
-    console.error('发送消息失败:', error)
+    // 忽略错误
     showToast('消息发送失败，请稍后重试')
   }
 }
@@ -191,7 +191,7 @@ async function sendQuickReply(reply) {
     try {
       await connectWs(userStore.token)
     } catch (error) {
-      console.error('WebSocket 连接失败:', error)
+      // 忽略错误
       showToast('消息发送失败，请稍后重试')
       return
     }
@@ -213,7 +213,7 @@ async function sendQuickReply(reply) {
     // 滚动到底部
     scrollToBottom()
   } catch (error) {
-    console.error('发送消息失败:', error)
+    // 忽略错误
     showToast('消息发送失败，请稍后重试')
   }
 }
@@ -232,16 +232,13 @@ onMounted(async () => {
   }
 
   // 进入聊天页面，清空该会话的未读消息（调用API）
-  console.log('开始清除未读数, otherUserId:', otherUserId.value)
   try {
     await clearUnreadCount(otherUserId.value)
-    console.log('清除未读数 API 调用完成')
   } catch (err) {
-    console.error('清除未读数失败:', err)
+    // 忽略错误
   }
 
   // 触发自定义事件通知消息列表页面更新
-  console.log('触发 unread-cleared 事件')
   window.dispatchEvent(new CustomEvent('unread-cleared', {
     detail: { userId: otherUserId.value }
   }))

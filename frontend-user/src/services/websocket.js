@@ -42,24 +42,13 @@ export function connect(token) {
       const StompModule = await import('stompjs')
       const Stomp = StompModule.default || StompModule
 
-      console.log('创建原生 WebSocket 连接...')
-
       // 使用原生 WebSocket 创建连接
       const socket = new WebSocket(WS_URL)
 
-      socket.onopen = () => {
-        console.log('WebSocket 连接已建立')
-      }
-
       socket.onclose = (event) => {
-        console.log('WebSocket 关闭:', event.code, event.reason)
         isConnected.value = false
         connectionPromise = null
         stompClient = null
-      }
-
-      socket.onerror = (error) => {
-        console.error('WebSocket 错误:', error)
       }
 
       // 创建 STOMP 客户端
@@ -72,7 +61,6 @@ export function connect(token) {
       stompClient.connect(
         { Authorization: `Bearer ${token}` },
         () => {
-          console.log('STOMP 连接成功!')
           isConnected.value = true
 
           // 订阅个人消息队列
@@ -81,10 +69,9 @@ export function connect(token) {
             (message) => {
               try {
                 const data = JSON.parse(message.body)
-                console.log('收到消息:', data)
                 messageHandlers.forEach(handler => handler(data))
-              } catch (e) {
-                console.error('解析消息失败:', e)
+              } catch {
+                // 忽略消息解析错误
               }
             }
           )
@@ -92,7 +79,6 @@ export function connect(token) {
           resolve()
         },
         (error) => {
-          console.error('STOMP 连接失败:', error)
           isConnected.value = false
           connectionPromise = null
           stompClient = null
@@ -109,7 +95,6 @@ export function connect(token) {
       }, 10000)
 
     } catch (error) {
-      console.error('创建 WebSocket 失败:', error)
       connectionPromise = null
       reject(error)
     }
@@ -133,7 +118,6 @@ export function disconnect() {
 
   isConnected.value = false
   connectionPromise = null
-  console.log('WebSocket 已断开')
 }
 
 /**
@@ -151,8 +135,6 @@ export function sendMessage(receiverId, content) {
     { Authorization: `Bearer ${localStorage.getItem('token')}` },
     JSON.stringify({ content })
   )
-
-  console.log('消息已发送:', content)
 }
 
 /**

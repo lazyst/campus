@@ -286,7 +286,7 @@ async function fetchPost() {
       isCollected.value = collected;
     }
   } catch (error) {
-    console.error('获取帖子详情失败:', error);
+    // 忽略错误
     post.value = null;
   } finally {
     loading.value = false;
@@ -300,7 +300,7 @@ async function fetchComments() {
     const data = await getCommentsByPost(postId);
     comments.value = data || [];
   } catch (error) {
-    console.error('获取评论列表失败:', error);
+    // 忽略错误
     comments.value = [];
   } finally {
     commentsLoading.value = false;
@@ -371,7 +371,7 @@ async function handleLike() {
       await toggleLikePost(postId);
       // API 成功，不需要额外处理，乐观更新已生效
     } catch (error) {
-      console.error('点赞失败:', error);
+      // 忽略错误
       // 回滚
       isLiked.value = previousLiked;
       post.value.likeCount = previousCount;
@@ -398,7 +398,7 @@ async function handleLike() {
         // 重新获取帖子数据以同步收藏数
         await fetchPost();
       } catch (error: any) {
-        console.error('收藏失败:', error);
+        // 忽略错误
         // 回滚
         isCollected.value = previousCollected;
         post.value.collectCount = previousCount;
@@ -441,7 +441,7 @@ async function handleSubmitComment() {
       newComment.value = '';
       showToast('评论成功', 'success');
     } catch (error) {
-      console.error('发表评论失败:', error);
+      // 忽略错误
     } finally {
       isSubmitting.value = false;
     }

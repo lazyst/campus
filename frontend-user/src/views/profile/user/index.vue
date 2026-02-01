@@ -202,7 +202,6 @@ async function loadUserProfile() {
     const data = await getUserDetailInfo(userId.value);
     user.value = data;
   } catch (error) {
-    console.error('获取用户信息失败:', error);
     user.value = null;
   } finally {
     loading.value = false;
@@ -215,7 +214,6 @@ async function loadUserPosts() {
     const data = await getPostsByUserId(userId.value);
     posts.value = data?.records || data || [];
   } catch (error) {
-    console.error('获取用户帖子失败:', error);
     posts.value = [];
   } finally {
     postsLoading.value = false;
@@ -240,7 +238,7 @@ async function loadUserItems() {
       return { ...item, image };
     });
   } catch (error) {
-    console.error('获取用户闲置失败:', error);
+    // 忽略错误
     items.value = [];
   } finally {
     itemsLoading.value = false;

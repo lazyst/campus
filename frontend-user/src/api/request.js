@@ -24,7 +24,6 @@ request.interceptors.request.use(
   (config) => {
     // 1. 自动添加Token
     const token = localStorage.getItem('token')
-    console.log('【请求拦截器】URL:', config.url, '| 存在token:', !!token, '| token前20字符:', token ? token.substring(0, 20) + '...' : 'null')
 
     if (token) {
       config.headers.Authorization = `Bearer ${token}`
@@ -54,13 +53,10 @@ request.interceptors.response.use(
     // 2. 统一处理响应数据
     const { code, message, data, token } = response.data
 
-    console.log('【响应拦截器】URL:', response.config.url, '| HTTP:', response.status, '| 业务code:', code, '| message:', message)
-
     // 成功响应
     if (code === 200) {
       // 自动保存新token
       if (token) {
-        console.log('【响应拦截器】收到新token，保存到localStorage')
         localStorage.setItem('token', token)
       }
 
@@ -78,7 +74,6 @@ request.interceptors.response.use(
     }
 
     // 业务错误
-    console.log('【响应拦截器】业务错误，调用handleBusinessError，code:', code)
     handleBusinessError(code, message, response.config)
     return Promise.reject(new Error(message))
   },

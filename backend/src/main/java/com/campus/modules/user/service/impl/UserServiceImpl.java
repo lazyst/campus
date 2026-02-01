@@ -18,10 +18,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
 
     @Override
     public User getByPhone(String phone) {
-        System.out.println("=== UserServiceImpl.getByPhone === phone: " + phone);
-        User user = baseMapper.selectOne(new LambdaQueryWrapper<User>().eq(User::getPhone, phone));
-        System.out.println("=== UserServiceImpl.getByPhone === result: " + (user == null ? "null" : "id=" + user.getId() + ", status=" + user.getStatus()));
-        return user;
+        return baseMapper.selectOne(new LambdaQueryWrapper<User>().eq(User::getPhone, phone));
     }
 
     @Override
@@ -47,35 +44,9 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
     }
 
     @Override
-    public void updateProfile(Long userId, String nickname, Integer gender, String bio, String avatar) {
-        User user = baseMapper.selectById(userId);
-        if (user == null) {
-            throw new IllegalArgumentException("用户不存在");
-        }
-
-        if (nickname != null) {
-            user.setNickname(nickname);
-        }
-        if (gender != null) {
-            user.setGender(gender);
-        }
-        if (bio != null) {
-            user.setBio(bio);
-        }
-        if (avatar != null) {
-            user.setAvatar(avatar);
-        }
-
-        baseMapper.updateById(user);
-    }
-
-    @Override
     public void updateProfile(Long userId, String nickname, Integer gender, String bio, String avatar, String grade, String major) {
-        System.out.println("=== DEBUG UserServiceImpl === userId=" + userId + ", nickname=" + nickname + ", gender=" + gender);
-        
         User user = baseMapper.selectById(userId);
-        System.out.println("=== DEBUG UserServiceImpl === selectById result: " + (user == null ? "null" : "user found"));
-        
+
         if (user == null) {
             throw new IllegalArgumentException("用户不存在");
         }

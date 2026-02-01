@@ -158,7 +158,7 @@ class UserServiceTest {
             when(userMapper.selectById(1L)).thenReturn(testUser);
             when(userMapper.updateById(any(User.class))).thenReturn(1);
 
-            userService.updateProfile(1L, "新昵称", 2, "新简介", "https://new-avatar.jpg");
+            userService.updateProfile(1L, "新昵称", 2, "新简介", "https://new-avatar.jpg", null, null);
 
             assertEquals("新昵称", testUser.getNickname());
             assertEquals(2, testUser.getGender());
@@ -174,7 +174,7 @@ class UserServiceTest {
 
             IllegalArgumentException exception = assertThrows(
                     IllegalArgumentException.class,
-                    () -> userService.updateProfile(999L, "昵称", 1, "简介", "头像")
+                    () -> userService.updateProfile(999L, "昵称", 1, "简介", "头像", null, null)
             );
 
             assertEquals("用户不存在", exception.getMessage());
@@ -186,7 +186,7 @@ class UserServiceTest {
             when(userMapper.selectById(1L)).thenReturn(testUser);
             when(userMapper.updateById(any(User.class))).thenReturn(1);
 
-            userService.updateProfile(1L, "仅更新昵称", null, null, null);
+            userService.updateProfile(1L, "仅更新昵称", null, null, null, null, null);
 
             assertEquals("仅更新昵称", testUser.getNickname());
             assertEquals(1, testUser.getGender());

@@ -129,7 +129,7 @@ const fetchData = async () => {
       status.value = data.status || {}
     }
   } catch (error) {
-    console.error('获取首页数据失败:', error)
+    // 忽略错误
   } finally {
     loading.value = false
   }
