@@ -72,6 +72,24 @@ public class AdminServiceImpl extends ServiceImpl<AdminMapper, Admin> implements
         return admin != null && admin.getRole() == 1;
     }
 
+    @Override
+    public Long getAdminIdFromToken(String token) {
+        try {
+            SecretKey key = Keys.hmacShaKeyFor(jwtSecret.getBytes(StandardCharsets.UTF_8));
+
+            Claims claims = Jwts.parser()
+                    .verifyWith(key)
+                    .build()
+                    .parseSignedClaims(token)
+                    .getPayload();
+
+            String subject = claims.getSubject();
+            return subject != null ? Long.parseLong(subject) : null;
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
     /**
      * 生成JWT Token
      */

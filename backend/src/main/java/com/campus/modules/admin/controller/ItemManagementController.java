@@ -4,10 +4,12 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.campus.common.Result;
 import com.campus.modules.admin.service.AdminService;
 import com.campus.modules.auth.service.AuthService;
+import com.campus.modules.trade.controller.ItemController.ItemUpdateRequest;
 import com.campus.modules.trade.entity.Item;
 import com.campus.modules.trade.service.ItemService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.*;
 
 import java.math.BigDecimal;
@@ -108,19 +110,51 @@ public class ItemManagementController {
     public Result<Void> delete(
             @RequestHeader("Authorization") String authHeader,
             @PathVariable Long itemId) {
-        
+
         verifyAdmin(authHeader);
-        
+
         Item item = itemService.getById(itemId);
         if (item == null || (item.getStatus() != null && item.getStatus() == 0)) {
             return Result.error("物品不存在");
         }
-        
+
         // Soft delete - set status to 0 (deleted)
         item.setStatus(0);
         itemService.updateById(item);
-        
+
         return Result.success();
+    }
+
+    @Operation(summary = "更新物品")
+    @PutMapping("/{itemId}")
+    public Result<Item> update(
+            @RequestHeader("Authorization") String authHeader,
+            @PathVariable Long itemId,
+            @Valid @RequestBody ItemUpdateRequest request) {
+
+        verifyAdmin(authHeader);
+
+        Item item = itemService.getById(itemId);
+        if (item == null || (item.getStatus() != null && item.getStatus() == 0)) {
+            return Result.error("物品不存在");
+        }
+
+        // 更新字段
+        if (request.getTitle() != null) {
+            item.setTitle(request.getTitle());
+        }
+        if (request.getDescription() != null) {
+            item.setDescription(request.getDescription());
+        }
+        if (request.getPrice() != null) {
+            item.setPrice(request.getPrice());
+        }
+        if (request.getImages() != null) {
+            item.setImages(request.getImages());
+        }
+
+        itemService.updateById(item);
+        return Result.success(item);
     }
 
     @Operation(summary = "下架物品")
@@ -179,11 +213,11 @@ public class ItemManagementController {
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
             throw new SecurityException("未授权访问");
         }
-        
+
         String token = authHeader.replace("Bearer ", "");
-        Long adminId = authService.getUserIdFromToken(token);
-        
-        if (!adminService.isSuperAdmin(adminId)) {
+        Long adminId = adminService.getAdminIdFromToken(token);
+
+        if (adminId == null || !adminService.isSuperAdmin(adminId)) {
             throw new SecurityException("权限不足");
         }
     }

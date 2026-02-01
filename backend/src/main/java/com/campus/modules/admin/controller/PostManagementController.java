@@ -4,12 +4,17 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.campus.common.Result;
 import com.campus.modules.admin.service.AdminService;
 import com.campus.modules.auth.service.AuthService;
+import com.campus.modules.forum.dto.PostUpdateRequest;
+import com.campus.modules.forum.entity.Comment;
 import com.campus.modules.forum.entity.Post;
+import com.campus.modules.forum.service.CommentService;
 import com.campus.modules.forum.service.PostService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -21,11 +26,14 @@ import java.util.Map;
 public class PostManagementController {
 
     private final PostService postService;
+    private final CommentService commentService;
     private final AdminService adminService;
     private final AuthService authService;
 
-    public PostManagementController(PostService postService, AdminService adminService, AuthService authService) {
+    public PostManagementController(PostService postService, CommentService commentService,
+                                     AdminService adminService, AuthService authService) {
         this.postService = postService;
+        this.commentService = commentService;
         this.adminService = adminService;
         this.authService = authService;
     }
@@ -100,46 +108,115 @@ public class PostManagementController {
     public Result<Void> delete(
             @RequestHeader("Authorization") String authHeader,
             @PathVariable Long postId) {
-        
+
         verifyAdmin(authHeader);
-        
+
         Post post = postService.getById(postId);
         if (post == null || (post.getStatus() != null && post.getStatus() == 0)) {
             return Result.error("帖子不存在");
         }
-        
+
         // Soft delete - set status to 0 (deleted)
         post.setStatus(0);
         postService.updateById(post);
-        
+
         return Result.success();
+    }
+
+    @Operation(summary = "更新帖子")
+    @PutMapping("/{postId}")
+    public Result<Post> update(
+            @RequestHeader("Authorization") String authHeader,
+            @PathVariable Long postId,
+            @Valid @RequestBody PostUpdateRequest request) {
+
+        verifyAdmin(authHeader);
+
+        Post post = postService.getById(postId);
+        if (post == null || (post.getStatus() != null && post.getStatus() == 0)) {
+            return Result.error("帖子不存在");
+        }
+
+        // 更新字段
+        if (request.getTitle() != null) {
+            post.setTitle(request.getTitle());
+        }
+        if (request.getContent() != null) {
+            post.setContent(request.getContent());
+        }
+        if (request.getImages() != null) {
+            post.setImages(request.getImages());
+        }
+        if (request.getStatus() != null) {
+            post.setStatus(request.getStatus());
+        }
+
+        postService.updateById(post);
+        return Result.success(post);
     }
 
     @Operation(summary = "获取帖子统计")
     @GetMapping("/stats")
     public Result<Map<String, Object>> stats(
             @RequestHeader("Authorization") String authHeader) {
-        
+
         verifyAdmin(authHeader);
-        
+
         long total = postService.count(new com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper<Post>()
                 .ne(Post::getStatus, 0)); // Exclude deleted
-        
+
         long today = postService.count(new com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper<Post>()
                 .ne(Post::getStatus, 0)
                 .ge(Post::getCreatedAt, java.time.LocalDateTime.now().minusDays(1)));
-        
+
         long thisWeek = postService.count(new com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper<Post>()
                 .ne(Post::getStatus, 0)
                 .ge(Post::getCreatedAt, java.time.LocalDateTime.now().minusWeeks(1)));
-        
+
         Map<String, Object> result = Map.of(
             "total", total,
             "today", today,
             "thisWeek", thisWeek
         );
-        
+
         return Result.success(result);
+    }
+
+    @Operation(summary = "获取帖子的评论列表")
+    @GetMapping("/{postId}/comments")
+    public Result<List<Comment>> getComments(
+            @RequestHeader("Authorization") String authHeader,
+            @PathVariable Long postId) {
+
+        verifyAdmin(authHeader);
+
+        Post post = postService.getById(postId);
+        if (post == null) {
+            return Result.error("帖子不存在");
+        }
+
+        List<Comment> comments = commentService.getByPostId(postId);
+        return Result.success(comments);
+    }
+
+    @Operation(summary = "删除评论")
+    @DeleteMapping("/comments/{commentId}")
+    public Result<Void> deleteComment(
+            @RequestHeader("Authorization") String authHeader,
+            @PathVariable Long commentId) {
+
+        verifyAdmin(authHeader);
+
+        Comment comment = commentService.getById(commentId);
+        if (comment == null) {
+            return Result.error("评论不存在");
+        }
+
+        // Soft delete - set status to 0
+        comment.setStatus(0);
+        commentService.updateById(comment);
+
+        return Result.success();
     }
 
     /**
@@ -149,11 +226,11 @@ public class PostManagementController {
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
             throw new SecurityException("未授权访问");
         }
-        
+
         String token = authHeader.replace("Bearer ", "");
-        Long adminId = authService.getUserIdFromToken(token);
-        
-        if (!adminService.isSuperAdmin(adminId)) {
+        Long adminId = adminService.getAdminIdFromToken(token);
+
+        if (adminId == null || !adminService.isSuperAdmin(adminId)) {
             throw new SecurityException("权限不足");
         }
     }

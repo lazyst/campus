@@ -4,10 +4,12 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.campus.common.Result;
 import com.campus.modules.admin.service.AdminService;
 import com.campus.modules.auth.service.AuthService;
+import com.campus.modules.user.dto.UpdateProfileRequest;
 import com.campus.modules.user.entity.User;
 import com.campus.modules.user.service.UserService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
@@ -72,16 +74,55 @@ public class UserManagementController {
     public Result<User> detail(
             @RequestHeader("Authorization") String authHeader,
             @PathVariable Long userId) {
-        
+
         verifyAdmin(authHeader);
-        
+
         User user = userService.getById(userId);
         if (user == null || (user.getDeleted() != null && user.getDeleted() == 1)) {
             return Result.error("用户不存在");
         }
-        
+
         // Clear sensitive data
         user.setPassword(null);
+        return Result.success(user);
+    }
+
+    @Operation(summary = "更新用户信息")
+    @PutMapping("/{userId}")
+    public Result<User> update(
+            @RequestHeader("Authorization") String authHeader,
+            @PathVariable Long userId,
+            @Valid @RequestBody UpdateProfileRequest request) {
+
+        verifyAdmin(authHeader);
+
+        User user = userService.getById(userId);
+        if (user == null || (user.getDeleted() != null && user.getDeleted() == 1)) {
+            return Result.error("用户不存在");
+        }
+
+        // 更新用户信息
+        if (request.getNickname() != null) {
+            user.setNickname(request.getNickname());
+        }
+        if (request.getGender() != null) {
+            user.setGender(request.getGender());
+        }
+        if (request.getBio() != null) {
+            user.setBio(request.getBio());
+        }
+        if (request.getAvatar() != null) {
+            user.setAvatar(request.getAvatar());
+        }
+        if (request.getGrade() != null) {
+            user.setGrade(request.getGrade());
+        }
+        if (request.getMajor() != null) {
+            user.setMajor(request.getMajor());
+        }
+
+        userService.updateById(user);
+        user.setPassword(null); // 不返回密码
         return Result.success(user);
     }
 
@@ -181,11 +222,11 @@ public class UserManagementController {
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
             throw new SecurityException("未授权访问");
         }
-        
+
         String token = authHeader.replace("Bearer ", "");
-        Long adminId = authService.getUserIdFromToken(token);
-        
-        if (!adminService.isSuperAdmin(adminId)) {
+        Long adminId = adminService.getAdminIdFromToken(token);
+
+        if (adminId == null || !adminService.isSuperAdmin(adminId)) {
             throw new SecurityException("权限不足");
         }
     }

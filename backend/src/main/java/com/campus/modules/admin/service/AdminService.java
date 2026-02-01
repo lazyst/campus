@@ -22,4 +22,9 @@ public interface AdminService extends IService<Admin> {
      * 检查是否为超级管理员
      */
     boolean isSuperAdmin(Long adminId);
+
+    /**
+     * 从token中获取管理员ID
+     */
+    Long getAdminIdFromToken(String token);
 }
