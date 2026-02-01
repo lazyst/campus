@@ -160,11 +160,9 @@
         <el-pagination
           v-model:current-page="currentPage"
           v-model:page-size="pageSize"
-          :page-sizes="[12, 24, 48, 96]"
           :total="total"
-          layout="total, sizes, prev, pager, next, jumper"
-          @size-change="handleSearch"
-          @current-change="handleSearch"
+          layout="total, prev, pager, next, jumper"
+          @current-change="handleCurrentChange"
         />
       </div>
     </el-card>
@@ -207,6 +205,7 @@ const dateDirs = ref([])
 const total = ref(0)
 const currentPage = ref(1)
 const pageSize = ref(12)
+const pageSizes = [12, 24, 48, 96]
 const searchKeyword = ref('')
 const selectedDateDir = ref('')
 const activeTab = ref('all')
@@ -216,7 +215,7 @@ const previewList = computed(() => fileList.value.map(f => f.url))
 const fetchStats = async () => {
   try {
     const res = await getStorageStats()
-    stats.value = res
+    stats.value = res.data || {}
   } catch (error) {
     console.error('获取统计数据失败:', error)
   }
@@ -248,8 +247,8 @@ const fetchFileList = async () => {
         pageSize: pageSize.value
       })
     }
-    fileList.value = res.records || []
-    total.value = res.total || 0
+    fileList.value = res.data.records || []
+    total.value = res.data.total || 0
   } catch (error) {
     ElMessage.error('获取文件列表失败')
   } finally {
@@ -260,6 +259,16 @@ const fetchFileList = async () => {
 const handleSearch = () => {
   currentPage.value = 1
   selectedImages.value = []
+  fetchFileList()
+}
+
+const handleSizeChange = (size) => {
+  pageSize.value = size
+  fetchFileList()
+}
+
+const handleCurrentChange = (page) => {
+  currentPage.value = page
   fetchFileList()
 }
 

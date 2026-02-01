@@ -45,17 +45,18 @@ export default api
 
 // 封装的请求方法
 export function get(url, params) {
-  return api.get(url, { params }).then((res) => res.data)
+  // 响应拦截器已处理数据解析，直接返回
+  return api.get(url, { params })
 }
 
 export function post(url, data) {
-  return api.post(url, data).then((res) => res.data)
+  return api.post(url, data)
 }
 
 export function put(url, data) {
-  return api.put(url, data).then((res) => res.data)
+  return api.put(url, data)
 }
 
 export function del(url) {
-  return api.delete(url).then((res) => res.data)
+  return api.delete(url)
 }

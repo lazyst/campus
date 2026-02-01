@@ -3,6 +3,7 @@ package com.campus.modules.common.controller;
 import com.campus.common.Result;
 import com.campus.modules.forum.entity.Post;
 import com.campus.modules.trade.entity.Item;
+import com.campus.modules.user.entity.User;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.Data;
@@ -41,7 +42,7 @@ public class UploadController {
     private com.campus.modules.trade.mapper.ItemMapper itemMapper;
 
     @Autowired
-    private com.campus.modules.user.mapper.UserMapper userMapper;
+    private com.campus.modules.user.service.UserService userService;
 
     @Operation(summary = "上传图片")
     @PostMapping("/image")
@@ -324,32 +325,20 @@ public class UploadController {
             // 获取所有被引用的图片URL
             Set<String> usedUrls = new HashSet<>();
 
-            // 从用户表获取头像 - 使用JDBC直接查询
-            java.sql.Connection conn = null;
-            java.sql.Statement stmt = null;
-            java.sql.ResultSet rs = null;
-            try {
-                conn = java.sql.DriverManager.getConnection(
-                    "jdbc:mysql://localhost:3306/campus?useUnicode=true&characterEncoding=utf-8&serverTimezone=Asia/Shanghai&useSSL=false&allowPublicKeyRetrieval=true",
-                    "root", "123");
-                stmt = conn.createStatement();
-                rs = stmt.executeQuery("SELECT avatar FROM user WHERE avatar IS NOT NULL AND avatar != ''");
-                while (rs.next()) {
-                    String avatar = rs.getString("avatar");
-                    usedUrls.add(avatar);
+            // 从用户表获取头像 - 使用MyBatis-Plus查询
+            List<User> users = userService.list();
+            System.out.println("=== DEBUG: 查询到 " + users.size() + " 个用户");
+            for (User user : users) {
+                String avatar = user.getAvatar();
+                System.out.println("=== DEBUG: 用户 " + user.getId() + " 的头像: " + avatar);
+                if (avatar != null && !avatar.isEmpty()) {
+                    // 规范化URL：去除协议和域名，只保留路径部分
+                    String normalizedUrl = normalizeUrl(avatar);
+                    System.out.println("=== DEBUG: 规范化后: " + normalizedUrl);
+                    usedUrls.add(normalizedUrl);
                 }
-            } catch (Exception e) {
-                System.out.println("Error fetching user avatars: " + e.getMessage());
-            } finally {
-                try { if (rs != null) rs.close(); } catch (Exception e) {}
-                try { if (stmt != null) stmt.close(); } catch (Exception e) {}
-                try { if (conn != null) conn.close(); } catch (Exception e) {}
             }
-
-            System.out.println("=== DEBUG: Found " + usedUrls.size() + " used URLs from users ===");
-            for (String url : usedUrls) {
-                System.out.println("=== DEBUG: Used URL: " + url + " ===");
-            }
+            System.out.println("=== DEBUG: 总共 " + usedUrls.size() + " 个被使用的URL");
 
             // 从帖子表获取
             List<Post> posts = postMapper.selectList(null);
@@ -358,7 +347,7 @@ public class UploadController {
                     usedUrls.addAll(parseImageUrls(post.getImages()));
                 }
                 if (post.getThumbnail() != null) {
-                    usedUrls.add(post.getThumbnail());
+                    usedUrls.add(normalizeUrl(post.getThumbnail()));
                 }
             }
 
@@ -369,11 +358,11 @@ public class UploadController {
                     usedUrls.addAll(parseImageUrls(item.getImages()));
                 }
                 if (item.getThumbnail() != null) {
-                    usedUrls.add(item.getThumbnail());
+                    usedUrls.add(normalizeUrl(item.getThumbnail()));
                 }
             }
 
-            // 获取所有文件
+            // 获取所有文件（包含日期目录和avatars目录）
             Path uploadDir = Paths.get(UPLOAD_PATH);
             if (!Files.exists(uploadDir)) {
                 Map<String, Object> emptyResult = new HashMap<>();
@@ -384,6 +373,8 @@ public class UploadController {
             }
 
             List<FileInfo> allFiles = new ArrayList<>();
+
+            // 遍历所有子目录（日期目录和avatars等）
             Files.list(uploadDir)
                     .filter(Files::isDirectory)
                     .forEach(dateFolder -> {
@@ -437,26 +428,13 @@ public class UploadController {
             // 获取所有被引用的图片URL
             Set<String> usedUrls = new HashSet<>();
 
-            // 从用户表获取头像 - 使用JDBC直接查询
-            java.sql.Connection conn = null;
-            java.sql.Statement stmt = null;
-            java.sql.ResultSet rs = null;
-            try {
-                conn = java.sql.DriverManager.getConnection(
-                    "jdbc:mysql://localhost:3306/campus?useUnicode=true&characterEncoding=utf-8&serverTimezone=Asia/Shanghai&useSSL=false&allowPublicKeyRetrieval=true",
-                    "root", "123");
-                stmt = conn.createStatement();
-                rs = stmt.executeQuery("SELECT avatar FROM user WHERE avatar IS NOT NULL AND avatar != ''");
-                while (rs.next()) {
-                    String avatar = rs.getString("avatar");
-                    usedUrls.add(avatar);
+            // 从用户表获取头像 - 使用MyBatis-Plus查询
+            List<User> users = userService.list();
+            for (User user : users) {
+                String avatar = user.getAvatar();
+                if (avatar != null && !avatar.isEmpty()) {
+                    usedUrls.add(normalizeUrl(avatar));
                 }
-            } catch (Exception e) {
-                System.out.println("Error fetching user avatars: " + e.getMessage());
-            } finally {
-                try { if (rs != null) rs.close(); } catch (Exception e) {}
-                try { if (stmt != null) stmt.close(); } catch (Exception e) {}
-                try { if (conn != null) conn.close(); } catch (Exception e) {}
             }
 
             List<Post> posts = postMapper.selectList(null);
@@ -465,7 +443,7 @@ public class UploadController {
                     usedUrls.addAll(parseImageUrls(post.getImages()));
                 }
                 if (post.getThumbnail() != null) {
-                    usedUrls.add(post.getThumbnail());
+                    usedUrls.add(normalizeUrl(post.getThumbnail()));
                 }
             }
 
@@ -475,7 +453,7 @@ public class UploadController {
                     usedUrls.addAll(parseImageUrls(item.getImages()));
                 }
                 if (item.getThumbnail() != null) {
-                    usedUrls.add(item.getThumbnail());
+                    usedUrls.add(normalizeUrl(item.getThumbnail()));
                 }
             }
 
@@ -548,26 +526,13 @@ public class UploadController {
             // 获取所有被引用的图片URL
             Set<String> usedUrls = new HashSet<>();
 
-            // 从用户表获取头像 - 使用JDBC直接查询
-            java.sql.Connection conn = null;
-            java.sql.Statement stmt = null;
-            java.sql.ResultSet rs = null;
-            try {
-                conn = java.sql.DriverManager.getConnection(
-                    "jdbc:mysql://localhost:3306/campus?useUnicode=true&characterEncoding=utf-8&serverTimezone=Asia/Shanghai&useSSL=false&allowPublicKeyRetrieval=true",
-                    "root", "123");
-                stmt = conn.createStatement();
-                rs = stmt.executeQuery("SELECT avatar FROM user WHERE avatar IS NOT NULL AND avatar != ''");
-                while (rs.next()) {
-                    String avatar = rs.getString("avatar");
-                    usedUrls.add(avatar);
+            // 从用户表获取头像 - 使用MyBatis-Plus查询
+            List<User> users = userService.list();
+            for (User user : users) {
+                String avatar = user.getAvatar();
+                if (avatar != null && !avatar.isEmpty()) {
+                    usedUrls.add(normalizeUrl(avatar));
                 }
-            } catch (Exception e) {
-                System.out.println("Error fetching user avatars: " + e.getMessage());
-            } finally {
-                try { if (rs != null) rs.close(); } catch (Exception e) {}
-                try { if (stmt != null) stmt.close(); } catch (Exception e) {}
-                try { if (conn != null) conn.close(); } catch (Exception e) {}
             }
 
             List<Post> posts = postMapper.selectList(null);
@@ -576,7 +541,7 @@ public class UploadController {
                     usedUrls.addAll(parseImageUrls(post.getImages()));
                 }
                 if (post.getThumbnail() != null) {
-                    usedUrls.add(post.getThumbnail());
+                    usedUrls.add(normalizeUrl(post.getThumbnail()));
                 }
             }
 
@@ -586,7 +551,7 @@ public class UploadController {
                     usedUrls.addAll(parseImageUrls(item.getImages()));
                 }
                 if (item.getThumbnail() != null) {
-                    usedUrls.add(item.getThumbnail());
+                    usedUrls.add(normalizeUrl(item.getThumbnail()));
                 }
             }
 
@@ -675,6 +640,7 @@ public class UploadController {
                         .readValue(imagesJson, List.class);
                 return urls.stream()
                         .map(Object::toString)
+                        .map(this::normalizeUrl)
                         .collect(Collectors.toList());
             } catch (Exception e) {
                 // 解析失败，返回空列表
@@ -682,7 +648,26 @@ public class UploadController {
         }
 
         // 逗号分隔的URL
-        return Arrays.asList(imagesJson.split(","));
+        return Arrays.stream(imagesJson.split(","))
+                .map(this::normalizeUrl)
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * 规范化URL：去除协议和域名，只保留路径部分
+     * 例如：http://localhost:8080/uploads/xxx.jpg -> /uploads/xxx.jpg
+     */
+    private String normalizeUrl(String url) {
+        if (url == null || url.isEmpty()) {
+            return url;
+        }
+        // 去除 http://、https:// 前缀
+        url = url.replaceFirst("^https?://[^/]+", "");
+        // 确保以 / 开头
+        if (!url.startsWith("/")) {
+            url = "/" + url;
+        }
+        return url;
     }
 
     private String formatFileSize(long bytes) {

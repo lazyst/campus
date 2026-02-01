@@ -54,11 +54,9 @@
         <el-pagination
           v-model:current-page="currentPage"
           v-model:page-size="pageSize"
-          :page-sizes="[10, 20, 50, 100]"
           :total="total"
-          layout="total, sizes, prev, pager, next, jumper"
-          @size-change="handleSearch"
-          @current-change="handleSearch"
+          layout="total, prev, pager, next, jumper"
+          @current-change="handleCurrentChange"
         />
       </div>
     </el-card>
@@ -74,6 +72,7 @@ const loading = ref(false)
 const itemList = ref<Item[]>([])
 const currentPage = ref(1)
 const pageSize = ref(20)
+const pageSizes = [10, 20, 50, 100]
 const total = ref(0)
 const searchKeyword = ref('')
 const searchType = ref<number | null>(null)
@@ -107,8 +106,8 @@ const fetchData = async () => {
       type: searchType.value || undefined,
       status: searchStatus.value || undefined
     })
-    itemList.value = res.records
-    total.value = res.total
+    itemList.value = res.data.records
+    total.value = res.data.total
   } catch (error) {
     ElMessage.error('获取物品列表失败')
   } finally {
@@ -118,6 +117,16 @@ const fetchData = async () => {
 
 const handleSearch = () => {
   currentPage.value = 1
+  fetchData()
+}
+
+const handleSizeChange = (size: number) => {
+  pageSize.value = size
+  fetchData()
+}
+
+const handleCurrentChange = (page: number) => {
+  currentPage.value = page
   fetchData()
 }
 

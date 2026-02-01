@@ -33,11 +33,9 @@
         <el-pagination
           v-model:current-page="currentPage"
           v-model:page-size="pageSize"
-          :page-sizes="[10, 20, 50]"
           :total="total"
-          layout="total, sizes, prev, pager, next"
-          @size-change="fetchData"
-          @current-change="fetchData"
+          layout="total, prev, pager, next"
+          @current-change="handleCurrentChange"
         />
       </div>
     </el-card>
@@ -75,6 +73,7 @@ const loading = ref(false)
 const boardList = ref<Board[]>([])
 const currentPage = ref(1)
 const pageSize = ref(20)
+const pageSizes = [10, 20, 50]
 const total = ref(0)
 const dialogVisible = ref(false)
 const dialogTitle = ref('新建板块')
@@ -96,13 +95,23 @@ const fetchData = async () => {
   loading.value = true
   try {
     const res = await getBoardList({ page: currentPage.value, size: pageSize.value })
-    boardList.value = res.records
-    total.value = res.total
+    boardList.value = res.data.records
+    total.value = res.data.total
   } catch (error) {
     ElMessage.error('获取板块列表失败')
   } finally {
     loading.value = false
   }
+}
+
+const handleSizeChange = (size: number) => {
+  pageSize.value = size
+  fetchData()
+}
+
+const handleCurrentChange = (page: number) => {
+  currentPage.value = page
+  fetchData()
 }
 
 const handleCreate = () => {
