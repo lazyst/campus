@@ -172,7 +172,8 @@ const handleCurrentChange = (page: number) => {
 
 const handleView = async (post: Post) => {
   try {
-    const detail = await getPostDetail(post.id)
+    const res = await getPostDetail(post.id)
+    const detail = res.data
     if (detail.images) {
       try {
         detail.images = JSON.parse(detail.images)
@@ -182,7 +183,8 @@ const handleView = async (post: Post) => {
     }
     currentPost.value = detail
 
-    const commentList = await getPostComments(post.id)
+    const commentRes = await getPostComments(post.id)
+    const commentList = commentRes.data
     comments.value = commentList.filter((c: any) => c.status === 1)
 
     detailVisible.value = true
@@ -226,7 +228,8 @@ const handleDeleteComment = async (comment: any) => {
     await deleteComment(comment.id)
     ElMessage.success('删除成功')
     if (currentPost.value) {
-      const commentList = await getPostComments(currentPost.value.id)
+      const commentRes = await getPostComments(currentPost.value.id)
+      const commentList = commentRes.data
       comments.value = commentList.filter((c: any) => c.status === 1)
       currentPost.value.commentCount = comments.value.length
     }
