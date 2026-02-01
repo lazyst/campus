@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.annotation.*;
 import com.campus.entity.BaseEntity;
 import lombok.Getter;
 import lombok.Setter;
+import org.apache.ibatis.type.StringTypeHandler;
 
 import java.time.LocalDateTime;
 
@@ -34,11 +35,13 @@ public class Post extends BaseEntity {
     /**
      * 帖子内容
      */
+    @TableField(typeHandler = StringTypeHandler.class)
     private String content;
 
     /**
      * 图片JSON数组
      */
+    @TableField(typeHandler = StringTypeHandler.class)
     private String images;
 
     /**
@@ -71,6 +74,12 @@ public class Post extends BaseEntity {
      */
     @TableField(exist = false)
     private String userNickname;
+
+    /**
+     * 缩略图URL（非数据库字段）
+     */
+    @TableField(exist = false)
+    private String thumbnail;
 
     /**
      * 发布者头像（非数据库字段）

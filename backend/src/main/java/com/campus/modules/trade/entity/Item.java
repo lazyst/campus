@@ -84,6 +84,12 @@ public class Item extends BaseEntity {
     private String userAvatar;
     
     /**
+     * 兼容前端字段名：缩略图
+     */
+    @TableField(exist = false)
+    private String thumbnail;
+    
+    /**
      * 兼容前端字段名：卖家昵称
      */
     @TableField(exist = false)

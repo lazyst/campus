@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.annotation.*;
 import com.campus.entity.BaseEntity;
 import lombok.Getter;
 import lombok.Setter;
+import org.apache.ibatis.type.StringTypeHandler;
 
 /**
  * 评论实体类
@@ -32,6 +33,7 @@ public class Comment extends BaseEntity {
     /**
      * 评论内容
      */
+    @TableField(typeHandler = StringTypeHandler.class)
     private String content;
 
     /**
