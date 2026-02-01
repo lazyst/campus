@@ -85,8 +85,9 @@ public class ItemController {
         if (status != null) {
             wrapper.eq(Item::getStatus, status);
         } else {
-            // 默认排除已完成的物品（status=2）
+            // 默认排除已完成的物品（status=2）和已下架的物品（status=3）
             wrapper.ne(Item::getStatus, 2);
+            wrapper.ne(Item::getStatus, 3);
         }
 
         wrapper.orderByDesc(Item::getCreatedAt);
