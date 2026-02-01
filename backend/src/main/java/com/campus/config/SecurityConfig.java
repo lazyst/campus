@@ -61,6 +61,8 @@ public class SecurityConfig {
                 .requestMatchers("/api/comments/**").permitAll()
                 .requestMatchers("/api/items/**").permitAll()
                 .requestMatchers("/api/upload/**").permitAll()
+                .requestMatchers("/api/admin/auth/**").permitAll() // 允许管理员认证端点
+                .requestMatchers("/api/admin/**").hasRole("ADMIN") // 管理员API需要ADMIN角色
                 .requestMatchers("/uploads/**").permitAll()
                 .requestMatchers("/swagger-ui/**").permitAll()
                 .requestMatchers("/v3/api-docs/**").permitAll()

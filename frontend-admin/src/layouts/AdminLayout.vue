@@ -35,6 +35,10 @@
         <el-menu-item index="/users">
           <span>用户管理</span>
         </el-menu-item>
+
+        <el-menu-item index="/storage">
+          <span>文件管理</span>
+        </el-menu-item>
       </el-menu>
 
       <div class="sidebar-footer">
@@ -82,7 +86,8 @@ const pageTitle = computed(() => {
     '/users': '用户管理',
     '/boards': '板块管理',
     '/posts': '帖子管理',
-    '/items': '闲置管理'
+    '/items': '闲置管理',
+    '/storage': '文件管理'
   }
   return titles[route.path] || '管理后台'
 })
