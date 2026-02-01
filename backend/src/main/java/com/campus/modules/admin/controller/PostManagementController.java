@@ -9,13 +9,18 @@ import com.campus.modules.forum.entity.Comment;
 import com.campus.modules.forum.entity.Post;
 import com.campus.modules.forum.service.CommentService;
 import com.campus.modules.forum.service.PostService;
+import com.campus.modules.user.entity.User;
+import com.campus.modules.user.service.UserService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * 后台帖子管理控制器
@@ -29,13 +34,16 @@ public class PostManagementController {
     private final CommentService commentService;
     private final AdminService adminService;
     private final AuthService authService;
+    private final UserService userService;
 
     public PostManagementController(PostService postService, CommentService commentService,
-                                     AdminService adminService, AuthService authService) {
+                                     AdminService adminService, AuthService authService,
+                                     UserService userService) {
         this.postService = postService;
         this.commentService = commentService;
         this.adminService = adminService;
         this.authService = authService;
+        this.userService = userService;
     }
 
     @Operation(summary = "获取帖子列表")
@@ -89,17 +97,20 @@ public class PostManagementController {
     public Result<Post> detail(
             @RequestHeader("Authorization") String authHeader,
             @PathVariable Long postId) {
-        
+
         verifyAdmin(authHeader);
-        
+
         Post post = postService.getById(postId);
         if (post == null || (post.getStatus() != null && post.getStatus() == 0)) {
             return Result.error("帖子不存在");
         }
-        
+
         // Increment view count
         postService.incrementViewCount(postId);
-        
+
+        // 填充用户信息
+        enrichPostWithUserInfo(post);
+
         return Result.success(post);
     }
 
@@ -232,6 +243,23 @@ public class PostManagementController {
 
         if (adminId == null || !adminService.isSuperAdmin(adminId)) {
             throw new SecurityException("权限不足");
+        }
+    }
+
+    /**
+     * 填充帖子的用户信息（昵称和头像）
+     */
+    private void enrichPostWithUserInfo(Post post) {
+        if (post == null || post.getUserId() == null) {
+            return;
+        }
+
+        User user = userService.getById(post.getUserId());
+        if (user != null) {
+            post.setUserNickname(user.getNickname());
+            post.setUserAvatar(user.getAvatar());
+        } else {
+            post.setUserNickname("匿名用户");
         }
     }
 }
