@@ -7,10 +7,6 @@ import lombok.Setter;
 
 import java.time.LocalDateTime;
 
-/**
- * 聊天会话实体类
- * 注意：JPA/Hibernate 实体使用 @Getter/@Setter，不使用 @Data
- */
 @Getter
 @Setter
 @TableName("conversation")

@@ -3,7 +3,7 @@ package com.campus.modules.chat.controller;
 import com.campus.common.Result;
 import com.campus.modules.auth.service.AuthService;
 import com.campus.modules.chat.websocket.WebSocketAuthInterceptor.ChatPrincipal;
-import com.campus.modules.chat.websocket.ChatService;
+import com.campus.modules.chat.service.ChatService;
 import org.springframework.messaging.handler.annotation.DestinationVariable;
 import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.handler.annotation.SendTo;

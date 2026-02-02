@@ -5,11 +5,11 @@
 -- =====================================================
 
 -- 创建数据库
-CREATE DATABASE IF NOT EXISTS campus
+CREATE DATABASE IF NOT EXISTS campus_fenbushi
     DEFAULT CHARACTER SET utf8mb4
     DEFAULT COLLATE utf8mb4_unicode_ci;
 
-USE campus;
+USE campus_fenbushi;
 
 -- =====================================================
 -- 管理员表

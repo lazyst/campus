@@ -5,7 +5,7 @@ import com.campus.common.Result;
 import com.campus.modules.auth.service.AuthService;
 import com.campus.modules.trade.entity.Item;
 import com.campus.modules.trade.service.ItemService;
-import com.campus.modules.chat.websocket.ChatService;
+import com.campus.modules.chat.service.ChatService;
 import com.campus.modules.user.entity.User;
 import com.campus.modules.user.service.UserService;
 import io.swagger.v3.oas.annotations.Operation;
