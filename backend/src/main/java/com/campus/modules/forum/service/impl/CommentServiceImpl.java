@@ -15,6 +15,12 @@ import java.util.List;
 @Service
 public class CommentServiceImpl extends ServiceImpl<CommentMapper, Comment> implements CommentService {
 
+    /**
+     * 根据帖子ID获取评论列表
+     *
+     * @param postId 帖子ID
+     * @return 评论列表（按创建时间升序排列）
+     */
     @Override
     public List<Comment> getByPostId(Long postId) {
         LambdaQueryWrapper<Comment> wrapper = new LambdaQueryWrapper<>();
@@ -24,6 +30,13 @@ public class CommentServiceImpl extends ServiceImpl<CommentMapper, Comment> impl
         return this.list(wrapper);
     }
 
+    /**
+     * 判断用户是否为评论作者
+     *
+     * @param commentId 评论ID
+     * @param userId 用户ID
+     * @return 如果是作者返回true，否则返回false
+     */
     @Override
     public boolean isAuthor(Long commentId, Long userId) {
         Comment comment = this.getById(commentId);

@@ -80,6 +80,7 @@ public class SecurityConfig {
      */
     private CorsConfigurationSource wsCorsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
+        // TODO: 生产环境应配置为具体域名，如: configuration.addAllowedOriginPattern("https://your-domain.com");
         configuration.addAllowedOriginPattern("*");
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(Arrays.asList("*"));
@@ -94,6 +95,7 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
+        // TODO: 生产环境应配置为具体域名，如: configuration.addAllowedOriginPattern("https://your-domain.com");
         configuration.addAllowedOriginPattern("*");
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(Arrays.asList("*"));

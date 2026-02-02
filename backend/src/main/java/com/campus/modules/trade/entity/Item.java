@@ -17,6 +17,36 @@ import java.math.BigDecimal;
 public class Item extends BaseEntity {
 
     /**
+     * 物品类型：收购
+     */
+    public static final Integer TYPE_BUY = 1;
+
+    /**
+     * 物品类型：出售
+     */
+    public static final Integer TYPE_SELL = 2;
+
+    /**
+     * 物品状态：已删除
+     */
+    public static final Integer STATUS_DELETED = 0;
+
+    /**
+     * 物品状态：正常
+     */
+    public static final Integer STATUS_NORMAL = 1;
+
+    /**
+     * 物品状态：已完成
+     */
+    public static final Integer STATUS_COMPLETED = 2;
+
+    /**
+     * 物品状态：已下架
+     */
+    public static final Integer STATUS_OFFLINE = 3;
+
+    /**
      * 发布者ID
      */
     private Long userId;

@@ -645,12 +645,12 @@ const toggleCollect = handleCollect;
 }
 
 .detail-action-item--collected {
-  color: #F59E0B;
+  color: var(--color-primary-700);
 }
 
 .detail-action-item--collected .detail-action-icon {
-  fill: #F59E0B;
-  stroke: #F59E0B;
+  fill: var(--color-primary-700);
+  stroke: var(--color-primary-700);
 }
 
 .detail-action-count {

@@ -18,6 +18,16 @@ import java.time.LocalDateTime;
 public class Post extends BaseEntity {
 
     /**
+     * 帖子状态：已删除
+     */
+    public static final Integer STATUS_DELETED = 0;
+
+    /**
+     * 帖子状态：正常
+     */
+    public static final Integer STATUS_NORMAL = 1;
+
+    /**
      * 发布者ID
      */
     private Long userId;

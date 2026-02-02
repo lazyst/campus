@@ -100,7 +100,7 @@ public class PostController {
         post.setLikeCount(0);
         post.setCommentCount(0);
         post.setCollectCount(0);
-        post.setStatus(1);
+        post.setStatus(Post.STATUS_NORMAL);
 
         postService.save(post);
 
@@ -164,8 +164,8 @@ public class PostController {
             return Result.error("只能删除自己的帖子");
         }
 
-        // Soft delete - update status to 0
-        post.setStatus(0);
+        // Soft delete - update status to deleted
+        post.setStatus(Post.STATUS_DELETED);
         postService.updateById(post);
         return Result.success();
     }

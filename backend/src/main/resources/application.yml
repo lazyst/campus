@@ -11,7 +11,7 @@ spring:
     driver-class-name: com.mysql.cj.jdbc.Driver
     url: jdbc:mysql://localhost:3306/campus_fenbushi?useUnicode=true&characterEncoding=utf-8&serverTimezone=Asia/Shanghai&useSSL=false&allowPublicKeyRetrieval=true
     username: root
-    password: '123'
+    password: ${DB_PASSWORD:123}
     hikari:
       minimum-idle: 5
       maximum-pool-size: 20
@@ -37,9 +37,9 @@ spring:
   # Redis配置
   data:
     redis:
-      host: 192.168.100.100
+      host: ${REDIS_HOST:192.168.100.100}
       port: 6379
-      password:
+      password: ${REDIS_PASSWORD:}
       database: 0
       timeout: 10000ms
       lettuce:
@@ -65,7 +65,7 @@ mybatis-plus:
 
 # JWT配置
 jwt:
-  secret: campus-helping-platform-jwt-secret-key-2024-very-long-and-secure
+  secret: ${JWT_SECRET:campus-helping-platform-jwt-secret-key-2024-very-long-and-secure}
   expiration: 604800000  # 7天有效期 (毫秒)
   header: Authorization
   prefix: Bearer
