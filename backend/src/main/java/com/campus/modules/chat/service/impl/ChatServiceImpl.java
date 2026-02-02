@@ -3,10 +3,12 @@ package com.campus.modules.chat.service.impl;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.campus.modules.chat.dto.ChatMessageDTO;
 import com.campus.modules.chat.entity.Conversation;
 import com.campus.modules.chat.entity.Message;
 import com.campus.modules.chat.mapper.ConversationMapper;
 import com.campus.modules.chat.mapper.MessageMapper;
+import com.campus.modules.chat.publisher.ChatMessagePublisher;
 import com.campus.modules.chat.service.ChatService;
 import com.campus.modules.user.entity.User;
 import com.campus.modules.user.service.UserService;
@@ -23,10 +25,14 @@ public class ChatServiceImpl extends ServiceImpl<MessageMapper, Message>
 
     private final ConversationMapper conversationMapper;
     private final UserService userService;
+    private final ChatMessagePublisher chatMessagePublisher;
 
-    public ChatServiceImpl(ConversationMapper conversationMapper, UserService userService) {
+    public ChatServiceImpl(ConversationMapper conversationMapper,
+                          UserService userService,
+                          ChatMessagePublisher chatMessagePublisher) {
         this.conversationMapper = conversationMapper;
         this.userService = userService;
+        this.chatMessagePublisher = chatMessagePublisher;
     }
 
     @Override
@@ -51,7 +57,29 @@ public class ChatServiceImpl extends ServiceImpl<MessageMapper, Message>
 
         conversationMapper.updateById(conversation);
 
+        // 发布到 Redis Pub/Sub（用于集群环境下的消息同步）
+        publishMessageToRedis(message, conversation.getId());
+
         return message;
+    }
+
+    /**
+     * 将聊天消息发布到 Redis Pub/Sub 频道
+     * 这样集群中的其他服务器也能收到消息并推送给对应用户
+     */
+    private void publishMessageToRedis(Message message, Long conversationId) {
+        ChatMessageDTO dto = ChatMessageDTO.builder()
+                .id(message.getId())
+                .senderId(message.getSenderId())
+                .receiverId(message.getReceiverId())
+                .conversationId(conversationId)
+                .content(message.getContent())
+                .type(message.getType())
+                .sendTime(message.getSendTime())
+                .createdAt(message.getCreatedAt())
+                .build();
+
+        chatMessagePublisher.publish(dto);
     }
 
     @Override

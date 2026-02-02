@@ -123,6 +123,17 @@ async function loadConversations() {
     conversations.value = (data || []).map((conv: any) => {
       // 确保 unreadCount 是数字
       conv.unreadCount = conv.unreadCount || 0;
+      // 检查 localStorage 中是否有该会话的未读数更新
+      try {
+        const storageKey = `chat_unread_${conv.otherUserId}`
+        const storedValue = localStorage.getItem(storageKey)
+        if (storedValue !== null) {
+          conv.unreadCount = parseInt(storedValue, 10)
+          console.log('从 localStorage 恢复未读数:', conv.otherUserId, conv.unreadCount)
+        }
+      } catch (e) {
+        // 忽略 localStorage 错误
+      }
       return conv;
     });
   } catch (err: any) {
@@ -185,9 +196,15 @@ onMounted(async () => {
     // 监听自定义事件（聊天页面清除未读数时刷新列表）
     window.addEventListener('unread-cleared', handleUnreadCleared);
 
+    // 监听 App.vue 发送的聊天未读数更新事件
+    window.addEventListener('chat-unread-update', handleChatUnreadUpdate);
+
     // 监听 App.vue 触发的消息更新事件，刷新列表
     const unwatchMessageUpdate = watch(messageUpdateEvent, () => {
       console.log('Messages 页面收到消息更新事件，刷新列表')
+      // 先立即更新本地数据
+      syncLocalUnreadCounts()
+      // 再异步刷新列表
       loadConversations()
     })
 
@@ -206,26 +223,70 @@ const cleanupFunctions: (() => void)[] = []
 
 // 处理 storage 变化（跨标签页通信）
 function handleStorageChange(e: StorageEvent) {
-  // 监听聊天详情页面的已读标记
+  // 监听聊天详情页面的已读标记 - 设置为已读
   if (e.key && e.key.startsWith('unread_read_') && e.newValue === 'read') {
+    const userId = e.key.replace('unread_read_', '');
+    console.log('收到 storage 事件，设置用户', userId, '的未读数为0');
+    // 立即更新本地数据
+    updateLocalUnreadCount(userId, 0);
     // 刷新会话列表
-    console.log('收到 storage 事件，刷新消息列表')
-    loadConversations()
+    loadConversations();
+  }
+  // 监听未读数增加事件
+  if (e.key && e.key.startsWith('unread_increment_')) {
+    const userId = e.key.replace('unread_increment_', '');
+    // 获取新的未读数
+    const newUnreadCount = parseInt(e.newValue || '0', 10);
+    console.log('收到 storage 事件，用户', userId, '的未读数增加为', newUnreadCount);
+    // 立即更新本地数据
+    updateLocalUnreadCount(userId, newUnreadCount);
+    // 刷新会话列表
+    loadConversations();
   }
 }
 
 // 处理聊天页面清除未读数的事件
 function handleUnreadCleared(e: CustomEvent) {
-  console.log('收到 unread-cleared 事件，刷新消息列表')
-  loadConversations()
+  const { userId } = e.detail;
+  console.log('收到 unread-cleared 事件，刷新消息列表', userId);
+  // 立即更新本地数据
+  updateLocalUnreadCount(userId, 0);
+  // 刷新会话列表
+  loadConversations();
+}
+
+// 立即更新本地会话的未读数
+function updateLocalUnreadCount(userId: string | number, unreadCount: number) {
+  console.log('updateLocalUnreadCount:', { userId, unreadCount, conversations: conversations.value.map(c => ({ id: c.id, otherUserId: c.otherUserId, unreadCount: c.unreadCount })) });
+  // 确保类型一致，使用 == 进行宽松比较
+  const conv = conversations.value.find(c => Number(c.otherUserId) === Number(userId));
+  console.log('找到的会话:', conv);
+  if (conv) {
+    conv.unreadCount = unreadCount;
+    console.log('已更新未读数:', conv.otherUserId, unreadCount);
+  }
+}
+
+// 同步本地未读数（兼容旧逻辑）
+function syncLocalUnreadCounts() {
+  console.log('syncLocalUnreadCounts 被调用，但已改用事件监听');
 }
 
 // 监听页面可见性变化，当从聊天页面返回时刷新
 function handleVisibilityChange() {
   if (!document.hidden && isLoggedIn.value) {
     // 页面重新可见时刷新会话列表和未读数
+    console.log('页面可见，刷新会话列表')
     loadConversations()
   }
+}
+
+// 监听 App.vue 发送的聊天未读数更新事件
+function handleChatUnreadUpdate(e: CustomEvent) {
+  const { userId, unreadCount } = e.detail
+  console.log('收到 chat-unread-update 事件:', { userId, unreadCount })
+  // 立即更新本地数据
+  updateLocalUnreadCount(Number(userId), unreadCount)
 }
 
 // 页面卸载时移除事件监听
@@ -233,6 +294,7 @@ onUnmounted(() => {
   window.removeEventListener('storage', handleStorageChange)
   document.removeEventListener('visibilitychange', handleVisibilityChange)
   window.removeEventListener('unread-cleared', handleUnreadCleared)
+  window.removeEventListener('chat-unread-update', handleChatUnreadUpdate)
 
   // 执行所有清理函数
   cleanupFunctions.forEach(fn => fn())

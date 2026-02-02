@@ -83,7 +83,7 @@
 </template>
 
 <script setup>
-import { computed, ref, onMounted } from 'vue';
+import { computed, ref, onMounted, inject, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import { useUserStore } from '@/stores/user';
 import Dialog from '@/components/interactive/Dialog.vue';
@@ -93,7 +93,21 @@ import { getUnreadCount } from '@/api/modules/notification';
 const router = useRouter();
 const userStore = useUserStore();
 
+// 注入通知更新事件
+const notificationUpdateEvent = inject('notificationUpdateEvent');
+const totalNotificationUnreadCount = inject('totalNotificationUnreadCount');
+
 const unreadNotificationCount = ref(0);
+
+// 监听通知更新事件，实时增加未读数
+watch(() => notificationUpdateEvent.value, () => {
+  unreadNotificationCount.value = (unreadNotificationCount.value || 0) + 1;
+}, { immediate: false });
+
+// 监听全局未读通知数变化（从 App.vue 提供）
+watch(() => totalNotificationUnreadCount.value, (newVal) => {
+  unreadNotificationCount.value = newVal || 0;
+}, { immediate: true });
 
 // 获取未读通知数量
 async function fetchUnreadCount() {

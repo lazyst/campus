@@ -22,8 +22,9 @@ import { useRouter } from 'vue-router'
 import { useUserStore } from '@/stores/user'
 import Dialog from '@/components/interactive/Dialog.vue'
 import { getLoginDialogVisible, hideLoginConfirm } from '@/stores/loginConfirm'
-import { connect, disconnect, onMessage } from '@/services/websocket'
+import { connect, disconnect, onMessage, onNotification } from '@/services/websocket'
 import { getTotalUnreadCount } from '@/api/modules/conversation'
+import { getUnreadCount } from '@/api/modules/notification'
 
 const router = useRouter()
 const userStore = useUserStore()
@@ -32,17 +33,30 @@ const loginDialogVisible = ref(false)
 
 // 全局未读消息数
 const totalUnreadCount = ref(0)
+// 全局未读通知数
+const totalNotificationUnreadCount = ref(0)
 // 已处理的消息 ID 集合，用于去重
 const processedMessageIds = new Set<number>()
+// 已处理的通知 ID 集合，用于去重
+const processedNotificationIds = new Set<number>()
 // 消息更新事件总线
 const messageUpdateEvent = ref(0)
+// 通知更新事件总线
+const notificationUpdateEvent = ref(0)
 // 当前正在聊天的对方用户 ID（如果在聊天详情页）
 const currentChatUserId = ref<number | null>(null)
 
 let unsubscribeMessage: (() => void) | null = null
+let unsubscribeNotification: (() => void) | null = null
 
 // 提供全局未读数给子组件
 provide('totalUnreadCount', totalUnreadCount)
+
+// 提供全局通知未读数给子组件
+provide('totalNotificationUnreadCount', totalNotificationUnreadCount)
+
+// 提供通知更新事件给子组件
+provide('notificationUpdateEvent', notificationUpdateEvent)
 
 // 提供消息更新事件给子组件（用于触发列表刷新）
 provide('messageUpdateEvent', messageUpdateEvent)
@@ -53,6 +67,38 @@ provide('setCurrentChatUserId', (userId: number | null) => {
   currentChatUserId.value = userId
 })
 
+// 提供更新会话未读数的方法（用于同步更新消息列表）
+const updateConversationUnread = (userId: number, unreadCount: number) => {
+  console.log('App.vue 更新会话未读数:', userId, unreadCount)
+  // 派发全局自定义事件，同步更新消息列表
+  window.dispatchEvent(new CustomEvent('chat-unread-update', {
+    detail: { userId, unreadCount }
+  }))
+  // 同时存储到 localStorage，供消息列表页面加载时读取
+  try {
+    const storageKey = `chat_unread_${userId}`
+    localStorage.setItem(storageKey, String(unreadCount))
+  } catch (e) {
+    // 忽略 localStorage 错误
+  }
+}
+
+// 监听全局聊天未读数更新事件（用于同步更新 localStorage）
+window.addEventListener('chat-unread-update', (e: CustomEvent) => {
+  const { userId, unreadCount } = e.detail
+  try {
+    const storageKey = `chat_unread_${userId}`
+    localStorage.setItem(storageKey, String(unreadCount))
+  } catch (err) {
+    // 忽略 localStorage 错误
+  }
+})
+
+// 挂载到 window 上供 onMessage 回调中使用
+;(window as any).__updateConversationUnread = updateConversationUnread
+
+provide('updateConversationUnread', updateConversationUnread)
+
 // 应用启动时初始化用户状态
 onMounted(async () => {
   await userStore.initialize()
@@ -60,6 +106,7 @@ onMounted(async () => {
   // 如果已经有 token，建立连接
   if (userStore.token) {
     await fetchTotalUnreadCount()
+    await fetchNotificationUnreadCount()
     await setupWebSocket()
   }
 
@@ -89,7 +136,7 @@ function handleUnreadCleared(e: CustomEvent) {
   messageUpdateEvent.value++
 }
 
-// 获取总未读数
+// 获取总未读消息数
 async function fetchTotalUnreadCount() {
   if (!userStore.token) {
     totalUnreadCount.value = 0
@@ -102,6 +149,22 @@ async function fetchTotalUnreadCount() {
   } catch (error) {
     console.error('获取总未读消息数失败:', error)
     totalUnreadCount.value = 0
+  }
+}
+
+// 获取通知未读数
+async function fetchNotificationUnreadCount() {
+  if (!userStore.token) {
+    totalNotificationUnreadCount.value = 0
+    return
+  }
+
+  try {
+    const count = await getUnreadCount()
+    totalNotificationUnreadCount.value = count || 0
+  } catch (error) {
+    console.error('获取通知未读数失败:', error)
+    totalNotificationUnreadCount.value = 0
   }
 }
 
@@ -134,10 +197,19 @@ async function setupWebSocket() {
 
       // 如果正在与发送者聊天，不增加未读数（因为已经在聊天详情页查看了）
       const senderId = data.senderId
+      console.log('收到消息:', { senderId, currentChatUserId: currentChatUserId.value, isChatting: currentChatUserId.value === senderId })
       if (currentChatUserId.value === senderId) {
         console.log('正在与发送者聊天，不增加未读数')
         // 仍然触发消息更新事件，让聊天页面可以刷新消息列表
         messageUpdateEvent.value++
+        // 通过 provide 方法同步更新消息列表页面的会话未读数为0
+        // 注意：我们需要在注入 context7 的环境中调用 updateConversationUnread
+        // 这里直接调用 provide 的方法
+        const updateFn = (window as any).__updateConversationUnread
+        if (updateFn) {
+          console.log('调用 updateConversationUnread:', senderId, 0)
+          updateFn(senderId, 0)
+        }
       } else {
         // 收到新消息时增加未读数
         totalUnreadCount.value = (totalUnreadCount.value || 0) + 1
@@ -153,6 +225,35 @@ async function setupWebSocket() {
       }
     })
 
+    // 订阅新通知，实时更新通知未读数
+    unsubscribeNotification = onNotification((data) => {
+      console.log('App.vue 收到新通知:', data)
+
+      // 使用通知 ID 去重
+      const notificationId = data.id || new Date(data.createdAt || Date.now()).getTime()
+
+      if (processedNotificationIds.has(notificationId)) {
+        console.log('通知已处理过，忽略:', notificationId)
+        return
+      }
+
+      // 标记通知为已处理
+      processedNotificationIds.add(notificationId)
+
+      // 增加通知未读数
+      totalNotificationUnreadCount.value = (totalNotificationUnreadCount.value || 0) + 1
+      console.log('通知未读数增加，当前:', totalNotificationUnreadCount.value)
+
+      // 触发通知更新事件，让通知列表刷新
+      notificationUpdateEvent.value++
+
+      // 限制 Set 大小，防止内存泄漏
+      if (processedNotificationIds.size > 1000) {
+        const first = processedNotificationIds.values().next().value
+        processedNotificationIds.delete(first)
+      }
+    })
+
     console.log('App.vue WebSocket 连接成功')
   } catch (error) {
     console.error('App.vue WebSocket 连接失败:', error)
@@ -164,6 +265,10 @@ function teardownWebSocket() {
   if (unsubscribeMessage) {
     unsubscribeMessage()
     unsubscribeMessage = null
+  }
+  if (unsubscribeNotification) {
+    unsubscribeNotification()
+    unsubscribeNotification = null
   }
   disconnect()
 }
@@ -178,11 +283,14 @@ watch(() => userStore.token, async (newToken) => {
   if (newToken) {
     // 登录后获取未读数并建立 WebSocket 连接
     await fetchTotalUnreadCount()
+    await fetchNotificationUnreadCount()
     await setupWebSocket()
   } else {
     // 登出时清空未读数和已处理消息 ID 并断开连接
     totalUnreadCount.value = 0
+    totalNotificationUnreadCount.value = 0
     processedMessageIds.clear()
+    processedNotificationIds.clear()
     teardownWebSocket()
   }
 }, { immediate: true })

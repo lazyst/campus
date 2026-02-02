@@ -2,13 +2,16 @@ package com.campus.modules.forum.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.campus.modules.forum.dto.NotificationDTO;
 import com.campus.modules.forum.entity.Like;
 import com.campus.modules.forum.entity.Notification;
 import com.campus.modules.forum.entity.Post;
 import com.campus.modules.forum.mapper.LikeMapper;
+import com.campus.modules.forum.publisher.NotificationPublisher;
 import com.campus.modules.forum.service.LikeService;
 import com.campus.modules.forum.service.NotificationService;
 import com.campus.modules.forum.service.PostService;
+import com.campus.modules.user.service.UserService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -20,10 +23,17 @@ public class LikeServiceImpl extends ServiceImpl<LikeMapper, Like> implements Li
 
     private final PostService postService;
     private final NotificationService notificationService;
+    private final NotificationPublisher notificationPublisher;
+    private final UserService userService;
 
-    public LikeServiceImpl(PostService postService, NotificationService notificationService) {
+    public LikeServiceImpl(PostService postService,
+                          NotificationService notificationService,
+                          NotificationPublisher notificationPublisher,
+                          UserService userService) {
         this.postService = postService;
         this.notificationService = notificationService;
+        this.notificationPublisher = notificationPublisher;
+        this.userService = userService;
     }
 
     @Override
@@ -73,7 +83,7 @@ public class LikeServiceImpl extends ServiceImpl<LikeMapper, Like> implements Li
             }
             postService.incrementLikeCount(postId);
 
-            // 创建通知（如果点赞的不是自己的帖子）
+            // 创建通知并推送（如果点赞的不是自己的帖子）
             Post post = postService.getById(postId);
             if (post != null && !post.getUserId().equals(userId)) {
                 try {
@@ -85,6 +95,21 @@ public class LikeServiceImpl extends ServiceImpl<LikeMapper, Like> implements Li
                     notification.setIsRead(0);
                     notification.setContent("点赞了你的帖子");
                     notificationService.save(notification);
+
+                    // 通过 WebSocket 实时推送通知
+                    NotificationDTO dto = NotificationDTO.builder()
+                            .id(notification.getId())
+                            .userId(notification.getUserId())
+                            .fromUserId(notification.getFromUserId())
+                            .postId(notification.getPostId())
+                            .type(notification.getType())
+                            .content(notification.getContent())
+                            .isRead(notification.getIsRead())
+                            .createdAt(notification.getCreatedAt())
+                            .build();
+
+                    notificationPublisher.publish(post.getUserId(), dto);
+
                 } catch (Exception e) {
                     // 通知创建失败不影响点赞功能
                 }

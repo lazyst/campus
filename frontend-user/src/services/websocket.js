@@ -9,6 +9,7 @@ let stompClient = null
 let isConnected = ref(false)
 let connectionPromise = null
 const messageHandlers = new Set()
+const notificationHandlers = new Set()
 
 // 原生 WebSocket 连接地址
 const WS_URL = `ws://localhost:8080/ws`
@@ -70,6 +71,19 @@ export function connect(token) {
               try {
                 const data = JSON.parse(message.body)
                 messageHandlers.forEach(handler => handler(data))
+              } catch {
+                // 忽略消息解析错误
+              }
+            }
+          )
+
+          // 订阅通知队列（点赞、评论等）
+          stompClient.subscribe(
+            '/user/queue/notifications',
+            (message) => {
+              try {
+                const data = JSON.parse(message.body)
+                notificationHandlers.forEach(handler => handler(data))
               } catch {
                 // 忽略消息解析错误
               }
@@ -147,11 +161,22 @@ export function onMessage(handler) {
   return () => messageHandlers.delete(handler)
 }
 
+/**
+ * 订阅通知
+ * @param {Function} handler - 通知处理函数
+ * @returns {Function} 取消订阅函数
+ */
+export function onNotification(handler) {
+  notificationHandlers.add(handler)
+  return () => notificationHandlers.delete(handler)
+}
+
 export default {
   connect,
   disconnect,
   sendMessage,
   onMessage,
+  onNotification,
   getStompClient,
   getIsConnected
 }

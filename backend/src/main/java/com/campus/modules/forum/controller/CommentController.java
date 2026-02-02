@@ -15,9 +15,11 @@ import com.campus.common.Result;
 import com.campus.common.ResultCode;
 import com.campus.modules.auth.service.AuthService;
 import com.campus.modules.forum.dto.CommentCreateRequest;
+import com.campus.modules.forum.dto.NotificationDTO;
 import com.campus.modules.forum.entity.Comment;
 import com.campus.modules.forum.entity.Notification;
 import com.campus.modules.forum.entity.Post;
+import com.campus.modules.forum.publisher.NotificationPublisher;
 import com.campus.modules.forum.service.CommentService;
 import com.campus.modules.forum.service.NotificationService;
 import com.campus.modules.forum.service.PostService;
@@ -40,14 +42,17 @@ public class CommentController {
     private final PostService postService;
     private final AuthService authService;
     private final NotificationService notificationService;
+    private final NotificationPublisher notificationPublisher;
     private final UserService userService;
 
     public CommentController(CommentService commentService, PostService postService,
-            AuthService authService, NotificationService notificationService, UserService userService) {
+            AuthService authService, NotificationService notificationService,
+            NotificationPublisher notificationPublisher, UserService userService) {
         this.commentService = commentService;
         this.postService = postService;
         this.authService = authService;
         this.notificationService = notificationService;
+        this.notificationPublisher = notificationPublisher;
         this.userService = userService;
     }
 
@@ -104,7 +109,7 @@ public class CommentController {
 
             commentService.save(comment);
 
-            // 创建评论通知（如果评论的不是自己的帖子）
+            // 创建评论通知并推送（如果评论的不是自己的帖子）
             if (!post.getUserId().equals(userId)) {
                 try {
                     Notification notification = new Notification();
@@ -116,6 +121,21 @@ public class CommentController {
                     notification.setIsRead(0);
                     notification.setContent("评论了你的帖子");
                     notificationService.save(notification);
+
+                    // 通过 WebSocket 实时推送通知
+                    NotificationDTO dto = NotificationDTO.builder()
+                            .id(notification.getId())
+                            .userId(notification.getUserId())
+                            .fromUserId(notification.getFromUserId())
+                            .postId(notification.getPostId())
+                            .type(notification.getType())
+                            .content(notification.getContent())
+                            .isRead(notification.getIsRead())
+                            .createdAt(notification.getCreatedAt())
+                            .build();
+
+                    notificationPublisher.publish(post.getUserId(), dto);
+
                 } catch (Exception e) {
                     // 通知创建失败不影响评论功能
                 }
