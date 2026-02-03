@@ -2,8 +2,10 @@
 
 /**
  * Toast提示工具
- * 使用Element Plus的ElMessage组件
+ * 使用项目的自定义 Toast 组件 (components/interactive/Toast.vue)
  */
+
+import { showToast as showToastService } from '@/services/toastService'
 
 let loadingInstance = null
 
@@ -14,37 +16,22 @@ let loadingInstance = null
  * @param {number} duration - 持续时间（毫秒）
  */
 export function showToast(message, type = 'info', duration = 2000) {
-  // 使用Element Plus的Message组件
-  // 如果项目中没有Element Plus，可以替换为其他Toast库
-  if (window.ElmMessage) {
-    window.ElmMessage({
-      message,
-      type,
-      duration
-    })
+  if (typeof message === 'object' && message !== null) {
+    // 兼容对象参数: { message, type, duration }
+    showToastService(message)
   } else {
-    // 降级方案：使用console
-    console.log(`[${type.toUpperCase()}] ${message}`)
-    // TODO: 集成项目使用的Toast组件
+    // 兼容字符串参数: (message, type, duration)
+    showToastService({ message, type, duration })
   }
 }
 
 /**
- * 显示Loading
+ * 显示Loading (控制台输出，简化处理)
  * @param {string} text - 提示文字
  */
 export function showLoading(text = '加载中...') {
   if (loadingInstance) return
-
-  if (window.ElLoading) {
-    loadingInstance = window.ElLoading.service({
-      fullscreen: true,
-      text,
-      background: 'rgba(0, 0, 0, 0.7)'
-    })
-  } else {
-    console.log('[LOADING]', text)
-  }
+  console.log('[LOADING]', text)
 }
 
 /**

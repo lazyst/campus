@@ -78,6 +78,7 @@ import { ref, reactive, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useUserStore } from '@/stores/user'
 import NavBar from '@/components/navigation/NavBar.vue'
+import { showToast } from '@/services/toastService'
 
 const router = useRouter()
 const userStore = useUserStore()
@@ -138,9 +139,15 @@ async function handleSubmit() {
       password: form.password,
       nickname: form.nickname
     })
-    router.replace('/login')
+    // 显示注册成功提示
+    showToast('注册成功，请登录', 'success')
+    // 延迟跳转，让用户看到提示
+    setTimeout(() => {
+      router.replace('/login')
+    }, 1500)
   } catch (error) {
     console.error('注册失败', error)
+    showToast(error?.message || '注册失败，请稍后重试', 'error')
   } finally {
     loading.value = false
   }

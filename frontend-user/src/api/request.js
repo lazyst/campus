@@ -60,15 +60,6 @@ request.interceptors.response.use(
         localStorage.setItem('token', token)
       }
 
-      // 成功提示（可选）
-      if (response.config.showSuccess !== false && response.method !== 'get') {
-        try {
-          showToast(message || '操作成功', 'success')
-        } catch (toastError) {
-          console.warn('Toast error:', toastError)
-        }
-      }
-
       // 返回data,确保不返回undefined
       return data !== undefined ? data : response.data
     }
@@ -114,20 +105,23 @@ function handleBusinessError(code, message, config) {
         showToast(message || '请求参数错误', 'error')
         break
       case 401:
-        // 只有在明确需要登录的操作才清除token并弹出登录对话框
-        // 对于点赞、收藏等操作，不自动清除token，只显示提示
+        // 登录接口返回 401 时显示"用户名或密码错误"
+        // 其他需要认证的操作触发登录确认对话框
         const authRequiredUrls = ['/auth/', '/posts/my', '/posts/collections']
         const isAuthRequired = authRequiredUrls.some(url => config.url?.includes(url))
+        const isLoginUrl = config.url?.includes('/auth/login')
 
-        if (isAuthRequired) {
-          // 清除本地token
+        if (isLoginUrl) {
+          // 登录接口的 401 错误
+          showToast(message || '用户名或密码错误', 'error')
+        } else if (isAuthRequired) {
+          // 需要登录的操作
           localStorage.removeItem('token')
-          // 触发登录确认对话框（给用户选择权）
           import('@/stores/loginConfirm').then(({ showLoginConfirm }) => {
             showLoginConfirm()
           })
         } else {
-          // 其他401错误（如点赞、收藏），只打印警告不清除token
+          // 其他401错误
           console.warn('操作需要登录:', message)
         }
         break

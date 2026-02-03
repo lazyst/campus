@@ -30,7 +30,7 @@ public class AuthServiceImpl implements AuthService {
         }
 
         if (!passwordEncoder.matches(password, user.getPassword())) {
-            throw new IllegalArgumentException("密码错误");
+            throw new IllegalArgumentException("用户名或密码错误");
         }
 
         if (user.getStatus() != 1) {

@@ -88,6 +88,7 @@ async function handleSubmit() {
     await userStore.login(form);
     router.replace('/');
   } catch (error) {
+    // 错误已在 request.js 中通过 showToast 处理
     console.error('登录失败', error);
   }
 }

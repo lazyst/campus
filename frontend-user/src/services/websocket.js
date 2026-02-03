@@ -1,6 +1,6 @@
 /**
  * WebSocket STOMP 服务
- * 使用原生 WebSocket 配合 STOMP
+ * 支持自动重连和粘性会话
  */
 
 import { ref } from 'vue'
@@ -8,11 +8,170 @@ import { ref } from 'vue'
 let stompClient = null
 let isConnected = ref(false)
 let connectionPromise = null
+let currentToken = null
+let reconnectAttempts = 0
+const maxReconnectAttempts = 10
+const baseReconnectDelay = 1000
+
+// 订阅管理
+const subscriptions = new Map()
 const messageHandlers = new Set()
 const notificationHandlers = new Set()
 
-// 原生 WebSocket 连接地址
-const WS_URL = `ws://localhost:8080/ws`
+// 根据当前环境动态生成WebSocket地址
+const getWebSocketUrl = () => {
+  const isDev = import.meta.env.DEV || window.location.port === '3000'
+  if (isDev) {
+    return `ws://localhost:8080/ws`
+  }
+  const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
+  return `${protocol}//${window.location.host}/ws`
+}
+
+const WS_URL = getWebSocketUrl()
+
+/**
+ * 获取重连延迟时间（指数退避）
+ */
+const getReconnectDelay = () => {
+  const delay = Math.min(baseReconnectDelay * Math.pow(2, reconnectAttempts), 30000)
+  return delay + Math.random() * 1000 // 添加随机抖动
+}
+
+/**
+ * 订阅消息队列
+ */
+const subscribeQueues = (client) => {
+  // 订阅个人消息
+  const msgSub = client.subscribe(
+    '/user/queue/messages',
+    (message) => {
+      try {
+        const data = JSON.parse(message.body)
+        messageHandlers.forEach(handler => handler(data))
+      } catch {
+        // 忽略消息解析错误
+      }
+    }
+  )
+  subscriptions.set('messages', msgSub)
+
+  // 订阅通知队列
+  const notifSub = client.subscribe(
+    '/user/queue/notifications',
+    (message) => {
+      try {
+        const data = JSON.parse(message.body)
+        notificationHandlers.forEach(handler => handler(data))
+      } catch {
+        // 忽略消息解析错误
+      }
+    }
+  )
+  subscriptions.set('notifications', notifSub)
+}
+
+/**
+ * 执行WebSocket连接
+ */
+const doConnect = () => {
+  return new Promise(async (resolve, reject) => {
+    try {
+      // 动态导入 STOMP
+      const StompModule = await import('stompjs')
+      const Stomp = StompModule.default || StompModule
+
+      const socket = new WebSocket(WS_URL)
+
+      socket.onclose = (event) => {
+        isConnected.value = false
+        console.warn(`[WebSocket] 连接关闭 code=${event.code}, reason=${event.reason || '无'}`)
+
+        // 清除订阅
+        subscriptions.forEach((sub) => {
+          try { sub.unsubscribe() } catch {}
+        })
+        subscriptions.clear()
+
+        // 不是主动断开，尝试重连
+        if (currentToken) {
+          attemptReconnect()
+        }
+      }
+
+      socket.onerror = (error) => {
+        console.error('[WebSocket] 连接错误:', error)
+      }
+
+      // 创建 STOMP 客户端
+      stompClient = Stomp.over(socket, {
+        heartbeat: false,
+        reconnectDelay: 0 // 我们自己控制重连
+      })
+
+      // 连接 STOMP
+      stompClient.connect(
+        { Authorization: `Bearer ${currentToken}` },
+        () => {
+          isConnected.value = true
+          reconnectAttempts = 0
+          console.log('[WebSocket] 连接成功')
+
+          // 订阅队列
+          subscribeQueues(stompClient)
+
+          resolve()
+        },
+        (error) => {
+          isConnected.value = false
+          stompClient = null
+          console.error('[WebSocket] 连接失败:', error)
+          reject(error)
+        }
+      )
+
+      // 超时处理
+      setTimeout(() => {
+        if (!isConnected.value) {
+          reject(new Error('WebSocket 连接超时'))
+        }
+      }, 10000)
+
+    } catch (error) {
+      reject(error)
+    }
+  })
+}
+
+/**
+ * 尝试重连
+ */
+const attemptReconnect = () => {
+  if (!currentToken) {
+    console.log('[WebSocket] 无token，跳过重连')
+    return
+  }
+
+  reconnectAttempts++
+  if (reconnectAttempts > maxReconnectAttempts) {
+    console.error('[WebSocket] 超过最大重连次数，停止重连')
+    return
+  }
+
+  const delay = getReconnectDelay()
+  console.log(`[WebSocket] ${reconnectAttempts}/${maxReconnectAttempts} 次重连，${delay.toFixed(0)}ms 后尝试...`)
+
+  setTimeout(async () => {
+    connectionPromise = null
+    stompClient = null
+    try {
+      await connect(currentToken)
+      console.log('[WebSocket] 重连成功')
+    } catch (error) {
+      console.warn('[WebSocket] 重连失败:', error.message)
+    }
+  }, delay)
+}
 
 export function getStompClient() {
   return stompClient
@@ -27,92 +186,26 @@ export function getIsConnected() {
  * @param {string} token - JWT token
  * @returns {Promise<void>}
  */
-export function connect(token) {
+export async function connect(token) {
   if (connectionPromise) {
     return connectionPromise
   }
 
-  connectionPromise = new Promise(async (resolve, reject) => {
-    if (stompClient && isConnected.value) {
-      resolve()
-      return
-    }
+  currentToken = token
 
-    try {
-      // 动态导入 STOMP
-      const StompModule = await import('stompjs')
-      const Stomp = StompModule.default || StompModule
+  // 如果已连接，直接返回
+  if (stompClient && isConnected.value) {
+    return Promise.resolve()
+  }
 
-      // 使用原生 WebSocket 创建连接
-      const socket = new WebSocket(WS_URL)
+  connectionPromise = doConnect()
 
-      socket.onclose = (event) => {
-        isConnected.value = false
-        connectionPromise = null
-        stompClient = null
-      }
-
-      // 创建 STOMP 客户端
-      stompClient = Stomp.over(socket, {
-        heartbeat: false,
-        reconnectDelay: 0
-      })
-
-      // 连接 STOMP
-      stompClient.connect(
-        { Authorization: `Bearer ${token}` },
-        () => {
-          isConnected.value = true
-
-          // 订阅个人消息队列
-          stompClient.subscribe(
-            '/user/queue/messages',
-            (message) => {
-              try {
-                const data = JSON.parse(message.body)
-                messageHandlers.forEach(handler => handler(data))
-              } catch {
-                // 忽略消息解析错误
-              }
-            }
-          )
-
-          // 订阅通知队列（点赞、评论等）
-          stompClient.subscribe(
-            '/user/queue/notifications',
-            (message) => {
-              try {
-                const data = JSON.parse(message.body)
-                notificationHandlers.forEach(handler => handler(data))
-              } catch {
-                // 忽略消息解析错误
-              }
-            }
-          )
-
-          resolve()
-        },
-        (error) => {
-          isConnected.value = false
-          connectionPromise = null
-          stompClient = null
-          reject(error)
-        }
-      )
-
-      // 超时处理
-      setTimeout(() => {
-        if (!isConnected.value) {
-          connectionPromise = null
-          reject(new Error('WebSocket 连接超时'))
-        }
-      }, 10000)
-
-    } catch (error) {
-      connectionPromise = null
-      reject(error)
-    }
-  })
+  try {
+    await connectionPromise
+  } catch (error) {
+    connectionPromise = null
+    throw error
+  }
 
   return connectionPromise
 }
@@ -121,11 +214,14 @@ export function connect(token) {
  * 断开 WebSocket 连接
  */
 export function disconnect() {
+  currentToken = null
+  reconnectAttempts = 0
+
   if (stompClient) {
     try {
       stompClient.disconnect()
     } catch (e) {
-      // 忽略错误
+      console.warn('[WebSocket] 断开连接时出错:', e)
     }
     stompClient = null
   }
@@ -171,6 +267,17 @@ export function onNotification(handler) {
   return () => notificationHandlers.delete(handler)
 }
 
+/**
+ * 获取重连状态（用于UI显示）
+ */
+export function getReconnectStatus() {
+  return {
+    isConnected: isConnected.value,
+    reconnectAttempts,
+    maxReconnectAttempts
+  }
+}
+
 export default {
   connect,
   disconnect,
@@ -178,5 +285,6 @@ export default {
   onMessage,
   onNotification,
   getStompClient,
-  getIsConnected
+  getIsConnected,
+  getReconnectStatus
 }

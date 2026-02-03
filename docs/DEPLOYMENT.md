@@ -10,6 +10,7 @@
 - [4. 部署步骤](#4-部署步骤)
 - [4.5 部署前检查清单](#45-部署前检查清单重要)
 - [4.6 服务器端验证步骤](#46-服务器端验证步骤)
+- [4.7 部署常见问题汇总](#47-部署常见问题汇总)
 - [5. 常用命令](#5-常用命令)
 - [6. 故障排查](#6-故障排查)
 - [7. 监控与维护](#7-监控与维护)
@@ -448,6 +449,77 @@ curl http://localhost/api/boards
 # 帖子列表
 curl http://localhost/api/posts?page=1\&size=10
 # 期望：返回帖子列表（可能有数据）
+```
+
+### 步骤 5：验证前端页面
+
+```bash
+# 用户前端首页
+curl http://localhost/ | grep "<title>"
+# 期望输出：<title>校园互助平台</title>
+
+# 管理后台
+curl -I http://localhost/admin/
+# 期望输出：HTTP 301 或 200
+```
+
+---
+
+## 4.7 部署常见问题汇总
+
+### 问题 1：前端显示 nginx 默认欢迎页面
+
+**现象**：访问 http://服务器IP 显示 "Welcome to nginx!" 默认页面
+
+**原因**：前端 dist 目录为空或未正确上传
+
+**排查**：
+```bash
+# 1. 检查前端 dist 目录
+ls -la frontend-user/dist/
+
+# 2. 检查服务器上文件是否存在
+ssh root@服务器IP "ls -la /app/campus/frontend-user/dist/"
+```
+
+**解决方案**：
+```bash
+# 本地构建前端
+cd frontend-user && npm run build
+cd ../frontend-admin && npm run build
+
+# 上传到服务器
+scp -r frontend-user/dist root@服务器IP:/app/campus/
+scp -r frontend-admin/dist root@服务器IP:/app/campus/
+
+# 重启 nginx
+ssh root@服务器IP "docker restart campus-nginx"
+```
+
+### 问题 2：Docker bind mount 挂载空目录
+
+**现象**：容器启动后挂载目录为空，后续上传的文件不生效
+
+**原因**：Docker bind mount 特性 - 容器启动时如果源目录为空，会创建一个持久空目录
+
+**解决方案**：
+```bash
+# 删除容器并重新启动（确保先上传文件）
+docker compose down
+# 上传前端文件...
+docker compose up -d --build
+```
+
+### 问题 3：init.sql 文件位置错误
+
+**现象**：数据库表不存在，API 返回 500 错误
+
+**原因**：docker-compose.yml 挂载 `./mysql/init.sql`，但文件实际在 `backend/sql/init.sql`
+
+**解决方案**：
+```bash
+# 本地复制文件
+cp backend/sql/init.sql mysql/init.sql
 ```
 
 ---
