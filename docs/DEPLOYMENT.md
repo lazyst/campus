@@ -23,8 +23,8 @@
                     ┌─────────────────────────────────────┐
                     │            服务器 (Linux)            │
                     │                                     │
-   用户访问 ───────►│  ┌─────────────┐                   │
-   (浏览器)         │  │   Nginx     │  端口: 80/443     │
+    用户访问 ───────►│  ┌─────────────┐                   │
+    (浏览器)         │  │   Nginx     │  端口: 80/443     │
                     │  │  (负载均衡)  │                   │
                     │  └──────┬──────┘                   │
                     │         │                          │
@@ -40,9 +40,15 @@
                     │ ▼        ▼  ▼        ▼             │
                     │ ┌────┐  ┌────┐  ┌────┐            │
                     │ │MySQL│  │Redis│  │Frontend│       │
-                    │ └────┘  └────┘  │ Vue  │           │
-                    │               │ :3000 │           │
-                    │               └───────┘           │
+                    │ │主库 │  │     │  │ Vue  │           │
+                    │ └──┬──┘  └────┘  │ :3000 │           │
+                    │    │同步           └───────┘           │
+                    │ ┌──┴──┐                                  │
+                    │ ▼     ▼                                  │
+                    │ ┌────┐  ┌────┐  ┌────┐                │
+                    │ │MySQL│  │     │  │                      │
+                    │ │从库 │  │     │  │                      │
+                    │ └────┘  └────┘                          │
                     └─────────────────────────────────────┘
 ```
 
@@ -53,12 +59,14 @@
 | Nginx | nginx:alpine | 反向代理、负载均衡、静态资源 | 80/443 |
 | Backend-1/2 | 自定义 Spring Boot | 后端 API 服务 | 8080 |
 | Frontend | node:18-alpine | Vue 前端静态资源 | 3000 |
-| MySQL | mysql:8.0 | 主数据库 | 3306 |
+| MySQL Master | mysql:8.0 | 主数据库（写操作） | 3306 |
+| MySQL Slave | mysql:8.0 | 从数据库（读操作） | 3307 |
 | Redis | redis:7-alpine | 缓存、消息队列 | 6379 |
 
 ### 核心特性
 
 - **双后端实例**：实现负载均衡和高可用
+- **数据库读写分离**：MySQL 主从复制，写操作走主库，读操作走从库
 - **Redis Pub/Sub**：跨容器消息实时同步（聊天功能）
 - **健康检查**：每个服务都有健康检查机制
 - **数据持久化**：MySQL 和 Redis 数据独立存储
@@ -109,14 +117,194 @@ docker compose version
 sudo ufw allow 80/tcp
 sudo ufw allow 443/tcp
 sudo ufw allow 22/tcp
+sudo ufw allow 3306/tcp
+sudo ufw allow 3307/tcp
 sudo ufw reload
 
 # 或 CentOS firewalld
 sudo firewall-cmd --permanent --add-port=80/tcp
 sudo firewall-cmd --permanent --add-port=443/tcp
 sudo firewall-cmd --permanent --add-port=22/tcp
+sudo firewall-cmd --permanent --add-port=3306/tcp
+sudo firewall-cmd --permanent --add-port=3307/tcp
 sudo firewall-cmd --reload
 ```
+
+---
+
+## 2.4 数据库读写分离配置（可选）
+
+本节介绍如何配置 MySQL 主从复制实现数据库读写分离。
+
+### 2.4.1 主从复制架构说明
+
+```
+┌─────────────────────────────────────────┐
+│            MySQL 主从复制                │
+├─────────────────────────────────────────┤
+│                                         │
+│   主库 (Master)        从库 (Slave)     │
+│   ┌─────────┐         ┌─────────┐      │
+│   │  写操作  │ ──同步──►│  读操作  │      │
+│   │ INSERT  │         │ SELECT  │      │
+│   │ UPDATE  │         │         │      │
+│   │ DELETE  │         │         │      │
+│   └─────────┘         └─────────┘      │
+│       │                   │            │
+│       │                   │            │
+│       ▼                   ▼            │
+│   端口:3306           端口:3307        │
+│                                         │
+└─────────────────────────────────────────┘
+```
+
+### 2.4.2 主库配置
+
+在主库 `my.cnf` 中添加：
+
+```ini
+[mysqld]
+# 主库唯一标识
+server-id=1
+
+# 启用二进制日志（用于同步）
+log_bin=mysql-bin
+binlog_format=ROW
+binlog_expire_logs_seconds=604800
+max_binlog_size=100M
+
+# 同步配置
+sync_binlog=1
+binlog_checksum=NONE
+
+# 忽略同步的数据库
+binlog_ignore_db=mysql
+binlog_ignore_db=information_schema
+binlog_ignore_db=performance_schema
+
+# 字符集
+character-set-server=utf8mb4
+collation-server=utf8mb4_unicode_ci
+```
+
+### 2.4.3 从库配置
+
+在从库 `my.cnf` 中添加：
+
+```ini
+[mysqld]
+# 从库唯一标识（不能与主库相同）
+server-id=2
+
+# 启用中继日志
+relay_log=relay-bin
+relay_log_purge=ON
+relay_log_recovery=ON
+
+# 只读模式（生产环境建议开启）
+read_only=ON
+super_read_only=ON
+
+# 字符集
+character-set-server=utf8mb4
+collation-server=utf8mb4_unicode_ci
+```
+
+### 2.4.4 主从复制配置步骤
+
+#### 步骤 1：主库创建同步账号
+
+```sql
+-- 登录主库 MySQL
+mysql -uroot -p
+
+-- 创建同步账号
+CREATE USER 'repl'@'%' IDENTIFIED BY 'repl_password';
+GRANT REPLICATION SLAVE, REPLICATION CLIENT ON *.* TO 'repl'@'%';
+FLUSH PRIVILEGES;
+
+-- 查看主库状态
+SHOW MASTER STATUS;
+-- 记录 File 和 Position 的值
+```
+
+#### 步骤 2：从库连接主库
+
+```sql
+-- 登录从库 MySQL
+mysql -uroot -p
+
+-- 配置主从连接
+CHANGE MASTER TO
+    MASTER_HOST='master_host_ip',
+    MASTER_USER='repl',
+    MASTER_PASSWORD='repl_password',
+    MASTER_PORT=3306,
+    MASTER_LOG_FILE='mysql-bin.000001',
+    MASTER_LOG_POS=123,
+    GET_MASTER_PUBLIC_KEY=1;
+
+-- 启动复制
+START SLAVE;
+
+-- 查看复制状态
+SHOW SLAVE STATUS\G
+```
+
+#### 步骤 3：验证复制状态
+
+```sql
+-- 在主库执行
+CREATE DATABASE test_replication;
+USE test_replication;
+CREATE TABLE test (id INT PRIMARY KEY, name VARCHAR(100));
+INSERT INTO test VALUES (1, 'master_data');
+
+-- 在从库验证
+USE test_replication;
+SELECT * FROM test;
+-- 应该能看到主库插入的数据
+```
+
+### 2.4.5 读写分离环境变量
+
+在 `.env` 文件中添加读写分离相关配置：
+
+```bash
+# ==================== 数据库读写分离配置 ====================
+
+# 主库配置（写操作）
+DB_HOST=localhost           # 主库地址
+DB_PORT=3306                # 主库端口
+DB_PASSWORD=your_password   # 主库密码
+
+# 从库配置（读操作）
+DB_SLAVE_HOST=localhost     # 从库地址
+DB_SLAVE_PORT=3307          # 从库端口
+DB_SLAVE_PASSWORD=your_password  # 从库密码
+
+# 是否启用读写分离（true/false）
+READ_WRITE_SPLIT_ENABLED=true
+```
+
+### 2.4.6 读写分离原理
+
+系统采用 **dynamic-datasource** 组件实现读写分离：
+
+- **写操作**：INSERT、UPDATE、DELETE 自动路由到主库
+- **读操作**：SELECT、COUNT、AVG 等自动路由到从库
+- **自动识别**：根据方法名自动判断读写操作
+
+**读操作方法名模式**（走从库）：
+- `get*`, `find*`, `list*`, `query*`, `search*`, `select*`
+- `count*`, `sum*`, `avg*`, `min*`, `max*`
+- `check*`, `verify*`, `is*`, `has*`, `exist*`
+
+**写操作方法名模式**（走主库）：
+- `save*`, `add*`, `create*`, `update*`, `delete*`
+- `remove*`, `modify*`, `insert*`, `change*`
+
+**默认策略**：不匹配以上模式的方法默认走主库（安全策略）
 
 ---
 
@@ -207,9 +395,11 @@ cp .env.example .env
 vim .env
 
 # 填写以下内容：
-DB_PASSWORD=your_mysql_password    # MySQL 密码
-JWT_SECRET=your-super-secret-key   # JWT 密钥（越长越好）
-REDIS_PASSWORD=your_redis_password # Redis 密码
+DB_PASSWORD=your_mysql_password              # MySQL 主库密码
+DB_SLAVE_PASSWORD=your_mysql_slave_password  # MySQL 从库密码（读写分离用）
+JWT_SECRET=your-super-secret-key             # JWT 密钥（越长越好）
+REDIS_PASSWORD=your_redis_password           # Redis 密码
+READ_WRITE_SPLIT_ENABLED=true                # 启用读写分离
 ```
 
 ### 4.2 上传文件到服务器
@@ -451,9 +641,34 @@ curl http://localhost/api/posts?page=1\&size=10
 # 期望：返回帖子列表（可能有数据）
 ```
 
-### 步骤 5：验证前端页面
+### 步骤 5：验证读写分离（可选）
+
+如果配置了读写分离，验证数据源是否正确切换：
 
 ```bash
+# 1. 检查后端日志，查看数据源切换情况
+docker logs campus-backend-1 --tail 100 | grep -i "数据源"
+
+# 期望输出示例：
+# 切换数据源到: master  # 写操作
+# 切换数据源到: slave   # 读操作
+
+# 2. 验证主从复制状态
+docker exec -it campus-mysql-slave mysql -uroot -p${DB_SLAVE_PASSWORD} -e "SHOW SLAVE STATUS\G"
+# 期望：Slave_IO_Running: Yes, Slave_SQL_Running: Yes
+
+# 3. 测试读写分离
+# 在主库插入数据
+docker exec -it campus-mysql mysql -uroot -p${DB_PASSWORD} -e "INSERT INTO campus_fenbushi.post (title) VALUES ('读写分离测试');"
+
+# 在从库查询数据
+docker exec -it campus-mysql-slave mysql -uroot -LAVE_PASSWORD} -e "SELECT * FROM campus_fenbushi.post WHERE title='读写分离测试';"
+# 期望：能查询到主库插入的数据
+```
+
+### 步骤 6：验证前端页面
+
+```p${DB_Sbash
 # 用户前端首页
 curl http://localhost/ | grep "<title>"
 # 期望输出：<title>校园互助平台</title>
@@ -889,13 +1104,80 @@ chmod -R 777 /app/campus/nginx/logs
 
 | 变量 | 说明 | 示例 |
 |------|------|------|
-| DB_PASSWORD | MySQL root 密码 | `MySecurePass123` |
+| DB_PASSWORD | MySQL 主库 root 密码 | `MySecurePass123` |
+| DB_SLAVE_PASSWORD | MySQL 从库 root 密码 | `MySecurePass123` |
 | JWT_SECRET | JWT 签名密钥 | 长度至少 256 位 |
 | REDIS_PASSWORD | Redis 访问密码 | `RedisPass456` |
+| READ_WRITE_SPLIT_ENABLED | 是否启用读写分离 | `true` / `false` |
+| DB_SLAVE_HOST | 从库地址 | `localhost` 或 IP 地址 |
+| DB_SLAVE_PORT | 从库端口 | `3307` |
 
-### D. 参考资料
+### D. 读写分离配置参考
+
+#### D.1 读写分离原理
+
+系统采用 AOP 切面自动识别读写操作：
+
+```
+请求 → Controller → Service → AOP切面识别方法名 → 自动路由到对应数据源
+                                                              │
+                    ┌─────────────────────────┬───────────────┘
+                    ▼                         ▼
+              ┌─────────┐              ┌─────────┐
+              │  主库    │              │  从库    │
+              │ (写操作) │              │ (读操作) │
+              └─────────┘              └─────────┘
+```
+
+#### D.2 方法名路由规则
+
+| 方法名模式 | 数据源 | 示例 |
+|-----------|--------|------|
+| `get*`, `find*`, `list*`, `query*` | 从库 | `getUserById()`, `listPosts()` |
+| `save*`, `add*`, `create*` | 主库 | `saveUser()`, `createPost()` |
+| `update*`, `delete*`, `remove*` | 主库 | `updateUser()`, `deleteById()` |
+| `count*`, `sum*`, `avg*` | 从库 | `countUsers()`, `sumScores()` |
+| 其他方法 | 主库 | 未匹配的方法默认走主库 |
+
+#### D.3 手动指定数据源
+
+在特殊情况下，可以手动指定数据源：
+
+```java
+// 强制读主库（数据一致性要求高的场景）
+@DS("master")
+public User getUserById(Long id) {
+    return userMapper.selectById(id);
+}
+
+// 强制读从库
+@DS("slave")
+public List<User> listUsers() {
+    return userMapper.selectList(null);
+}
+```
+
+### E. 参考资料
 
 - [Docker Compose 官方文档](https://docs.docker.com/compose/)
 - [Nginx 反向代理指南](https://docs.nginx.com/nginx/admin-guide/)
 - [MySQL Docker 部署](https://dev.mysql.com/doc/refman/8.0/en/docker-mysql.html)
 - [Redis Docker 部署](https://redis.io/docs/management/publishing/#docker)
+- [Dynamic Datasource 官方文档](https://dynamic-datasource.com/)
+- [MySQL 主从复制配置](https://dev.mysql.com/doc/refman/8.0/en/replication.html)
+
+---
+
+**文档版本**：1.1
+
+**最后更新**：2026年2月
+
+**更新内容**：
+- 添加数据库读写分离架构概览（第1节）
+- 添加 MySQL 主从复制配置说明（2.4节）
+- 添加读写分离环境变量配置（4.2.3节）
+- 添加读写分离验证步骤（4.6节）
+- 添加读写分离故障排查（问题7、问题8）
+- 添加读写分离配置参考（附录D、附录E）
+
+**维护团队**：校园互助平台开发团队

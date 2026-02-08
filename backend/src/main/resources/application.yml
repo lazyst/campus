@@ -6,19 +6,52 @@ spring:
   application:
     name: campus-helping-platform
 
-  # MySQL数据库配置
+  # 动态数据源配置（读写分离）
   datasource:
-    driver-class-name: com.mysql.cj.jdbc.Driver
-    url: jdbc:mysql://${DB_HOST:localhost}:3306/campus_fenbushi?useUnicode=true&characterEncoding=utf-8&serverTimezone=Asia/Shanghai&useSSL=false&allowPublicKeyRetrieval=true
-    username: root
-    password: ${DB_PASSWORD:123}
-    hikari:
-      minimum-idle: 5
-      maximum-pool-size: 20
-      idle-timeout: 30000
-      pool-name: CampusHikariCP
-      max-lifetime: 1800000
-      connection-timeout: 30000
+    dynamic:
+      # 默认主库（写操作）
+      primary: master
+      # 严格模式：未匹配到数据源时直接报错
+      strict: true
+      
+      datasource:
+        # 主库配置（写操作）
+        master:
+          driver-class-name: com.mysql.cj.jdbc.Driver
+          url: jdbc:mysql://${DB_HOST:192.168.100.100}:3306/campus_fenbushi?useUnicode=true&characterEncoding=utf-8&serverTimezone=Asia/Shanghai&useSSL=false&allowPublicKeyRetrieval=true
+          username: root
+          password: ${DB_PASSWORD:123}
+          druid:
+            initial-size: 5
+            min-idle: 5
+            max-active: 20
+            max-wait: 60000
+            time-between-eviction-runs-millis: 60000
+            min-evictable-idle-time-millis: 300000
+            validation-query: SELECT 1
+            test-while-idle: true
+            test-on-borrow: false
+            test-on-return: false
+            filters: stat,wall,slf4j
+            
+        # 从库配置（读操作）
+        slave:
+          driver-class-name: com.mysql.cj.jdbc.Driver
+          url: jdbc:mysql://${DB_SLAVE_HOST:192.168.100.100}:${DB_SLAVE_PORT:3307}/campus_fenbushi?useUnicode=true&characterEncoding=utf-8&serverTimezone=Asia/Shanghai&useSSL=false&allowPublicKeyRetrieval=true
+          username: root
+          password: ${DB_SLAVE_PASSWORD:123}
+          druid:
+            initial-size: 5
+            min-idle: 5
+            max-active: 20
+            max-wait: 60000
+            time-between-eviction-runs-millis: 60000
+            min-evictable-idle-time-millis: 300000
+            validation-query: SELECT 1
+            test-while-idle: true
+            test-on-borrow: false
+            test-on-return: false
+            filters: stat,wall,slf4j
 
   # 文件上传配置
   servlet:
@@ -39,7 +72,7 @@ spring:
     redis:
       host: ${REDIS_HOST:192.168.100.100}
       port: 6379
-      password: ${REDIS_PASSWORD:}
+      password: ${REDIS_PASSWORD:123}
       database: 0
       timeout: 10000ms
       lettuce:
@@ -65,7 +98,7 @@ mybatis-plus:
 
 # JWT配置
 jwt:
-  secret: ${JWT_SECRET:campus-helping-platform-jwt-secret-key-2024-very-long-and-secure}
+  secret: ${JWT_SECRET:campus-helping-platform-jwt-secret-key-2024-very-long-and-secure-123}
   expiration: 604800000  # 7天有效期 (毫秒)
   header: Authorization
   prefix: Bearer

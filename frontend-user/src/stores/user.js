@@ -77,7 +77,19 @@ export const useUserStore = defineStore('user', () => {
     if (result.token) {
       token.value = result.token
     }
-    userInfo.value = result.user
+    if (result.user) {
+      userInfo.value = result.user
+      // 确保 user 对象中也保存 token
+      try {
+        const stored = localStorage.getItem('user')
+        const parsed = stored ? JSON.parse(stored) : {}
+        parsed.token = result.token
+        parsed.userInfo = result.user
+        localStorage.setItem('user', JSON.stringify(parsed))
+      } catch (e) {
+        console.warn('保存用户状态失败:', e)
+      }
+    }
     return result
   }
 

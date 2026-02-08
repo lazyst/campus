@@ -6,6 +6,7 @@ import Components from 'unplugin-vue-components/vite'
 import { ElementPlusResolver } from 'unplugin-vue-components/resolvers'
 
 export default defineConfig({
+  base: '/admin/',  // 部署在 /admin 子目录
   onWarn(warning, warn) {
     // 忽略 Element Plus 内部的弃用警告和类型检查警告
     const ignorePatterns = [
@@ -25,7 +26,8 @@ export default defineConfig({
     AutoImport({
       imports: ['vue', 'vue-router', 'pinia'],
       resolvers: [ElementPlusResolver()],
-      dts: false
+      dts: false,
+      eslintrc: { enabled: false }
     }),
     Components({
       resolvers: [ElementPlusResolver()],

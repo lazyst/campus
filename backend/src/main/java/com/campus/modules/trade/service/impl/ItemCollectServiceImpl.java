@@ -1,6 +1,9 @@
 package com.campus.modules.trade.service.impl;
+import com.baomidou.dynamic.datasource.annotation.DS;
 
+import com.baomidou.dynamic.datasource.annotation.DS;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.dynamic.datasource.annotation.DS;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.campus.modules.trade.entity.Item;
 import com.campus.modules.trade.entity.ItemCollect;
@@ -16,6 +19,7 @@ import java.util.List;
  * 物品收藏服务实现
  */
 @Service
+@DS("slave")
 public class ItemCollectServiceImpl extends ServiceImpl<ItemCollectMapper, ItemCollect> implements ItemCollectService {
 
     private final ItemService itemService;

@@ -2,6 +2,7 @@ package com.campus.modules.forum.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.baomidou.dynamic.datasource.annotation.DS;
 import com.campus.modules.forum.entity.Post;
 import com.campus.modules.forum.mapper.PostMapper;
 import com.campus.modules.forum.service.PostService;
@@ -113,6 +114,7 @@ public class PostServiceImpl extends ServiceImpl<PostMapper, Post> implements Po
      * @return 如果是作者返回true，否则返回false
      */
     @Override
+    @DS("slave")
     public boolean isAuthor(Long postId, Long userId) {
         Post post = this.getById(postId);
         return post != null && post.getUserId().equals(userId);

@@ -1,6 +1,9 @@
 package com.campus.modules.admin.service.impl;
+import com.baomidou.dynamic.datasource.annotation.DS;
 
+import com.baomidou.dynamic.datasource.annotation.DS;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.dynamic.datasource.annotation.DS;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.campus.common.Result;
 import com.campus.modules.admin.entity.Admin;
@@ -22,6 +25,7 @@ import java.util.Date;
  * 管理员服务实现
  */
 @Service
+@DS("slave")
 public class AdminServiceImpl extends ServiceImpl<AdminMapper, Admin> implements AdminService {
 
     @Value("${jwt.secret}")

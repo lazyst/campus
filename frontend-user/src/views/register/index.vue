@@ -134,16 +134,17 @@ async function handleSubmit() {
 
   loading.value = true
   try {
+    // 注册成功后自动登录
     await userStore.register({
       phone: form.phone,
       password: form.password,
       nickname: form.nickname
     })
     // 显示注册成功提示
-    showToast('注册成功，请登录', 'success')
-    // 延迟跳转，让用户看到提示
+    showToast('注册成功', 'success')
+    // 延迟跳转，让用户看到提示，然后跳转到"我的"页面
     setTimeout(() => {
-      router.replace('/login')
+      router.replace('/profile')
     }, 1500)
   } catch (error) {
     console.error('注册失败', error)

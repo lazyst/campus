@@ -2,6 +2,7 @@ package com.campus.modules.user.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.baomidou.dynamic.datasource.annotation.DS;
 import com.campus.modules.user.entity.User;
 import com.campus.modules.user.mapper.UserMapper;
 import com.campus.modules.user.service.UserService;
@@ -17,11 +18,13 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
     private final BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
 
     @Override
+    @DS("slave")
     public User getByPhone(String phone) {
         return baseMapper.selectOne(new LambdaQueryWrapper<User>().eq(User::getPhone, phone));
     }
 
     @Override
+    @DS("slave")
     public boolean existsByPhone(String phone) {
         return baseMapper.exists(new LambdaQueryWrapper<User>().eq(User::getPhone, phone));
     }

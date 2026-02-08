@@ -1,6 +1,6 @@
 package com.campus.modules.forum.service.impl;
 
-import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.dynamic.datasource.annotation.DS;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.campus.modules.forum.entity.Collect;
 import com.campus.modules.forum.entity.CollectSimple;
@@ -12,16 +12,18 @@ import com.campus.modules.forum.service.CollectService;
 import com.campus.modules.forum.service.NotificationService;
 import com.campus.modules.forum.service.PostService;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+
 /**
- * 收藏服务实现
+ * 收藏服务实现类
  */
 @Service
+@DS("slave")
 public class CollectServiceImpl extends ServiceImpl<CollectMapper, Collect> implements CollectService {
 
     private final PostService postService;

@@ -1,11 +1,14 @@
 package com.campus.modules.admin.controller;
 
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.baomidou.dynamic.datasource.annotation.DS;
 import com.campus.common.Result;
 import com.campus.modules.admin.service.AdminService;
 import com.campus.modules.auth.service.AuthService;
 import com.campus.modules.user.dto.UpdateProfileRequest;
 import com.campus.modules.user.entity.User;
+import com.campus.modules.user.mapper.UserMapper;
 import com.campus.modules.user.service.UserService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -47,12 +50,12 @@ public class UserManagementController {
         verifyAdmin(authHeader);
 
         Page<User> pageParam = new Page<>(page, size);
-        
-        com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper<User> wrapper = 
+
+        com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper<User> wrapper =
             new com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper<>();
-        
-        wrapper.eq(User::getDeleted, false);
-        
+
+        // 注意：@TableLogic 会自动添加 deleted = 0 条件，无需手动添加
+
         if (keyword != null && !keyword.isEmpty()) {
             wrapper.and(w -> w.like(User::getPhone, keyword)
                             .or()
@@ -91,7 +94,7 @@ public class UserManagementController {
     @PutMapping("/{userId}")
     public Result<User> update(
             @RequestHeader("Authorization") String authHeader,
-            @PathVariable Long userId,
+            @PathVariable("userId") Long userId,
             @Valid @RequestBody UpdateProfileRequest request) {
 
         verifyAdmin(authHeader);
@@ -173,21 +176,28 @@ public class UserManagementController {
     }
 
     @Operation(summary = "删除用户")
-    @DeleteMapping("/{userId}")
+    @DeleteMapping("/{userId}/delete")
+    @DS("master") // 强制走主库，避免主从延迟
     public Result<Void> delete(
             @RequestHeader("Authorization") String authHeader,
-            @PathVariable Long userId) {
-        
+            @PathVariable("userId") Long userId) {
+
         verifyAdmin(authHeader);
-        
-        User user = userService.getById(userId);
+
+        // 直接用 Mapper 查询，强制走主库
+        User user = userService.getBaseMapper().selectOne(
+            new LambdaQueryWrapper<User>().eq(User::getId, userId)
+        );
         if (user == null || (user.getDeleted() != null && user.getDeleted() == 1)) {
             return Result.error("用户不存在");
         }
-        
-        // Soft delete
-        user.setDeleted(1);
-        userService.updateById(user);
+
+        // Soft delete - 只更新 deleted 字段
+        userService.lambdaUpdate()
+                .eq(User::getId, userId)
+                .set(User::getDeleted, 1)
+                .update();
+
         return Result.success();
     }
 

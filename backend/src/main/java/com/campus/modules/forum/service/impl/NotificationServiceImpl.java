@@ -1,6 +1,9 @@
 package com.campus.modules.forum.service.impl;
+import com.baomidou.dynamic.datasource.annotation.DS;
 
+import com.baomidou.dynamic.datasource.annotation.DS;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.dynamic.datasource.annotation.DS;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.campus.modules.forum.entity.Notification;
 import com.campus.modules.forum.mapper.NotificationMapper;
@@ -13,6 +16,7 @@ import java.util.List;
  * 通知服务实现
  */
 @Service
+@DS("slave")
 public class NotificationServiceImpl extends ServiceImpl<NotificationMapper, Notification> implements NotificationService {
 
     @Override

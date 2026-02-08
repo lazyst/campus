@@ -1,6 +1,9 @@
 package com.campus.modules.forum.service.impl;
+import com.baomidou.dynamic.datasource.annotation.DS;
 
+import com.baomidou.dynamic.datasource.annotation.DS;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.dynamic.datasource.annotation.DS;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.campus.modules.forum.entity.Comment;
 import com.campus.modules.forum.mapper.CommentMapper;
@@ -13,6 +16,7 @@ import java.util.List;
  * 评论服务实现类
  */
 @Service
+@DS("slave")
 public class CommentServiceImpl extends ServiceImpl<CommentMapper, Comment> implements CommentService {
 
     /**

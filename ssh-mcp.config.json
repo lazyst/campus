@@ -1,0 +1,18 @@
+{
+  "servers": {
+    "dev": {
+      "host": "192.168.100.100",
+      "port": 22,
+      "username": "root",
+      "password": "123",
+      "timeout": 60000
+    },
+    "deploy": {
+      "host": "192.168.100.133",
+      "port": 22,
+      "username": "root",
+      "password": "123",
+      "timeout": 30000
+    }
+  }
+}

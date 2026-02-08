@@ -65,7 +65,12 @@
           <div class="header-actions">
             <el-select v-model="selectedDateDir" placeholder="日期目录" clearable style="width: 150px" @change="handleSearch">
               <el-option label="全部" value="" />
-              <el-option v-for="dir in dateDirs" :key="dir" :label="dir" :value="dir" />
+              <el-option
+                v-for="dir in dateDirs.filter(d => d != null && d !== undefined)"
+                :key="String(dir)"
+                :label="String(dir)"
+                :value="String(dir)"
+              />
             </el-select>
             <el-input
               v-model="searchKeyword"
@@ -224,7 +229,7 @@ const fetchStats = async () => {
 const fetchDateDirs = async () => {
   try {
     const res = await getDateDirs()
-    dateDirs.value = res || []
+    dateDirs.value = (res.data && Array.isArray(res.data)) ? res.data : []
   } catch (error) {
     // 忽略错误
   }

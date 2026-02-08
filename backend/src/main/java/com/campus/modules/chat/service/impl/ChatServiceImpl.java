@@ -1,6 +1,9 @@
 package com.campus.modules.chat.service.impl;
+import com.baomidou.dynamic.datasource.annotation.DS;
 
+import com.baomidou.dynamic.datasource.annotation.DS;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.dynamic.datasource.annotation.DS;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.campus.modules.chat.dto.ChatMessageDTO;
@@ -20,6 +23,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Service
+@DS("slave")
 public class ChatServiceImpl extends ServiceImpl<MessageMapper, Message>
         implements ChatService {
 

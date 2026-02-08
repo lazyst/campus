@@ -1,6 +1,9 @@
 package com.campus.modules.admin.service.impl;
+import com.baomidou.dynamic.datasource.annotation.DS;
 
+import com.baomidou.dynamic.datasource.annotation.DS;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.dynamic.datasource.annotation.DS;
 import com.campus.modules.admin.service.DashboardService;
 import com.campus.modules.forum.entity.Board;
 import com.campus.modules.forum.entity.Post;
@@ -24,6 +27,7 @@ import java.util.*;
  * Dashboard服务实现
  */
 @Service
+@DS("slave")
 public class DashboardServiceImpl implements DashboardService {
 
     private final UserService userService;

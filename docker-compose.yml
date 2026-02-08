@@ -18,6 +18,7 @@ services:
       - ./nginx/html:/usr/share/nginx/html:ro
       - ./nginx/ssl:/etc/nginx/ssl:ro
       - ./nginx/logs:/var/log/nginx
+      - uploads-data:/var/www/uploads
     depends_on:
       backend-1:
         condition: service_healthy
@@ -55,6 +56,8 @@ services:
         condition: service_healthy
     networks:
       - app-network
+    volumes:
+      - uploads-data:/app/uploads
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8080/api/health"]
@@ -86,6 +89,8 @@ services:
         condition: service_healthy
     networks:
       - app-network
+    volumes:
+      - uploads-data:/app/uploads
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8080/api/health"]
@@ -173,4 +178,6 @@ volumes:
   mysql-data:
     driver: local
   redis-data:
+    driver: local
+  uploads-data:
     driver: local

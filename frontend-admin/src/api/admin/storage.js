@@ -13,14 +13,14 @@ import api from '../index'
  * @param {string} [params.keyword] - 关键词搜索
  */
 export function getFileList(params) {
-  return api.get('/upload/list', { params })
+  return api.get('/api/upload/list', { params })
 }
 
 /**
  * 获取所有日期目录
  */
 export function getDateDirs() {
-  return api.get('/upload/dates')
+  return api.get('/api/upload/dates')
 }
 
 /**
@@ -30,14 +30,14 @@ export function getDateDirs() {
  * @param {number} params.pageSize - 每页数量
  */
 export function getUnusedImages(params) {
-  return api.get('/upload/unused', { params })
+  return api.get('/api/upload/unused', { params })
 }
 
 /**
  * 清理未使用的图片
  */
 export function cleanUnusedImages() {
-  return api.delete('/upload/unused/clean')
+  return api.delete('/api/upload/unused/clean')
 }
 
 /**
@@ -45,7 +45,7 @@ export function cleanUnusedImages() {
  * @param {string} url - 图片URL
  */
 export function deleteImage(url) {
-  return api.delete('/upload/image?url=' + encodeURIComponent(url))
+  return api.delete('/api/upload/image?url=' + encodeURIComponent(url))
 }
 
 /**
@@ -53,12 +53,12 @@ export function deleteImage(url) {
  * @param {string[]} urls - 图片URL数组
  */
 export function deleteImages(urls) {
-  return api.delete('/upload/images/batch', { data: urls })
+  return api.delete('/api/upload/images/batch', { data: urls })
 }
 
 /**
  * 获取存储统计信息
  */
 export function getStorageStats() {
-  return api.get('/upload/stats')
+  return api.get('/api/upload/stats')
 }

@@ -11,6 +11,77 @@ campus/
 └── frontend-admin/    # Vue 3 + JavaScript + Element Plus + SCSS (端口 3001)
 ```
 
+### 技术栈版本
+
+| 层级 | 技术 | 版本 | 说明 |
+|------|------|------|------|
+| 后端 | Spring Boot | 3.2.0 | 自动配置、约定优于配置 |
+| 后端 | Java | 17 | 开发语言 |
+| 后端 | MyBatis-Plus | 3.5.5 | ORM 框架 |
+| 前端-user | Vue 3 | 3.4+ | 组合式 API |
+| 前端-user | Tailwind CSS | 4.x | 原子化 CSS |
+| 前端-user | Vant UI | 4.x | 移动端组件库 |
+| 前端-admin | Element Plus | 2.x | PC 端组件库 |
+| 数据库 | MySQL | 8.0 | 关系型数据库 |
+| 缓存 | Redis | 7.x | 缓存/会话存储 |
+
+---
+
+## 文档导航
+
+项目文档位于 `docs/` 目录下，提供了更详细的技术说明和使用指南：
+
+| 文档 | 说明 |
+|------|------|
+| [ENV_SETUP.md](docs/ENV_SETUP.md) | 环境配置指南，包含 VM 远程数据库配置 |
+| [ARCHITECTURE.md](docs/ARCHITECTURE.md) | 系统架构设计文档 |
+| [PROJECT_STRUCTURE.md](docs/PROJECT_STRUCTURE.md) | 完整目录结构说明 |
+| [CODING_STANDARDS.md](docs/CODING_STANDARDS.md) | 详细代码规范 |
+| [DEPLOYMENT.md](docs/DEPLOYMENT.md) | Docker 生产部署指南 |
+| [ENVIRONMENT_VARIABLES.md](docs/ENVIRONMENT_VARIABLES.md) | 环境变量完整说明 |
+| [TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md) | 常见问题排查指南 |
+
+**开发前建议阅读顺序**：
+1. @docs/ENV_SETUP.md - 环境搭建
+2. @docs/ARCHITECTURE.md - 架构理解
+3. @docs/CODING_STANDARDS.md - 代码规范
+
+---
+
+## 环境配置（开发环境）
+
+本项目使用虚拟机 `192.168.100.100` 上的 Docker 容器运行数据库服务：
+
+### 数据库连接信息
+
+| 服务 | 地址 | 端口 | 用户名 | 密码 | 数据库名 |
+|------|------|------|--------|------|----------|
+| MySQL | 192.168.100.100 | 3306 | root | 123 | campus_fenbushi |
+| Redis | 192.168.100.100 | 6379 | - | 123 | - |
+
+### 数据库初始化
+
+```bash
+# 初始化数据库脚本位置
+backend/sql/init.sql
+
+# 执行初始化
+mysql -h 192.168.100.100 -uroot -p123 campus_fenbushi < backend/sql/init.sql
+```
+
+**注意**：`init.sql` 包含 11 张核心数据表结构：
+- `admin` - 管理员表
+- `user` - 用户表
+- `board` - 论坛板块表
+- `post` - 帖子表
+- `comment` - 评论表
+- `collect` - 帖子收藏表
+- `like` - 帖子点赞表
+- `item` - 闲置物品表
+- `item_collect` - 物品收藏表
+- `message` - 消息表
+- `conversation` - 会话表
+- `notification` - 通知表
 ---
 
 ## 构建命令
@@ -26,6 +97,12 @@ mvn test -Dtest=PostServiceTest                    # 单个测试类
 mvn test -Dtest=PostServiceTest#shouldIncrementViewCount # 单个测试方法
 mvn jacoco:report              # 生成代码覆盖率报告 (target/site/jacoco)
 ```
+
+**代码覆盖率要求**：
+- **行覆盖率 (Line Coverage)**: ≥ 70%
+- **分支覆盖率 (Branch Coverage)**: ≥ 60%
+
+报告位置：`backend/target/site/jacoco/index.html`
 
 ### 前端 (user 和 admin)
 ```bash
@@ -172,7 +249,42 @@ PARAM_ERROR(400, "参数错误"),
 
 ---
 
+## 开发工作流建议
+
+1. **理解需求**
+   - 阅读需求文档和设计文档
+   - 查看相关模块的 API 文档
+   - 与产品/设计确认疑问
+
+2. **查看相关模块代码**
+   - 理解现有代码结构和模式
+   - 遵循项目编码规范
+   - 参考相似功能的实现
+
+3. **编写/更新测试**
+   - 遵循测试覆盖率要求
+   - 覆盖正常流程和边界情况
+
+4. **实现功能**
+   - 遵循分层架构模式
+   - 保持代码简洁和可读性
+
+5. **运行验证**
+   - 执行相关测试用例
+   - 检查代码规范
+   - 验证功能完整性
+
+---
+
 ## 参考链接
-- 后端 API 文档: http://localhost:8080/swagger-ui.html
-- 用户应用: http://localhost:3000
-- 管理应用: http://localhost:3001
+
+| 链接 | 说明 |
+|------|------|
+| 后端 API 文档 | http://localhost:8080/swagger-ui.html |
+| 用户应用 | http://localhost:3000 |
+| 管理应用 | http://localhost:3001 |
+| 环境配置 | @docs/ENV_SETUP.md |
+| 架构设计 | @docs/ARCHITECTURE.md |
+| 代码规范 | @docs/CODING_STANDARDS.md |
+| 部署指南 | @docs/DEPLOYMENT.md |
+| 故障排查 | @docs/TROUBLESHOOTING.md |

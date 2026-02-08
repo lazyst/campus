@@ -120,6 +120,14 @@ async function fetchUnreadCount() {
   }
 }
 
+// 监听 userStore 变化，当从其他页面跳转过来时更新状态
+watch(() => userStore.token, async (newToken) => {
+  if (newToken && !userStore.userInfo) {
+    await userStore.fetchUserInfo()
+  }
+  await fetchUnreadCount()
+}, { immediate: true });
+
 // 确保userStore已初始化
 onMounted(async () => {
   if (!userStore.isInitialized) {
