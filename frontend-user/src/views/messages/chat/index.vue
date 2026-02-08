@@ -30,7 +30,22 @@
           <span v-else>{{ otherUserNickname.charAt(0) || '用' }}</span>
         </div>
 
-        <div class="message-bubble" :class="{ sent: msg.senderId === currentUserId }">
+        <!-- 图片消息 -->
+        <div
+          v-if="isImageMessage(msg)"
+          class="message-image-container"
+          :class="{ sent: msg.senderId === currentUserId }"
+        >
+          <img
+            v-if="msg.content"
+            :src="getImageUrl(msg.content)"
+            class="message-image"
+            @click="previewMessageImage(msg.content)"
+          />
+        </div>
+
+        <!-- 文本消息 -->
+        <div v-else class="message-bubble" :class="{ sent: msg.senderId === currentUserId }">
           {{ msg.content }}
         </div>
 
@@ -40,6 +55,24 @@
 
     <!-- 输入区域 -->
     <div class="input-area">
+      <!-- 图片按钮 -->
+      <button class="image-btn" @click="triggerImageSelect">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
+          <circle cx="8.5" cy="8.5" r="1.5" />
+          <polyline points="21 15 16 10 5 21" />
+        </svg>
+      </button>
+
+      <!-- 隐藏的文件输入框 -->
+      <input
+        ref="imageInput"
+        type="file"
+        accept="image/*"
+        class="hidden-image-input"
+        @change="handleImageSelect"
+      />
+
       <input
         v-model="inputMessage"
         type="text"
@@ -49,18 +82,29 @@
       />
       <button class="send-btn" @click="handleSendMessage">发送</button>
     </div>
+
+    <!-- 图片预览组件 -->
+    <ImagePreview
+      v-model:visible="showImagePreview"
+      :images="previewImages"
+      :initial-index="previewImageIndex"
+      @close="showImagePreview = false"
+    />
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted, inject, nextTick } from 'vue'
+import { ref, onMounted, onUnmounted, inject, nextTick, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { getMessagesWithUser } from '@/api/modules/message'
 import { getUserPublicInfo } from '@/api/modules/user'
 import { clearUnreadCount } from '@/api/modules/conversation'
 import { useUserStore } from '@/stores/user'
 import { sendMessage as sendStompMessage, onMessage, connect as connectWs, getIsConnected } from '@/services/websocket'
+import { uploadImage } from '@/api/modules/upload'
 import { getImageUrl } from '@/utils/imageUrl'
+import ImagePreview from '@/components/ImagePreview.vue'
+import { showToast } from '@/services/toastService'
 
 const route = useRoute()
 const router = useRouter()
@@ -79,9 +123,116 @@ const currentUserId = ref(0)
 // 用户自己的头像
 const myAvatar = ref('')
 
+// 图片相关
+const imageInput = ref(null)
+const isUploading = ref(false)
+
+// 图片预览
+const showImagePreview = ref(false)
+const previewImages = ref([])
+const previewImageIndex = ref(0)
+
 const messagesContainer = ref(null)
 const messages = ref([])
 let unsubscribeMessage = null
+
+// 图片预览相关
+function previewMessageImage(imageUrl) {
+  previewImages.value = [imageUrl]
+  previewImageIndex.value = 0
+  showImagePreview.value = true
+}
+
+// 判断是否是图片消息
+function isImageMessage(msg) {
+  // 明确指定是图片消息
+  if (msg.type === 2) return true
+  // 历史消息兼容：根据 URL 判断
+  if (msg.content && typeof msg.content === 'string') {
+    const lowerContent = msg.content.toLowerCase()
+    return (
+      lowerContent.startsWith('/uploads/') ||
+      lowerContent.startsWith('http://') ||
+      lowerContent.startsWith('https://')
+    ) && (
+      lowerContent.endsWith('.png') ||
+      lowerContent.endsWith('.jpg') ||
+      lowerContent.endsWith('.jpeg') ||
+      lowerContent.endsWith('.gif') ||
+      lowerContent.endsWith('.webp')
+    )
+  }
+  return false
+}
+
+function triggerImageSelect() {
+  imageInput.value?.click()
+}
+
+async function handleImageSelect(event) {
+  const file = event.target.files?.[0]
+  if (!file) return
+
+  // 验证文件类型
+  if (!file.type.startsWith('image/')) {
+    showToast('请选择图片文件')
+    return
+  }
+
+  // 验证文件大小 (5MB)
+  if (file.size > 5 * 1024 * 1024) {
+    showToast('图片大小不能超过5MB')
+    return
+  }
+
+  // 清空 input，允许重复选择同一文件
+  event.target.value = ''
+
+  await sendImageMessage(file)
+}
+
+async function sendImageMessage(file) {
+  const receiverId = otherUserId.value
+
+  // 确保 WebSocket 已连接
+  if (!getIsConnected()) {
+    try {
+      await connectWs(userStore.token)
+    } catch (error) {
+      showToast('连接失败，请稍后重试')
+      return
+    }
+  }
+
+  isUploading.value = true
+
+  try {
+    // 上传图片
+    const result = await uploadImage(file)
+    const imageUrl = result.url || result
+
+    // 通过 WebSocket 发送图片消息 (type=2 表示图片消息)
+    sendStompMessage(receiverId, imageUrl, 2)
+
+    // 添加到本地显示
+    messages.value.push({
+      id: Date.now(),
+      content: imageUrl,
+      type: 2, // 图片消息
+      senderId: currentUserId.value,
+      receiverId: receiverId,
+      createdAt: new Date().toISOString()
+    })
+
+    // 滚动到底部
+    scrollToBottom()
+  } catch (error) {
+    console.error('图片上传失败:', error)
+    showToast('图片发送失败，请稍后重试')
+  } finally {
+    isUploading.value = false
+  }
+}
 
 // 滚动到底部
 function scrollToBottom() {
@@ -250,6 +401,7 @@ onMounted(async () => {
       messages.value.push({
         id: data.id || Date.now(),
         content: data.content,
+        type: data.type || 1, // type=2 表示图片消息，默认文本消息 type=1
         senderId: data.senderId,
         receiverId: data.receiverId,
         createdAt: data.createdAt || new Date().toISOString()
@@ -420,5 +572,53 @@ onUnmounted(() => {
 
 .send-btn:active {
   opacity: 0.8;
+}
+
+/* 图片按钮 */
+.image-btn {
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--text-secondary);
+  transition: all var(--transition-fast);
+  flex-shrink: 0;
+}
+
+.image-btn:active {
+  opacity: 0.6;
+}
+
+.image-btn svg {
+  width: 24px;
+  height: 24px;
+}
+
+/* 隐藏的文件输入 */
+.hidden-image-input {
+  display: none;
+}
+
+/* 图片消息容器 */
+.message-image-container {
+  max-width: 200px;
+  border-radius: var(--radius-md);
+  overflow: hidden;
+}
+
+.message-image-container.sent {
+  border-radius: var(--radius-md);
+}
+
+.message-image {
+  width: 180px;
+  height: auto;
+  display: block;
+  cursor: pointer;
+  object-fit: cover;
 }
 </style>

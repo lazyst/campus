@@ -297,6 +297,8 @@ onMounted(() => {
 <style scoped>
 .forum-list {
   padding: var(--space-3);
+  /* 为底部导航栏预留空间 */
+  padding-bottom: calc(var(--tabbar-height) + var(--page-safe-bottom, 16px));
 }
 
 .forum-list__state {

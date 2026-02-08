@@ -149,7 +149,8 @@ onMounted(() => {
 .home-page {
   min-height: 100vh;
   background: #F8FAFC;
-  padding-bottom: 80px;
+  /* 底部导航栏高度 + 安全区域 + 额外空间 */
+  padding-bottom: calc(var(--tabbar-height) + var(--page-safe-bottom, 16px));
 }
 
 .status-bar {

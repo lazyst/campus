@@ -234,8 +234,9 @@ export function disconnect() {
  * 发送消息
  * @param {number} receiverId - 接收者ID
  * @param {string} content - 消息内容
+ * @param {number} type - 消息类型 (1=文本, 2=图片)
  */
-export function sendMessage(receiverId, content) {
+export function sendMessage(receiverId, content, type = 1) {
   if (!stompClient || !isConnected.value) {
     throw new Error('WebSocket 未连接，请先调用 connect()')
   }
@@ -243,7 +244,7 @@ export function sendMessage(receiverId, content) {
   stompClient.send(
     `/app/chat.send/${receiverId}`,
     { Authorization: `Bearer ${localStorage.getItem('token')}` },
-    JSON.stringify({ content })
+    JSON.stringify({ content, type })
   )
 }
 

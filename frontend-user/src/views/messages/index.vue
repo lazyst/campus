@@ -62,7 +62,7 @@
             <span class="message-sender">{{ conversation.otherUserNickname || '未知用户' }}</span>
             <span class="message-time">{{ formatTime(conversation.lastMessageTime) }}</span>
           </div>
-          <p class="message-preview">{{ conversation.lastMessageContent || '暂无消息' }}</p>
+          <p class="message-preview">{{ formatMessagePreview(conversation.lastMessageContent, conversation.lastMessageType) }}</p>
         </div>
       </div>
     </div>
@@ -110,6 +110,28 @@ function formatTime(time: string) {
   } else {
     return date.format('YYYY-MM-DD');
   }
+}
+
+// 格式化消息预览内容
+function formatMessagePreview(content: string, messageType?: number): string {
+  if (!content) return '暂无消息';
+  // type=2 表示图片消息
+  if (messageType === 2) {
+    return '[图片]';
+  }
+  // 兼容处理：根据 URL 判断是否是图片
+  const trimmedContent = content.trim().toLowerCase();
+  if (
+    trimmedContent.startsWith('/uploads/') ||
+    trimmedContent.startsWith('http://') ||
+    trimmedContent.startsWith('https://')
+  ) {
+    const imageExtensions = /\.(jpg|jpeg|png|gif|webp|bmp)$/;
+    if (imageExtensions.test(trimmedContent)) {
+      return '[图片]';
+    }
+  }
+  return content;
 }
 
 // 获取会话列表

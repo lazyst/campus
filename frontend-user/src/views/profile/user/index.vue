@@ -31,6 +31,18 @@
             加入于 {{ formatJoinTime(user.createdAt) }}
           </div>
         </div>
+
+        <!-- 私信按钮 -->
+        <button
+          v-if="canSendMessage"
+          class="message-btn"
+          @click="goToChat"
+        >
+          <svg class="message-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+          </svg>
+          私信
+        </button>
       </div>
 
       <!-- 个人简介 -->
@@ -79,6 +91,21 @@
               <span class="post-card-title">{{ post.title }}</span>
             </div>
             <p class="post-card-preview">{{ truncateContent(post.content) }}</p>
+
+            <!-- 帖子图片（最多显示3张） -->
+            <div v-if="post.images && post.images.length > 0" class="post-card-images">
+              <div
+                v-for="(img, index) in post.images.slice(0, 3)"
+                :key="index"
+                class="post-card-image"
+              >
+                <img :src="getImageUrl(img)" :alt="'图片' + (index + 1)" />
+              </div>
+              <div v-if="post.images.length > 3" class="post-card-image-more">
+                +{{ post.images.length - 3 }}
+              </div>
+            </div>
+
             <div class="post-card-footer">
               <span>{{ formatTime(post.createdAt) }}</span>
               <span class="post-card-likes">
@@ -108,9 +135,24 @@
             @click="goToItemDetail(item.id)"
           >
             <div class="item-card-image">
-              <img v-if="item.image" :src="item.image" :alt="item.title" />
+              <img
+                v-if="item.image && isValidImageUrl(item.image)"
+                :src="item.image"
+                :alt="item.title"
+              />
               <div v-else class="item-card-placeholder">
-                <span>物品</span>
+                <div class="item-card-placeholder-content">
+                  <div class="item-card-placeholder-corner item-card-placeholder-corner--tl"></div>
+                  <div class="item-card-placeholder-corner item-card-placeholder-corner--tr"></div>
+                  <div class="item-card-placeholder-corner item-card-placeholder-corner--bl"></div>
+                  <div class="item-card-placeholder-corner item-card-placeholder-corner--br"></div>
+                  <div class="item-card-placeholder-stamp">
+                    <span class="item-card-placeholder-stamp-text">物品介绍</span>
+                  </div>
+                  <p class="item-card-placeholder-description">
+                    {{ item.description || '暂无描述' }}
+                  </p>
+                </div>
               </div>
               <span v-if="item.type === 1" class="item-card-type">求购</span>
               <span v-else class="item-card-type item-card-type--sell">出售</span>
@@ -140,7 +182,9 @@ import { getUserDetailInfo } from '@/api/modules/user';
 import { getPostsByUserId } from '@/api/modules/post';
 import { getItemsByUserId } from '@/api/modules/item';
 import NavBar from '@/components/navigation/NavBar.vue';
+import { useUserStore } from '@/stores/user';
 import { getImageUrl } from '@/utils/imageUrl';
+import { showToast } from '@/services/toastService';
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
 import 'dayjs/locale/zh-cn';
@@ -150,8 +194,31 @@ dayjs.locale('zh-cn');
 
 const router = useRouter();
 const route = useRoute();
+const userStore = useUserStore();
 
 const userId = computed(() => Number(route.params.id));
+
+// 当前登录用户ID
+const currentUserId = computed(() => userStore.userInfo?.id || 0);
+
+// 是否可以发送私信（已登录且不是自己）
+const canSendMessage = computed(() => {
+  return currentUserId.value && currentUserId.value !== userId.value;
+});
+
+// 跳转到聊天页面
+function goToChat() {
+  if (!userStore.token) {
+    showToast('请先登录后再私信');
+    router.push('/login');
+    return;
+  }
+  if (currentUserId.value === userId.value) {
+    showToast('不能给自己发私信');
+    return;
+  }
+  router.push(`/messages/${userId.value}`);
+}
 
 const loading = ref(true);
 const postsLoading = ref(true);
@@ -178,6 +245,15 @@ function formatJoinTime(time: string) {
 function truncateContent(content: string, maxLength = 50) {
   if (!content) return '';
   return content.length > maxLength ? content.substring(0, maxLength) + '...' : content;
+}
+
+// 验证图片URL是否有效
+function isValidImageUrl(url: string): boolean {
+  if (!url || typeof url !== 'string') return false;
+  // 检查是否是有效的图片URL（包含图片扩展名或以/uploads/开头）
+  const trimmedUrl = url.trim();
+  const imageExtensions = /\.(jpg|jpeg|png|gif|webp|bmp)$/i;
+  return imageExtensions.test(trimmedUrl) || trimmedUrl.startsWith('/uploads/');
 }
 
 function goBack() {
@@ -212,7 +288,20 @@ async function loadUserPosts() {
   postsLoading.value = true;
   try {
     const data = await getPostsByUserId(userId.value);
-    posts.value = data?.records || data || [];
+    const records = data?.records || data || [];
+    // 解析 images 字段
+    posts.value = records.map((post: any) => {
+      let images: string[] = [];
+      if (post.images) {
+        try {
+          const parsed = JSON.parse(post.images);
+          images = Array.isArray(parsed) ? parsed : [parsed];
+        } catch {
+          images = post.images ? [post.images] : [];
+        }
+      }
+      return { ...post, images };
+    });
   } catch (error) {
     posts.value = [];
   } finally {
@@ -322,6 +411,33 @@ onMounted(async () => {
 .profile-info {
   flex: 1;
   min-width: 0;
+}
+
+/* 私信按钮 */
+.message-btn {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-4);
+  background-color: var(--color-primary-700);
+  color: white;
+  border: none;
+  border-radius: var(--radius-full);
+  font-size: var(--text-sm);
+  font-weight: var(--font-weight-medium);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  flex-shrink: 0;
+}
+
+.message-btn:active {
+  transform: scale(0.95);
+  opacity: 0.9;
+}
+
+.message-icon {
+  width: 16px;
+  height: 16px;
 }
 
 .profile-nickname {
@@ -500,6 +616,41 @@ onMounted(async () => {
   overflow: hidden;
 }
 
+/* 帖子图片 */
+.post-card-images {
+  display: flex;
+  gap: var(--space-2);
+  margin-bottom: var(--space-3);
+}
+
+.post-card-image {
+  width: 80px;
+  height: 80px;
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.post-card-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.post-card-image-more {
+  width: 80px;
+  height: 80px;
+  border-radius: var(--radius-md);
+  background-color: var(--color-gray-200);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: var(--text-lg);
+  font-weight: var(--font-weight-medium);
+  color: var(--text-tertiary);
+  flex-shrink: 0;
+}
+
 .post-card-footer {
   display: flex;
   align-items: center;
@@ -539,6 +690,7 @@ onMounted(async () => {
 
 .item-card:active {
   transform: scale(0.98);
+  box-shadow: var(--shadow-sm);
 }
 
 .item-card-image {
@@ -546,12 +698,18 @@ onMounted(async () => {
   width: 100%;
   aspect-ratio: 4/3;
   background-color: var(--bg-tertiary);
+  overflow: hidden;
 }
 
 .item-card-image img {
   width: 100%;
   height: 100%;
   object-fit: cover;
+  transition: transform var(--transition-slow);
+}
+
+.item-card:active .item-card-image img {
+  transform: scale(0.95);
 }
 
 .item-card-placeholder {
@@ -560,9 +718,118 @@ onMounted(async () => {
   display: flex;
   align-items: center;
   justify-content: center;
-  background-color: var(--bg-secondary);
-  color: var(--text-tertiary);
-  font-size: var(--text-sm);
+  background-color: #FDF8F0;
+  position: relative;
+  overflow: hidden;
+}
+
+.item-card-placeholder::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.08'/%3E%3C/svg%3E");
+  pointer-events: none;
+  z-index: 0;
+}
+
+.item-card-placeholder-content {
+  width: 100%;
+  height: 100%;
+  padding: var(--space-3);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  z-index: 1;
+}
+
+.item-card-placeholder-corner {
+  position: absolute;
+  width: 24px;
+  height: 24px;
+  border: 2px solid rgba(139, 115, 85, 0.3);
+  z-index: 2;
+}
+
+.item-card-placeholder-corner--tl {
+  top: 8px;
+  left: 8px;
+  border-right: none;
+  border-bottom: none;
+  border-top-left-radius: 8px;
+}
+
+.item-card-placeholder-corner--tr {
+  top: 8px;
+  right: 8px;
+  border-left: none;
+  border-bottom: none;
+  border-top-right-radius: 8px;
+}
+
+.item-card-placeholder-corner--bl {
+  bottom: 8px;
+  left: 8px;
+  border-right: none;
+  border-top: none;
+  border-bottom-left-radius: 8px;
+}
+
+.item-card-placeholder-corner--br {
+  bottom: 8px;
+  right: 8px;
+  border-left: none;
+  border-top: none;
+  border-bottom-right-radius: 8px;
+}
+
+.item-card-placeholder-stamp {
+  width: 48px;
+  height: 48px;
+  border: 2px dashed #C45C5C;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: var(--space-2);
+  transform: rotate(-8deg);
+  opacity: 0.9;
+}
+
+.item-card-placeholder-stamp-text {
+  font-size: 10px;
+  font-weight: bold;
+  color: #C45C5C;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  font-family: 'Georgia', serif;
+  transform: rotate(-4deg);
+}
+
+.item-card-placeholder-description {
+  font-size: 12px;
+  color: #5D4E3C;
+  line-height: 1.6;
+  text-align: center;
+  font-family: 'Georgia', 'Times New Roman', serif;
+  font-style: italic;
+  display: -webkit-box;
+  -webkit-line-clamp: 4;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  margin: 0;
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.5);
+}
+
+.item-card:active .item-card-placeholder-stamp {
+  transform: rotate(-4deg) scale(1.05);
+  transition: transform 0.2s ease;
+}
+
+.item-card:active .item-card-placeholder-description {
+  color: #3D3428;
+  transition: color 0.2s ease;
 }
 
 .item-card-type {

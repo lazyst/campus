@@ -295,7 +295,7 @@ async function confirmComplete() {
     // 更新本地状态
     const item = items.value.find(i => i.id === itemToComplete.value!.id)
     if (item) {
-      item.status = 3 // 3 = 已完成
+      item.status = 2 // 2 = 已完成（已卖出）
     }
     showToast('操作成功，物品已标记为已卖出', 'success')
   } catch (error) {
@@ -621,7 +621,7 @@ onMounted(() => {
 }
 
 .item-status.status-sold {
-  background-color: var(--color-gray-800);
+  background-color: var(--color-success-500);
   color: white;
 }
 
