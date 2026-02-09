@@ -148,3 +148,6 @@ secrets/
 admin_token.txt
 *.sql
 backend.log
+
+# OMC (Claude Code CLI)
+.omc/
