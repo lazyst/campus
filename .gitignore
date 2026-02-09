@@ -147,6 +147,7 @@ Thumbs.db
 secrets/
 admin_token.txt
 *.sql
+!mysql/init.sql
 backend.log
 
 # OMC (Claude Code CLI)
