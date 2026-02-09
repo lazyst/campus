@@ -32,6 +32,30 @@
         求购
         <div class="tab-underline"></div>
       </button>
+      <div class="trade-sort">
+        <button
+          class="trade-sort-btn"
+          :class="{ 'trade-sort-btn--active': sortBy === 'newest' }"
+          @click="onSortChange('newest')"
+        >
+          最新
+        </button>
+        <span class="trade-sort-divider">|</span>
+        <button
+          class="trade-sort-btn"
+          :class="{ 'trade-sort-btn--active': sortBy === 'price_asc' }"
+          @click="onSortChange('price_asc')"
+        >
+          价格↑
+        </button>
+        <button
+          class="trade-sort-btn"
+          :class="{ 'trade-sort-btn--active': sortBy === 'price_desc' }"
+          @click="onSortChange('price_desc')"
+        >
+          价格↓
+        </button>
+      </div>
     </div>
     
     <!-- 加载中 -->
@@ -135,9 +159,9 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, watch, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { getItems } from '@/api/modules/item'
+import { getItems, searchItems } from '@/api/modules/item'
 import { getImageUrl } from '@/utils/imageUrl'
 
 interface TradeItem {
@@ -153,8 +177,17 @@ interface TradeItem {
   userAvatar?: string
 }
 
+interface Props {
+  keyword?: string
+}
+
+const props = withDefaults(defineProps<Props>(), {
+  keyword: ''
+})
+
 const router = useRouter()
 const activeTab = ref(0)
+const sortBy = ref('newest')
 const list = ref<TradeItem[]>([])
 const loading = ref(false)
 const finished = ref(false)
@@ -195,16 +228,23 @@ function transformItem(item: any): TradeItem {
 
 async function onLoad() {
   if (loading.value || finished.value) return
-  
+
   loading.value = true
-  
+
   try {
     let type: number | undefined
     if (activeTab.value === 1) type = 2  // 出售
     else if (activeTab.value === 2) type = 1  // 收购
-    
-    const response = await getItems({ type, page: page.value, size: 10 })
-    
+
+    let response
+    if (props.keyword && props.keyword.trim()) {
+      // 搜索模式
+      response = await searchItems(props.keyword, { type, page: page.value, size: 10, sortBy: sortBy.value })
+    } else {
+      // 普通模式
+      response = await getItems({ type, page: page.value, size: 10, sortBy: sortBy.value })
+    }
+
     // 处理分页响应 - 支持 Page 对象和直接数组两种格式
     let records = []
     if (Array.isArray(response)) {
@@ -212,15 +252,15 @@ async function onLoad() {
     } else if (response && typeof response === 'object') {
       records = response.records || response.items || []
     }
-    
+
     const newList = records.map(transformItem)
-    
+
     list.value.push(...newList)
     page.value++
-    
+
     // 获取总数 - 支持多种字段名
     const total = response?.total || response?.totalCount || list.value.length
-    
+
     if (newList.length < 10 || list.value.length >= total) {
       finished.value = true
     }
@@ -239,9 +279,25 @@ function onTabChange(tab: number) {
   onLoad()
 }
 
+function onSortChange(sort: string) {
+  sortBy.value = sort
+  list.value = []
+  page.value = 1
+  finished.value = false
+  onLoad()
+}
+
 function onItemClick(item: TradeItem) {
   router.push(`/trade/${item.id}`)
 }
+
+// 监听关键词变化，重置列表并重新加载
+watch(() => props.keyword, () => {
+  list.value = []
+  page.value = 1
+  finished.value = false
+  onLoad()
+})
 
 onMounted(() => {
   onLoad()
@@ -333,6 +389,38 @@ onMounted(() => {
   transform: translateX(-50%) scaleX(1);
 }
 
+/* 排序按钮 */
+.trade-sort {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  margin-left: auto;
+  padding-left: var(--space-2);
+}
+
+.trade-sort-btn {
+  padding: var(--space-1) var(--space-2);
+  font-size: var(--text-xs);
+  color: var(--text-tertiary);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  transition: color var(--transition-fast);
+}
+
+.trade-sort-btn:hover {
+  color: var(--text-primary);
+}
+
+.trade-sort-btn--active {
+  color: var(--color-primary-700);
+  font-weight: var(--font-weight-medium);
+}
+
+.trade-sort-divider {
+  color: var(--border-light);
+}
+
 /* 加载状态 */
 .trade-loading {
   display: flex;
@@ -388,17 +476,16 @@ onMounted(() => {
   margin: 0;
 }
 
-/* 瀑布流容器 */
+/* 瀑布流容器 - 改为Grid布局确保显示顺序与数据一致 */
 .waterfall-container {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: var(--space-3);
   padding: var(--space-3);
-  column-count: 2;
-  column-gap: var(--space-3);
 }
 
 /* 瀑布流项 */
 .waterfall-item {
-  break-inside: avoid;
-  margin-bottom: var(--space-3);
   background-color: var(--bg-card);
   border-radius: var(--radius-lg);
   overflow: hidden;
@@ -680,20 +767,16 @@ onMounted(() => {
 /* 响应式 */
 @media (min-width: 768px) {
   .waterfall-container {
-    column-count: 3;
-    column-gap: var(--space-4);
+    grid-template-columns: repeat(3, 1fr);
+    gap: var(--space-4);
     padding: var(--space-4);
-  }
-  
-  .waterfall-item {
-    margin-bottom: var(--space-4);
   }
 }
 
 @media (min-width: 1024px) {
   .waterfall-container {
-    column-count: 4;
-    column-gap: var(--space-4);
+    grid-template-columns: repeat(4, 1fr);
+    gap: var(--space-4);
     padding: var(--space-4);
   }
 }

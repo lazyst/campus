@@ -1,21 +1,28 @@
 <template>
   <div class="search-bar" :class="{ focused }">
-    <span class="search-icon">🔍</span>
-    <input 
+    <input
       :value="modelValue"
       @input="handleInput"
+      @keydown="handleKeydown"
       @focus="focused = true"
       @blur="focused = false"
       :placeholder="placeholder"
       class="search-input"
       type="text"
     />
-    <button 
-      v-if="showClear" 
-      class="clear-btn" 
+    <button
+      v-if="showClear"
+      class="clear-btn"
       @click="handleClear"
     >
       ✕
+    </button>
+    <button
+      v-if="showSearchButton"
+      class="search-btn"
+      @click="handleSearchClick"
+    >
+      搜索
     </button>
   </div>
 </template>
@@ -26,11 +33,13 @@ import { ref, computed } from 'vue';
 interface Props {
   modelValue?: string;
   placeholder?: string;
+  showSearchButton?: boolean;
 }
 
 const props = withDefaults(defineProps<Props>(), {
   modelValue: '',
   placeholder: '搜索帖子、闲置...',
+  showSearchButton: false,
 });
 
 const emit = defineEmits<{
@@ -49,9 +58,19 @@ function handleInput(event: Event) {
   emit('update:modelValue', target.value);
 }
 
+function handleKeydown(event: KeyboardEvent) {
+  if (event.key === 'Enter') {
+    emit('search', props.modelValue);
+  }
+}
+
 function handleClear() {
   emit('update:modelValue', '');
   emit('search', '');
+}
+
+function handleSearchClick() {
+  emit('search', props.modelValue);
 }
 </script>
 
@@ -105,5 +124,21 @@ function handleClear() {
 .clear-btn:hover {
   background: #E2E8F0;
   color: #64748B;
+}
+
+.search-btn {
+  background: #6366F1;
+  color: white;
+  border: none;
+  border-radius: 14px;
+  padding: 6px 14px;
+  font-size: 13px;
+  cursor: pointer;
+  margin-left: 8px;
+  transition: all 0.2s ease;
+}
+
+.search-btn:hover {
+  background: #4F46E5;
 }
 </style>

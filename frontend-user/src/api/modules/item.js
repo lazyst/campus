@@ -116,3 +116,16 @@ export function onlineItem(id) {
 export function completeItem(id) {
   return request.put(`/items/${id}/complete`)
 }
+
+/**
+ * 搜索物品
+ * @param {string} keyword - 搜索关键词
+ * @param {Object} params - 查询参数
+ * @param {number} [params.type] - 物品类型（1=求购，2=出售）
+ * @param {number} [params.page=1]
+ * @param {number} [params.size=20]
+ * @returns {Promise<{records: Array, total: number}>}
+ */
+export function searchItems(keyword, params = {}) {
+  return request.get('/items/search', { params: { keyword, ...params }, showLoading: false })
+}

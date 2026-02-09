@@ -70,7 +70,8 @@ public class ItemController {
             @RequestParam(defaultValue = "1") Integer page,
             @RequestParam(defaultValue = "10") Integer size,
             @RequestParam(required = false) Integer type,
-            @RequestParam(required = false) Integer status) {
+            @RequestParam(required = false) Integer status,
+            @RequestParam(required = false, defaultValue = "newest") String sortBy) {
 
         Page<Item> pageParam = new Page<>(page, size);
 
@@ -90,7 +91,67 @@ public class ItemController {
             wrapper.ne(Item::getStatus, 3);
         }
 
-        wrapper.orderByDesc(Item::getCreatedAt);
+        // 排序
+        switch (sortBy) {
+            case "price_asc":
+                wrapper.orderByAsc(Item::getPrice);
+                break;
+            case "price_desc":
+                wrapper.orderByDesc(Item::getPrice);
+                break;
+            case "newest":
+            default:
+                wrapper.orderByDesc(Item::getCreatedAt);
+                break;
+        }
+
+        Page<Item> result = itemService.page(pageParam, wrapper);
+
+        // 填充用户信息
+        enrichItemsWithUserInfo(result.getRecords());
+
+        return Result.success(result);
+    }
+
+    @Operation(summary = "搜索物品")
+    @GetMapping("/search")
+    public Result<Page<Item>> search(
+            @RequestParam String keyword,
+            @RequestParam(required = false) Integer type,
+            @RequestParam(defaultValue = "1") Integer page,
+            @RequestParam(defaultValue = "10") Integer size,
+            @RequestParam(required = false, defaultValue = "newest") String sortBy) {
+
+        Page<Item> pageParam = new Page<>(page, size);
+
+        com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper<Item> wrapper =
+            new com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper<>();
+
+        wrapper.eq(Item::getDeleted, false)
+               .and(wrapper1 -> wrapper1
+                   .like(Item::getTitle, keyword)
+                   .or()
+                   .like(Item::getDescription, keyword))
+               .ne(Item::getStatus, 2)
+               .ne(Item::getStatus, 3);
+
+        if (type != null) {
+            wrapper.eq(Item::getType, type);
+        }
+
+        // 排序
+        switch (sortBy) {
+            case "price_asc":
+                wrapper.orderByAsc(Item::getPrice);
+                break;
+            case "price_desc":
+                wrapper.orderByDesc(Item::getPrice);
+                break;
+            case "newest":
+            default:
+                wrapper.orderByDesc(Item::getCreatedAt);
+                break;
+        }
 
         Page<Item> result = itemService.page(pageParam, wrapper);
 
@@ -107,10 +168,10 @@ public class ItemController {
         if (item == null) {
             return Result.error("物品不存在");
         }
-        
+
         // 填充用户信息
         enrichItemsWithUserInfo(Collections.singletonList(item));
-        
+
         return Result.success(item);
     }
 
