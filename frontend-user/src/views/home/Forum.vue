@@ -2,7 +2,17 @@
   <div class="forum-page">
     <!-- Navigation Bar -->
     <NavBar title="论坛" />
-    
+
+    <!-- Search Bar -->
+    <div class="forum-search">
+      <SearchBar
+        v-model="searchQuery"
+        @search="handleSearch"
+        placeholder="搜索帖子..."
+        :show-search-button="true"
+      />
+    </div>
+
     <!-- Category Tabs -->
     <div class="forum-tabs">
       <button
@@ -26,7 +36,7 @@
     </div>
     
     <!-- Forum List -->
-    <ForumList :board-id="currentBoardId" />
+    <ForumList :board-id="currentBoardId" :keyword="searchKeyword" />
   </div>
 </template>
 
@@ -35,8 +45,13 @@ import { ref, computed, onMounted } from 'vue'
 import { getBoards } from '@/api/modules'
 import ForumList from '@/views/forum/components/ForumList.vue'
 import NavBar from '@/components/navigation/NavBar.vue'
+import SearchBar from '@/components/SearchBar.vue'
+import { searchPosts } from '@/api/modules/post'
+import { showToast } from '@/services/toastService'
 
 const activeBoard = ref('all')
+const searchQuery = ref('')
+const searchKeyword = ref('')
 const boards = ref([])
 
 const currentBoardId = computed(() => {
@@ -50,12 +65,22 @@ onMounted(async () => {
     console.error('获取板块列表失败:', error)
   }
 })
+
+// 搜索相关 - 只在点击搜索按钮或按回车时提交搜索
+function handleSearch(query) {
+  searchKeyword.value = query
+}
 </script>
 
 <style scoped>
 .forum-page {
   min-height: 100vh;
   background-color: var(--bg-page);
+}
+
+.forum-search {
+  padding: var(--space-3) var(--page-padding);
+  background-color: var(--bg-card);
 }
 
 .forum-tabs {

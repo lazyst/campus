@@ -112,7 +112,7 @@
 import { ref, watch, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { getPosts } from '@/api/modules'
-import { toggleLikePost, checkPostLiked, toggleCollectPost, checkPostCollected } from '@/api/modules/post'
+import { searchPosts, toggleLikePost, checkPostLiked, toggleCollectPost, checkPostCollected } from '@/api/modules/post'
 import { useUserStore } from '@/stores/user'
 import Skeleton from '@/components/feedback/Skeleton.vue'
 import Dialog from '@/components/interactive/Dialog.vue'
@@ -134,10 +134,12 @@ interface Post {
 
 interface Props {
   boardId?: number
+  keyword?: string
 }
 
 const props = withDefaults(defineProps<Props>(), {
-  boardId: undefined
+  boardId: undefined,
+  keyword: ''
 })
 
 const router = useRouter()
@@ -237,19 +239,36 @@ async function handleCollect(post: Post) {
 async function loadPosts() {
   try {
     loading.value = true
-    const response = await getPosts({
-      boardId: props.boardId,
-      page: page.value,
-      size: 10
-    }) as { records: Post[], total: number }
+
+    let response
+    if (props.keyword && props.keyword.trim()) {
+      // 搜索模式
+      response = await searchPosts(props.keyword, {
+        boardId: props.boardId,
+        page: page.value,
+        size: 10
+      }) as { records: Post[], total: number }
+    } else {
+      // 普通模式
+      response = await getPosts({
+        boardId: props.boardId,
+        page: page.value,
+        size: 10
+      }) as { records: Post[], total: number }
+    }
 
     // 解析images字段（JSON字符串转数组）
     const newList = response.records.map(post => ({
       ...post,
       images: parseImages(post.images)
     }))
-    
-    list.value.push(...newList)
+
+    if (page.value === 1) {
+      // 如果是第一页，直接替换列表
+      list.value = newList
+    } else {
+      list.value.push(...newList)
+    }
     page.value++
 
     if (list.value.length >= response.total) {
@@ -280,8 +299,8 @@ function onPostClick(post: Post) {
   router.push(`/forum/detail/${post.id}`)
 }
 
-// Reset list when boardId changes
-watch(() => props.boardId, () => {
+// Reset list when boardId or keyword changes
+watch([() => props.boardId, () => props.keyword], () => {
   list.value = []
   page.value = 1
   finished.value = false

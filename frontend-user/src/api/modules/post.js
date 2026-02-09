@@ -133,3 +133,19 @@ export function checkPostCollected(id) {
 export function getMyCollections() {
   return request.get('/posts/collections', { showLoading: false })
 }
+
+/**
+ * 搜索帖子
+ * @param {string} keyword - 搜索关键词
+ * @param {Object} params
+ * @param {number} [params.page=1] - 页码
+ * @param {number} [params.size=20] - 每页大小
+ * @returns {Promise<{records: Array, total: number}>}
+ */
+export function searchPosts(keyword, params = {}) {
+  return request.get('/posts/search', {
+    params: { keyword, ...params },
+    showLoading: true,
+    loadingText: '搜索中...'
+  })
+}

@@ -36,13 +36,25 @@
     <!-- 帖子列表 -->
     <div class="posts-section">
       <div class="section-header">
-        <h2>最新帖子</h2>
-        <span class="more-btn">查看更多 ›</span>
+        <h2>{{ isSearching ? '搜索结果' : '最新帖子' }}</h2>
+        <span v-if="searchQuery" class="clear-search-btn" @click="clearSearch">清除 ›</span>
       </div>
-      
-      <div class="posts-list">
-        <PostCard 
-          v-for="post in posts" 
+
+      <!-- 搜索中状态 -->
+      <div v-if="loading" class="posts-loading">
+        <div class="loading-spinner"></div>
+        <p class="loading-text">加载中...</p>
+      </div>
+
+      <!-- 无结果状态 -->
+      <div v-else-if="posts.length === 0" class="posts-empty">
+        <p class="empty-text">{{ searchQuery ? '未找到相关帖子' : '暂无帖子' }}</p>
+      </div>
+
+      <!-- 帖子列表 -->
+      <div v-else class="posts-list">
+        <PostCard
+          v-for="post in posts"
           :key="post.id"
           :id="post.id"
           :author="post.author"
@@ -68,17 +80,21 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, watch } from 'vue';
 import { useRouter } from 'vue-router';
-import { getPosts } from '@/api/modules/post';
+import { getPosts, searchPosts } from '@/api/modules/post';
 import { showToast } from '@/services/toastService';
 import BottomNav from '@/components/BottomNav.vue';
+import SearchBar from '@/components/SearchBar.vue';
+import CategoryCard from '@/components/CategoryCard.vue';
+import PostCard from '@/components/PostCard.vue';
 
 const router = useRouter();
 
 const searchQuery = ref('');
 const activeNav = ref('home');
 const loading = ref(false);
+const isSearching = ref(false);
 
 // 分类数据（UI配置，可保留）
 const categories = [
@@ -105,7 +121,7 @@ const posts = ref<Post[]>([]);
 
 async function loadPosts() {
   loading.value = true;
-  
+
   try {
     const response = await getPosts({ size: 20 });
     posts.value = response.records || [];
@@ -117,9 +133,34 @@ async function loadPosts() {
   }
 }
 
-function handleSearch(query: string) {
-  // TODO: 实现搜索功能
-  console.log('搜索:', query);
+async function handleSearch(query: string) {
+  if (!query.trim()) {
+    // 空搜索词时加载默认帖子
+    await loadPosts();
+    return;
+  }
+
+  isSearching.value = true;
+  loading.value = true;
+
+  try {
+    const response = await searchPosts(query, { size: 20 });
+    posts.value = response.records || [];
+    if (posts.value.length === 0) {
+      showToast('未找到相关帖子');
+    }
+  } catch (error: any) {
+    console.error('搜索帖子失败:', error);
+    showToast(error.message || '搜索失败');
+  } finally {
+    loading.value = false;
+    isSearching.value = false;
+  }
+}
+
+function clearSearch() {
+  searchQuery.value = '';
+  loadPosts();
 }
 
 function handleCategoryClick(category: string) {
@@ -139,6 +180,15 @@ function handleNavChange(name: string) {
   activeNav.value = name;
   // TODO: 处理导航切换
 }
+
+// 监听搜索词变化（防抖）
+let searchTimeout: number;
+watch(searchQuery, (newQuery) => {
+  clearTimeout(searchTimeout);
+  searchTimeout = setTimeout(() => {
+    handleSearch(newQuery);
+  }, 300);
+});
 
 onMounted(() => {
   loadPosts();
@@ -230,5 +280,44 @@ onMounted(() => {
   display: flex;
   flex-direction: column;
   gap: 12px;
+}
+
+.posts-loading,
+.posts-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 16px;
+}
+
+.loading-spinner {
+  width: 36px;
+  height: 36px;
+  border: 3px solid #E2E8F0;
+  border-top-color: #6366F1;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.loading-text {
+  margin-top: 12px;
+  font-size: 14px;
+  color: #94A3B8;
+}
+
+.empty-text {
+  font-size: 14px;
+  color: #94A3B8;
+}
+
+.clear-search-btn {
+  font-size: 14px;
+  color: #6366F1;
+  cursor: pointer;
 }
 </style>

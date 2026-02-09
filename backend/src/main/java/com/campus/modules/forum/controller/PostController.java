@@ -211,6 +211,28 @@ public class PostController {
         return Result.success(postPage);
     }
 
+    @Operation(summary = "搜索帖子")
+    @GetMapping("/search")
+    public Result<Page<Post>> searchPosts(
+            @RequestParam String keyword,
+            @RequestParam(defaultValue = "1") Integer page,
+            @RequestParam(defaultValue = "20") Integer size) {
+        Page<Post> postPage = new Page<>(page, size);
+        LambdaQueryWrapper<Post> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(Post::getStatus, 1)
+               .and(wrapper1 -> wrapper1
+                   .like(Post::getTitle, keyword)
+                   .or()
+                   .like(Post::getContent, keyword))
+               .orderByDesc(Post::getCreatedAt);
+        postService.page(postPage, wrapper);
+
+        // 填充用户信息
+        enrichPostsWithUserInfo(postPage.getRecords());
+
+        return Result.success(postPage);
+    }
+
     /**
      * 填充帖子的用户信息（昵称和头像）
      */
