@@ -1,5 +1,5 @@
 <template>
-  <div class="trade-list">
+  <div ref="listRef" class="trade-list">
     <!-- 页面标题 -->
     <div class="trade-header">
       <h1 class="trade-title">闲置市场</h1>
@@ -159,7 +159,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch, onMounted } from 'vue'
+import { ref, watch, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { getItems, searchItems } from '@/api/modules/item'
 import { getImageUrl } from '@/utils/imageUrl'
@@ -192,6 +192,7 @@ const list = ref<TradeItem[]>([])
 const loading = ref(false)
 const finished = ref(false)
 const page = ref(1)
+const listRef = ref<HTMLElement | null>(null)
 
 const statusTexts: Record<number, string> = {
   2: '已售',
@@ -299,8 +300,33 @@ watch(() => props.keyword, () => {
   onLoad()
 })
 
+// Infinite scroll using scroll event
+let scrollHandler: (() => void) | undefined
+
 onMounted(() => {
   onLoad()
+
+  // Setup scroll event listener for infinite scroll
+  scrollHandler = () => {
+    if (loading.value || finished.value) return
+
+    const scrollHeight = document.documentElement.scrollHeight
+    const scrollTop = window.scrollY || document.documentElement.scrollTop
+    const clientHeight = window.innerHeight
+
+    // 当距离底部 100px 时触发加载
+    if (scrollHeight - scrollTop - clientHeight < 100) {
+      onLoad()
+    }
+  }
+
+  window.addEventListener('scroll', scrollHandler, { passive: true })
+})
+
+onUnmounted(() => {
+  if (scrollHandler) {
+    window.removeEventListener('scroll', scrollHandler)
+  }
 })
 </script>
 

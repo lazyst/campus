@@ -34,14 +34,14 @@
     </div>
 
     <!-- 帖子列表 -->
-    <div class="posts-section">
+    <div ref="listRef" class="posts-section">
       <div class="section-header">
         <h2>{{ isSearching ? '搜索结果' : '最新帖子' }}</h2>
         <span v-if="searchQuery" class="clear-search-btn" @click="clearSearch">清除 ›</span>
       </div>
 
       <!-- 搜索中状态 -->
-      <div v-if="loading" class="posts-loading">
+      <div v-if="loading && posts.length === 0" class="posts-loading">
         <div class="loading-spinner"></div>
         <p class="loading-text">加载中...</p>
       </div>
@@ -69,6 +69,19 @@
           @click="goToPostDetail"
         />
       </div>
+
+      <!-- 加载中 -->
+      <div v-if="loading && posts.length > 0" class="posts-loading-more">
+        <span class="loading-text">加载中...</span>
+      </div>
+
+      <!-- 已加载完 -->
+      <div v-if="finished && posts.length > 0" class="posts-finished">
+        <span class="finished-text">没有更多了</span>
+      </div>
+
+      <!-- 无限滚动 sentinel -->
+      <div ref="sentinelRef" class="scroll-sentinel"></div>
     </div>
 
     <!-- 底部导航 -->
@@ -80,8 +93,9 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, watch } from 'vue';
+import { ref, onMounted, onUnmounted } from 'vue';
 import { useRouter } from 'vue-router';
+import { useInfiniteScroll } from '@vueuse/core';
 import { getPosts, searchPosts } from '@/api/modules/post';
 import { showToast } from '@/services/toastService';
 import BottomNav from '@/components/BottomNav.vue';
@@ -95,6 +109,12 @@ const searchQuery = ref('');
 const activeNav = ref('home');
 const loading = ref(false);
 const isSearching = ref(false);
+
+// 分页相关
+const page = ref(1);
+const finished = ref(false);
+const listRef = ref<HTMLElement | null>(null);
+const sentinelRef = ref<HTMLElement | null>(null);
 
 // 分类数据（UI配置，可保留）
 const categories = [
@@ -119,15 +139,36 @@ interface Post {
 
 const posts = ref<Post[]>([]);
 
-async function loadPosts() {
+async function loadPosts(isRefresh = false) {
+  if (isRefresh) {
+    page.value = 1;
+    finished.value = false;
+  }
+
+  if (loading.value || finished.value) return;
+
   loading.value = true;
 
   try {
-    const response = await getPosts({ size: 20 });
-    posts.value = response.records || [];
+    const response = await getPosts({ page: page.value, size: 10 });
+    const records = response?.records || [];
+
+    if (isRefresh) {
+      posts.value = records;
+    } else {
+      posts.value.push(...records);
+    }
+
+    page.value++;
+
+    if (records.length < 10) {
+      finished.value = true;
+    }
   } catch (error: any) {
     console.error('获取帖子列表失败:', error);
-    showToast(error.message || '加载失败');
+    if (isRefresh) {
+      showToast(error.message || '加载失败');
+    }
   } finally {
     loading.value = false;
   }
@@ -136,16 +177,25 @@ async function loadPosts() {
 async function handleSearch(query: string) {
   if (!query.trim()) {
     // 空搜索词时加载默认帖子
-    await loadPosts();
+    await loadPosts(true);
     return;
   }
 
   isSearching.value = true;
+  finished.value = false;
+  page.value = 1;
   loading.value = true;
 
   try {
-    const response = await searchPosts(query, { size: 20 });
-    posts.value = response.records || [];
+    const response = await searchPosts(query, { page: page.value, size: 10 });
+    const records = response?.records || [];
+    posts.value = records;
+    page.value++;
+
+    if (records.length < 10) {
+      finished.value = true;
+    }
+
     if (posts.value.length === 0) {
       showToast('未找到相关帖子');
     }
@@ -160,7 +210,7 @@ async function handleSearch(query: string) {
 
 function clearSearch() {
   searchQuery.value = '';
-  loadPosts();
+  loadPosts(true);
 }
 
 function handleCategoryClick(category: string) {
@@ -190,8 +240,32 @@ watch(searchQuery, (newQuery) => {
   }, 300);
 });
 
+// 无限滚动 - 使用 Intersection Observer
+let observer: IntersectionObserver | undefined;
+
 onMounted(() => {
-  loadPosts();
+  loadPosts(true);
+
+  // 使用 Intersection Observer 监听 sentinel 元素
+  observer = new IntersectionObserver(
+    (entries) => {
+      const entry = entries[0];
+      if (entry.isIntersecting && !loading.value && !finished.value && !isSearching.value) {
+        loadPosts();
+      }
+    },
+    { rootMargin: '100px' }
+  );
+
+  if (sentinelRef.value) {
+    observer.observe(sentinelRef.value);
+  }
+});
+
+onUnmounted(() => {
+  if (observer) {
+    observer.disconnect();
+  }
 });
 </script>
 
@@ -319,5 +393,23 @@ onMounted(() => {
   font-size: 14px;
   color: #6366F1;
   cursor: pointer;
+}
+
+.posts-loading-more,
+.posts-finished {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-4) 0;
+}
+
+.finished-text {
+  font-size: var(--text-xs);
+  color: var(--text-tertiary);
+}
+
+.scroll-sentinel {
+  height: 20px;
+  width: 100%;
 }
 </style>

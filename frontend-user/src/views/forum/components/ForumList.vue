@@ -92,6 +92,9 @@
       <div v-if="finished && list.length > 0" class="forum-list__state">
         <span class="forum-list__state-text forum-list__state-text--muted">没有更多了</span>
       </div>
+
+      <!-- Infinite scroll sentinel -->
+      <div ref="sentinelRef" class="forum-list__sentinel"></div>
     </div>
 
     <!-- 登录确认弹窗 -->
@@ -109,7 +112,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch, onMounted } from 'vue'
+import { ref, watch, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { getPosts } from '@/api/modules'
 import { searchPosts, toggleLikePost, checkPostLiked, toggleCollectPost, checkPostCollected } from '@/api/modules/post'
@@ -150,6 +153,7 @@ const finished = ref(false)
 const page = ref(1)
 const showLoginDialog = ref(false)
 const isOperating = ref(false) // 防止重复点击
+const sentinelRef = ref<HTMLElement | null>(null)
 
 // 待执行的操作
 let pendingAction: (() => void) | null = null
@@ -307,9 +311,33 @@ watch([() => props.boardId, () => props.keyword], () => {
   loadPosts()
 })
 
-// Initial load
+// Infinite scroll using scroll event
+let scrollHandler: (() => void) | undefined
+
 onMounted(() => {
   onLoad()
+
+  // Setup scroll event listener for infinite scroll
+  scrollHandler = () => {
+    if (loading.value || finished.value) return
+
+    const scrollHeight = document.documentElement.scrollHeight
+    const scrollTop = window.scrollY || document.documentElement.scrollTop
+    const clientHeight = window.innerHeight
+
+    // 当距离底部 100px 时触发加载
+    if (scrollHeight - scrollTop - clientHeight < 100) {
+      loadPosts()
+    }
+  }
+
+  window.addEventListener('scroll', scrollHandler, { passive: true })
+})
+
+onUnmounted(() => {
+  if (scrollHandler) {
+    window.removeEventListener('scroll', scrollHandler)
+  }
 })
 </script>
 
@@ -502,5 +530,10 @@ onMounted(() => {
   font-weight: var(--font-weight-medium);
   color: var(--text-tertiary);
   flex-shrink: 0;
+}
+
+.forum-list__sentinel {
+  height: 20px;
+  width: 100%;
 }
 </style>
