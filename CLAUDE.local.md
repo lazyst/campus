@@ -1,8 +1,12 @@
 # 项目指南
 
+!important: 不要使用ssh命令，要使用ssh-mcp mcp代替
+
 ## 开发环境启动项目
 
-mysql和redis服务在服务器192.168.100.100（dev）的docker容器中
+mysql和redis服务在服务器192.168.100.100（dev）的docker容器中，本地后端需要连接他们
+
+服务器：192.168.100.100 root/123
 
 mysql数据库有读写分离，需要两个mysql
 
@@ -13,6 +17,8 @@ mysql数据库有读写分离，需要两个mysql
 用户前端：http://localhost:3000
 
 后台管理前端：http://localhost:3001
+
+如果指定端口被占用，先杀掉占用端口的进程
 
 ## 工具
 

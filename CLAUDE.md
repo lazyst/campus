@@ -171,7 +171,7 @@ import '@/styles/main.css'
 
 | Role | Username | Password |
 |------|----------|----------|
-| Admin | admin | admin123456 |
+| Admin | admin | admin123 |
 | User | 13800000000 | 123456 |
 
 ## Documentation Reference
