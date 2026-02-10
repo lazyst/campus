@@ -1,7 +1,0 @@
-{
-  "tool_name": "mcp__ssh-mcp__ssh_execute_command",
-  "tool_input_preview": "{\"command\":\"docker ps -a\",\"description\":\"Check Docker containers status\",\"response_format\":\"markdown\",\"server\":\"deploy\"}",
-  "error": "MCP error -32602: Input validation error: Invalid arguments for tool ssh_execute_command: [\n  {\n    \"code\": \"unrecognized_keys\",\n    \"keys\": [\n      \"description\"\n    ],\n    \"path\": [],\n    \"message\": \"Unrecognized key(s) in object: 'description'\"\n  }\n]",
-  "timestamp": "2026-02-06T06:01:10.061Z",
-  "retry_count": 1
-}

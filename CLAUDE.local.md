@@ -1,6 +1,6 @@
 # 项目指南
 
-!important: 不要使用ssh命令，要使用ssh-mcp mcp代替
+!important: 不要使用ssh、scp命令，要使用ssh-mcp mcp代替
 
 ## 开发环境启动项目
 

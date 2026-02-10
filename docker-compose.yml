@@ -37,9 +37,7 @@ services:
   # 后端实例 1 (集群节点)
   # ============================================
   backend-1:
-    build:
-      context: ./backend
-      dockerfile: Dockerfile
+    image: eclipse-temurin:17-jre-alpine
     container_name: campus-backend-1
     environment:
       - SPRING_PROFILES_ACTIVE=prod
@@ -49,6 +47,10 @@ services:
       - REDIS_HOST=redis
       - REDIS_PASSWORD=${REDIS_PASSWORD}
       - SERVER_PORT=8080
+    volumes:
+      - ./backend/backend-1.0.0.jar:/app/app.jar:ro
+      - uploads-data:/app/uploads
+    command: sh -c "java -Xms512m -Xmx1024m -XX:+UseG1GC -XX:G1HeapRegionSize=8m -jar /app/app.jar"
     depends_on:
       mysql:
         condition: service_healthy
@@ -56,11 +58,9 @@ services:
         condition: service_healthy
     networks:
       - app-network
-    volumes:
-      - uploads-data:/app/uploads
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8080/api/health"]
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:8080/api/health"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -70,9 +70,7 @@ services:
   # 后端实例 2 (集群节点)
   # ============================================
   backend-2:
-    build:
-      context: ./backend
-      dockerfile: Dockerfile
+    image: eclipse-temurin:17-jre-alpine
     container_name: campus-backend-2
     environment:
       - SPRING_PROFILES_ACTIVE=prod
@@ -82,6 +80,10 @@ services:
       - REDIS_HOST=redis
       - REDIS_PASSWORD=${REDIS_PASSWORD}
       - SERVER_PORT=8080
+    volumes:
+      - ./backend/backend-1.0.0.jar:/app/app.jar:ro
+      - uploads-data:/app/uploads
+    command: sh -c "java -Xms512m -Xmx1024m -XX:+UseG1GC -XX:G1HeapRegionSize=8m -jar /app/app.jar"
     depends_on:
       mysql:
         condition: service_healthy
@@ -89,36 +91,13 @@ services:
         condition: service_healthy
     networks:
       - app-network
-    volumes:
-      - uploads-data:/app/uploads
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8080/api/health"]
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:8080/api/health"]
       interval: 30s
       timeout: 10s
       retries: 3
       start_period: 40s
-
-  # ============================================
-  # 前端 Vue 应用
-  # ============================================
-  frontend:
-    image: node:18-alpine
-    container_name: campus-frontend
-    working_dir: /app
-    command: npx serve -s /app -l 3000
-    volumes:
-      - ./frontend/dist:/app:ro
-    ports:
-      - "3000:3000"
-    networks:
-      - app-network
-    restart: unless-stopped
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:3000"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
 
   # ============================================
   # Redis 缓存 + Pub/Sub

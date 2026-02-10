@@ -19,10 +19,6 @@
 ### 1. 本地构建（开发机）
 
 ```bash
-# 创建生产环境配置文件
-# 文件: frontend-admin/.env.production
-echo 'VITE_API_BASE_URL=http://192.168.100.133' > frontend-admin/.env.production
-
 # 构建后端JAR
 cd backend
 mvn clean package -DskipTests
@@ -43,13 +39,11 @@ npm run build
 
 ### 2. 复制初始化脚本
 
-```bash
-cp backend/sql/init.sql mysql/init.sql
-```
+初始化脚本已存在于 `mysql/init.sql`（数据库初始化），无需额外复制。
 
 ### 3. 上传文件到服务器
 
-**使用Python脚本**（推荐）：
+**使用 scp**：
 
 ```bash
 # 上传所有配置文件
@@ -58,9 +52,9 @@ scp -r docker-compose.yml .env nginx/ mysql/ redis/ root@192.168.100.133:/app/ca
 # 上传后端JAR
 scp backend/target/backend-1.0.0.jar root@192.168.100.133:/app/campus/backend/
 
-# 上传前端构建产物
-scp -r frontend-user/dist/* root@192.168.100.133:/app/campus/frontend/
-scp -r frontend-admin/dist/* root@192.168.100.133:/app/campus/frontend-admin/
+# 上传前端构建产物（直接复制到 nginx/html 目录）
+scp -r frontend-user/dist/* root@192.168.100.133:/app/campus/nginx/html/user/
+scp -r frontend-admin/dist/* root@192.168.100.133:/app/campus/nginx/html/admin/
 ```
 
 ### 4. 服务器端部署
@@ -69,13 +63,6 @@ scp -r frontend-admin/dist/* root@192.168.100.133:/app/campus/frontend-admin/
 ssh root@192.168.100.133
 
 cd /app/campus
-
-# 创建前端目录
-mkdir -p nginx/html/user nginx/html/admin
-
-# 复制前端文件到Nginx目录
-cp -r frontend/* nginx/html/user/
-cp -r frontend-admin/* nginx/html/admin/
 
 # 停止旧容器（如果有）
 docker compose down
@@ -103,75 +90,6 @@ curl http://192.168.100.133/admin/ | grep "<title>"
 curl http://192.168.100.133/api/health
 ```
 
-### 5. 验证部署
-
-```bash
-# 测试前端
-curl http://192.168.100.133/ | grep "<title>"
-
-# 测试API
-curl http://192.168.100.133/api/health
-curl http://192.168.100.133/api/boards
-```
-
-## 关键配置说明
-
-### 前端API地址配置
-
-**重要**: 管理前端必须配置正确的API服务器地址
-
-```bash
-# 创建生产环境配置文件
-echo 'VITE_API_BASE_URL=http://192.168.100.133' > frontend-admin/.env.production
-```
-
-**注意**: 如果不配置，生产环境会使用 `http://localhost:8080`，导致API请求失败。
-
-### Nginx配置注意事项
-
-**重要**: 使用 `$http_host` 而不是 `$host`
-
-```nginx
-location /api {
-    proxy_pass http://backend_cluster;
-    proxy_set_header Host $http_host;  # 正确
-    proxy_set_header X-Real-IP $remote_addr;
-}
-```
-
-**常见错误**: `400 Bad Request - Host header invalid`
-- 原因: `$host` 变量转义问题
-- 解决: 改为 `$http_host`
-
-### Docker Compose配置
-
-使用简化版本，直接运行JAR：
-
-```yaml
-backend-1:
-  image: eclipse-temurin:17-jre-alpine
-  command: java -Xms512m -Xmx1024m -jar /app/backend-1.0.0.jar
-  volumes:
-    - ./backend/backend-1.0.0.jar:/app/backend-1.0.0.jar:ro
-```
-
-**不要使用** `build: context: ./backend`，因为Docker构建时路径解析有问题。
-
-## 服务状态检查
-
-```bash
-# 查看容器状态
-docker compose ps
-
-# 查看日志
-docker logs campus-nginx --tail 50
-docker logs campus-backend-1 --tail 50
-docker logs campus-backend-2 --tail 50
-
-# 测试后端健康
-docker exec campus-backend-1 wget -qO- http://localhost:8080/api/health
-```
-
 ## 常用命令
 
 ```bash
@@ -184,6 +102,7 @@ docker compose down
 # 重启单个服务
 docker restart campus-nginx
 docker restart campus-backend-1
+docker restart campus-backend-2
 
 # 查看资源使用
 docker stats
@@ -200,15 +119,9 @@ docker exec -it campus-redis redis-cli -a 123
 
 **症状**: 访问 `/admin` 显示用户前端页面
 
-**原因**: Nginx将 `/admin` 路径代理到了frontend容器
-
-**解决**: 确保Nginx配置了正确的静态文件路径
-```nginx
-location /admin {
-    alias /usr/share/nginx/html/admin;
-    index index.html;
-    try_files $uri $uri/ /admin/index.html;
-}
+**解决**: 确保前端文件已上传到正确目录
+```bash
+ls -la /app/campus/nginx/html/admin/
 ```
 
 ### 2. 500 Internal Server Error
@@ -223,10 +136,7 @@ docker logs campus-backend-1 --tail 50
 
 通常是Host header问题，修复Nginx配置：
 ```bash
-# 修改 nginx/nginx.conf
-proxy_set_header Host $http_host;  # 不是 $host
-
-# 重启Nginx
+# nginx.conf 中使用 $http_host 而不是 $host
 docker restart campus-nginx
 ```
 
@@ -234,30 +144,43 @@ docker restart campus-nginx
 
 检查后端是否启动：
 ```bash
-docker exec campus-backend-1 netstat -tlnp | grep 8080
-curl http://localhost:8080/api/health
+docker exec campus-backend-1 wget -qO- http://localhost:8080/api/health
 ```
 
-### 4. 前端无法加载
+### 5. WebSocket 连接失败
 
-检查静态文件：
+**症状**: 聊天功能无法使用，控制台显示 `WebSocket connection to 'ws://192.168.100.133/ws' failed`
+
+**解决**:
 ```bash
-curl http://localhost/ | grep "<title>"
-ls -la /app/campus/nginx/html/user/
+# 检查 nginx WebSocket 代理配置
+docker exec campus-nginx cat /etc/nginx/nginx.conf | grep -A10 "location /ws"
+
+# 重启 nginx
+docker restart campus-nginx
+```
+
+### 6. 图片无法加载
+
+检查上传目录是否正确挂载：
+```bash
+docker exec campus-backend-1 ls /app/uploads/
 ```
 
 ## 环境变量
 
-`.env` 文件配置：
+`.env` 文件配置（用于 Docker 环境变量）：
 
 ```env
+# MySQL/Redis 配置（容器内使用服务名，外部访问使用 localhost）
 DB_HOST=mysql
 DB_PORT=3306
+DB_USERNAME=root
 DB_PASSWORD=123
 REDIS_HOST=redis
 REDIS_PORT=6379
 REDIS_PASSWORD=123
-JWT_SECRET=your-super-secret-key
+JWT_SECRET=campus-helping-platform-jwt-secret-key-2024-very-long-and-secure
 JWT_EXPIRATION=604800000
 ```
 
@@ -268,15 +191,16 @@ JWT_EXPIRATION=604800000
 ├── docker-compose.yml
 ├── .env
 ├── backend/
-│   ├── backend-1.0.0.jar
-│   └── Dockerfile
+│   └── backend-1.0.0.jar
 ├── nginx/
-│   ├── nginx.conf
+│   ├── nginx.conf       # 包含 /uploads/ 代理配置
+│   ├── ssl/
+│   ├── logs/
 │   └── html/
-│       ├── user/
+│       ├── user/        # 用户前端构建产物
 │       │   ├── index.html
 │       │   └── assets/
-│       └── admin/
+│       └── admin/       # 管理后台构建产物
 │           ├── index.html
 │           └── assets/
 ├── mysql/
@@ -286,46 +210,58 @@ JWT_EXPIRATION=604800000
     └── redis.conf
 ```
 
+## 架构说明
+
+| 组件 | 配置 | 说明 |
+|------|------|------|
+| 用户前端 | nginx/html/user | 通过 Nginx 直接服务 |
+| 管理后台 | nginx/html/admin | 通过 Nginx 直接服务 |
+| API | /api/ | 代理到后端集群 |
+| WebSocket | /ws, /ws/ | 代理到后端集群，支持 Upgrade |
+| 图片上传 | /uploads/ | 代理到后端静态资源服务 |
+| 数据存储 | Docker 卷 | mysql-data, redis-data, uploads-data |
+
+## WebSocket 端点配置
+
+```java
+// 后端 WebSocketConfig.java - 支持 /ws 和 /ws/ 两种路径
+registry.addEndpoint("/ws").setAllowedOrigins("*");
+registry.addEndpoint("/ws").withSockJS();
+registry.addEndpoint("/ws/").setAllowedOrigins("*");
+registry.addEndpoint("/ws/").withSockJS();
+```
+
 ## 测试账号
 
 | 角色 | 用户名 | 密码 |
 |------|--------|------|
-| 普通用户 | testuser | test123456 |
-| 管理员 | admin | admin123456 |
+| 普通用户 | 13800000000 | 123456 |
+| 管理员 | admin | admin123 |
 
----
-
-## 快速参考（下次部署用）
+## 快速参考（完整部署流程）
 
 ```bash
-# 1. 创建生产环境配置
-echo 'VITE_API_BASE_URL=http://192.168.100.133' > frontend-admin/.env.production
-
-# 2. 本地构建
+# ========== 1. 本地构建 ==========
 cd backend && mvn clean package -DskipTests
 cd ../frontend-user && npm install && npm run build
 cd ../frontend-admin && npm install && npm run build
-cp backend/sql/init.sql mysql/
 
-# 3. 上传文件
-scp -r docker-compose.yml .env nginx/ mysql/ redis/ root@192.168.100.133:/app/campus/
+# ========== 2. 上传文件 ==========
+scp docker-compose.yml .env nginx/ mysql/ redis/ root@192.168.100.133:/app/campus/
 scp backend/target/backend-1.0.0.jar root@192.168.100.133:/app/campus/backend/
-scp -r frontend-user/dist/* root@192.168.100.133:/app/campus/frontend/
-scp -r frontend-admin/dist/* root@192.168.100.133:/app/campus/frontend-admin/
+scp -r frontend-user/dist/* root@192.168.100.133:/app/campus/nginx/html/user/
+scp -r frontend-admin/dist/* root@192.168.100.133:/app/campus/nginx/html/admin/
 
-# 4. 服务器部署
+# ========== 3. 服务器部署 ==========
 ssh root@192.168.100.133 << 'EOF'
 cd /app/campus
-mkdir -p nginx/html/user nginx/html/admin
-cp -r frontend/* nginx/html/user/
-cp -r frontend-admin/* nginx/html/admin/
 docker compose down
 docker compose up -d
 sleep 60
 docker compose ps
 EOF
 
-# 5. 验证
+# ========== 4. 验证 ==========
 curl http://192.168.100.133/api/health
 ```
 

@@ -42,6 +42,14 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
         registry.addEndpoint("/ws")
                 .setAllowedOrigins("*")
                 .withSockJS();
+
+        // 支持 /ws/ 路径（与 nginx location 和前端 URL 一致）
+        registry.addEndpoint("/ws/")
+                .setAllowedOrigins("*");
+
+        registry.addEndpoint("/ws/")
+                .setAllowedOrigins("*")
+                .withSockJS();
     }
 
     @Override

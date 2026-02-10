@@ -19,13 +19,22 @@ const messageHandlers = new Set()
 const notificationHandlers = new Set()
 
 // 根据当前环境动态生成WebSocket地址
+// 注意：VITE_WS_URL_DEV 在生产构建时会被替换为空字符串，由 vite.config.js 的 define 配置控制
 const getWebSocketUrl = () => {
-  const isDev = import.meta.env.DEV || window.location.port === '3000'
-  if (isDev) {
-    return `ws://localhost:8080/ws`
+  // 优先使用环境变量配置
+  const envWsUrl = import.meta.env.VITE_WS_URL
+  if (envWsUrl) {
+    return envWsUrl
   }
+
+  // 开发环境使用 VITE_WS_URL_DEV 或动态生成
+  if (import.meta.env.VITE_WS_URL_DEV) {
+    return import.meta.env.VITE_WS_URL_DEV
+  }
+
+  // 生产环境动态生成（使用 /ws/ 与 nginx location 匹配）
   const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
-  return `${protocol}//${window.location.host}/ws`
+  return `${protocol}//${window.location.host}/ws/`
 }
 
 const WS_URL = getWebSocketUrl()

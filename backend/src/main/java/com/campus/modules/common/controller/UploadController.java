@@ -9,6 +9,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -31,7 +32,14 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class UploadController {
 
-    private static final String UPLOAD_PATH = "./uploads";
+    /**
+     * 上传路径 - 通过配置文件注入，支持多环境
+     * 开发环境: ./uploads (相对于项目目录)
+     * 生产环境: /app/uploads (Docker 卷挂载点)
+     */
+    @Value("${app.upload-path:./uploads}")
+    private String uploadPath;
+
     private static final long MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
     private static final List<String> ALLOWED_TYPES = List.of("image/jpeg", "image/png", "image/gif", "image/webp");
 
@@ -66,7 +74,7 @@ public class UploadController {
         try {
             // 创建日期目录
             String dateDir = LocalDate.now().format(DateTimeFormatter.ofPattern("yyyyMMdd"));
-            Path uploadDir = Paths.get(UPLOAD_PATH, dateDir);
+            Path uploadDir = Paths.get(uploadPath, dateDir);
             if (!Files.exists(uploadDir)) {
                 Files.createDirectories(uploadDir);
             }
@@ -118,7 +126,7 @@ public class UploadController {
 
             try {
                 String dateDir = LocalDate.now().format(DateTimeFormatter.ofPattern("yyyyMMdd"));
-                Path uploadDir = Paths.get(UPLOAD_PATH, dateDir);
+                Path uploadDir = Paths.get(uploadPath, dateDir);
                 if (!Files.exists(uploadDir)) {
                     Files.createDirectories(uploadDir);
                 }
@@ -231,9 +239,9 @@ public class UploadController {
         
         Path listDir;
         if (dateDir != null && !dateDir.isEmpty()) {
-            listDir = Paths.get(UPLOAD_PATH, dateDir);
+            listDir = Paths.get(uploadPath, dateDir);
         } else {
-            listDir = Paths.get(UPLOAD_PATH);
+            listDir = Paths.get(uploadPath);
         }
 
         // 获取所有文件
@@ -298,7 +306,7 @@ public class UploadController {
     @GetMapping("/dates")
     public Result<List<String>> listDateDirs() {
         try {
-            Path uploadDir = Paths.get(UPLOAD_PATH);
+            Path uploadDir = Paths.get(uploadPath);
             if (!Files.exists(uploadDir)) {
                 return Result.success(Collections.emptyList());
             }
@@ -359,7 +367,7 @@ public class UploadController {
             }
 
             // 获取所有文件（包含日期目录和avatars目录）
-            Path uploadDir = Paths.get(UPLOAD_PATH);
+            Path uploadDir = Paths.get(uploadPath);
             if (!Files.exists(uploadDir)) {
                 Map<String, Object> emptyResult = new HashMap<>();
                 emptyResult.put("total", 0);
@@ -453,7 +461,7 @@ public class UploadController {
                 }
             }
 
-            Path uploadDir = Paths.get(UPLOAD_PATH);
+            Path uploadDir = Paths.get(uploadPath);
             if (!Files.exists(uploadDir)) {
                 Map<String, Object> result = new HashMap<>();
                 result.put("deletedCount", 0);
@@ -507,7 +515,7 @@ public class UploadController {
     @GetMapping("/stats")
     public Result<Map<String, Object>> getStorageStats() {
         try {
-            Path uploadDir = Paths.get(UPLOAD_PATH);
+            Path uploadDir = Paths.get(uploadPath);
             if (!Files.exists(uploadDir)) {
                 Map<String, Object> emptyResult = new HashMap<>();
                 emptyResult.put("totalFiles", 0);

@@ -18,6 +18,10 @@ export default defineConfig({
       exclude: [/node_modules/, /\.git\//, /\.vscode\//, /van-config-provider/]
     })
   ],
+  // 定义全局变量，生产构建时移除开发环境配置
+  define: {
+    'import.meta.env.VITE_WS_URL_DEV': JSON.stringify(process.env.VITE_WS_URL_DEV || '')
+  },
   test: {
     globals: true,
     environment: 'happy-dom',
