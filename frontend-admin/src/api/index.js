@@ -2,8 +2,12 @@ import axios from 'axios'
 
 // 创建 axios 实例
 const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || ''
+// 开发环境（空值）使用相对路径走 vite proxy；生产环境使用完整URL
+const baseURL = apiBaseUrl
+  ? (apiBaseUrl.includes('/api') ? apiBaseUrl : `${apiBaseUrl}/api`)
+  : ''  // 空字符串表示相对路径
 const api = axios.create({
-  baseURL: apiBaseUrl ? `${apiBaseUrl}/api` : '',
+  baseURL: baseURL,
   timeout: 15000,
   headers: {
     'Content-Type': 'application/json'
