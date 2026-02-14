@@ -28,6 +28,8 @@
 <script setup lang="ts">
 import { computed, inject, ref } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
+import { useUserStore } from '@/stores/user'
+import { showLoginConfirm } from '@/stores/loginConfirm'
 import TabBar from '../components/navigation/TabBar.vue'
 
 interface TabItem {
@@ -37,6 +39,7 @@ interface TabItem {
 
 const router = useRouter()
 const route = useRoute()
+const userStore = useUserStore()
 
 // 从 App.vue 注入全局未读数
 const totalUnreadCount = inject<ref<number>>('totalUnreadCount', ref(0))
@@ -162,6 +165,19 @@ function onTabChange(name: string) {
 
 // Handle create action
 function onCreate() {
+  // 检查是否已登录
+  if (!userStore.isLoggedIn) {
+    // 弹窗提示，让用户选择是否登录
+    const currentPath = route.fullPath
+    showLoginConfirm(() => {
+      router.push({
+        path: '/login',
+        query: { redirect: currentPath }
+      })
+    })
+    return
+  }
+
   const routeName = route.name as string || ''
   const path = route.path
 

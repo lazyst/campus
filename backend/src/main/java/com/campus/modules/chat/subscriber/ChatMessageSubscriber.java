@@ -2,9 +2,8 @@ package com.campus.modules.chat.subscriber;
 
 import com.campus.modules.chat.dto.ChatMessageDTO;
 import jakarta.annotation.PostConstruct;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.context.ApplicationContext;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.data.redis.connection.Message;
 import org.springframework.data.redis.connection.MessageListener;
 import org.springframework.data.redis.listener.ChannelTopic;
@@ -19,11 +18,15 @@ import org.springframework.stereotype.Component;
  */
 @Slf4j
 @Component
-@RequiredArgsConstructor
 public class ChatMessageSubscriber implements MessageListener {
 
     private final RedisMessageListenerContainer container;
-    private final ApplicationContext applicationContext;
+    private final SimpMessagingTemplate messagingTemplate;
+
+    public ChatMessageSubscriber(RedisMessageListenerContainer container, @Lazy SimpMessagingTemplate messagingTemplate) {
+        this.container = container;
+        this.messagingTemplate = messagingTemplate;
+    }
 
     /**
      * Redis 频道名称
@@ -36,11 +39,20 @@ public class ChatMessageSubscriber implements MessageListener {
     private static final String QUEUE_MESSAGES = "/queue/messages";
 
     /**
-     * Bean初始化后自动订阅Redis频道
+     * Bean初始化后自动订阅Redis频道（延迟订阅以避免循环依赖）
      */
     @PostConstruct
     public void init() {
-        subscribe();
+        // 延迟订阅，等待所有 Bean 初始化完成
+        new Thread(() -> {
+            try {
+                Thread.sleep(3000);
+                subscribe();
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                log.error("订阅线程被中断");
+            }
+        }).start();
     }
 
     @Override
@@ -65,11 +77,9 @@ public class ChatMessageSubscriber implements MessageListener {
 
     /**
      * 通过 SimpMessagingTemplate 推送消息给目标用户
-     * 使用 ApplicationContext 获取以避免循环依赖
      */
     private void pushMessageToUser(ChatMessageDTO chatMessage) {
         try {
-            SimpMessagingTemplate messagingTemplate = applicationContext.getBean(SimpMessagingTemplate.class);
             messagingTemplate.convertAndSendToUser(
                     chatMessage.getReceiverId().toString(),
                     QUEUE_MESSAGES,

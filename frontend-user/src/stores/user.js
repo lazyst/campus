@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia'
-import { ref, watch } from 'vue'
+import { ref, watch, computed } from 'vue'
 import { login as loginApi, register as registerApi, logout as logoutApi, getUserInfo } from '@/api/modules'
 import router from '@/router'
 
@@ -120,10 +120,16 @@ export const useUserStore = defineStore('user', () => {
     }
   }
 
+  // 计算属性：是否已登录
+  const isLoggedIn = computed(() => {
+    return !!token.value
+  })
+
   return {
     token,
     userInfo,
     isInitialized,
+    isLoggedIn,
     login,
     register,
     logout,

@@ -18,7 +18,7 @@
 
 | 变量名 | 必填 | 默认值 | 说明 |
 |--------|------|--------|------|
-| `DB_HOST` | 是 | 192.168.100.100 | MySQL 数据库地址 |
+| `DB_HOST` | 是 | 172.19.119.151 | MySQL 数据库地址 |
 | `DB_PORT` | 否 | 3306 | MySQL 数据库端口 |
 | `DB_NAME` | 是 | campus_fenbushi | 数据库名称 |
 | `DB_USERNAME` | 否 | root | 数据库用户名 |
@@ -31,7 +31,7 @@
 
 | 变量名 | 必填 | 默认值 | 说明 |
 |--------|------|--------|------|
-| `REDIS_HOST` | 是 | 192.168.100.100 | Redis 服务器地址 |
+| `REDIS_HOST` | 是 | 172.19.119.151 | Redis 服务器地址 |
 | `REDIS_PORT` | 否 | 6379 | Redis 服务器端口 |
 | `REDIS_PASSWORD` | 否 | 123 | Redis 访问密码 |
 
@@ -143,6 +143,38 @@ VITE_ADMIN_WS_URL=wss://api.campus.example.com/ws
 ```
 
 ## Docker 环境变量
+
+### Docker Swarm 配置
+
+Docker Swarm 部署使用独立的 `.env.swarm` 文件，与开发环境端口隔离：
+
+```bash
+# ==================== 基础配置 ====================
+COMPOSE_PROJECT_NAME=campus-swarm
+
+# ==================== 端口配置（已隔离，不占用开发环境端口） ====================
+HTTP_PORT=80                      # HTTP 端口
+MYSQL_PORT=13306                  # MySQL 端口（隔离：开发环境用 3306）
+REDIS_PORT=16379                  # Redis 端口（隔离：开发环境用 6379）
+BACKEND_PORT=18080                # 后端端口（隔离：开发环境用 8080）
+
+# ==================== 数据库配置 ====================
+DB_PASSWORD=SwarmMySQL2024!       # 生产级别强密码
+DB_NAME=campus_fenbushi
+
+# ==================== Redis 配置 ====================
+REDIS_PASSWORD=SwarmRedis2024!
+
+# ==================== JWT 配置 ====================
+JWT_SECRET=campus-swarm-jwt-secret-key-2024-very-long-and-secure-and-unique-123456789
+
+# ==================== 节点配置 ====================
+MANAGER_IP=192.168.100.10        # Manager 节点 IP
+WORKER1_IP=192.168.100.11         # Worker1 节点 IP
+WORKER2_IP=192.168.100.12         # Worker2 节点 IP
+```
+
+**注意**：Docker Swarm 环境变量文件位于 `docker-swarm/.env.swarm`，与 `docker-compose` 部署的 `.env` 文件分开。
 
 ### docker-compose.yml 配置
 

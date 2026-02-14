@@ -6,7 +6,7 @@
 - [ ] 本地安装
 - [x] 远程服务器
 
-本项目使用虚拟机 `192.168.100.100` 上的 Docker 容器运行 MySQL 和 Redis 服务。开发环境直接连接虚拟机上的服务，无需本地安装数据库。
+本项目使用 WSL 中的 Docker 容器运行 MySQL 和 Redis 服务。开发环境通过 WSL 的 IP 地址连接服务。
 
 ## 数据库配置
 
@@ -14,7 +14,7 @@
 
 - **运行方式**：Docker 容器（远程服务器）
 - **连接信息**：
-  - Host: `192.168.100.100`
+  - Host: `172.19.119.151`
   - Port: `3306`
   - Database: `campus_fenbushi`
   - User: `root`
@@ -24,7 +24,7 @@
 
 - **运行方式**：Docker 容器（远程服务器）
 - **连接信息**：
-  - Host: `192.168.100.100`
+  - Host: `172.19.119.151`
   - Port: `6379`
   - Password: `123`
 
@@ -46,7 +46,7 @@ docker run -d \
   mysql:8.0
 
 # 连接 MySQL
-mysql -h 192.168.100.100 -uroot -p123 campus_fenbushi
+mysql -h 172.19.119.151 -uroot -p123 campus_fenbushi
 ```
 
 ### Redis 容器
@@ -64,7 +64,7 @@ docker run -d \
   redis-server --requirepass 123
 
 # 连接 Redis
-redis-cli -h 192.168.100.100 -p 6379 -a 123
+redis-cli -h 172.19.119.151 -p 6379 -a 123
 ```
 
 ## 开发环境连接配置
@@ -75,17 +75,17 @@ redis-cli -h 192.168.100.100 -p 6379 -a 123
 spring:
   datasource:
     master:
-      url: jdbc:mysql://192.168.100.100:3306/campus_fenbushi?useUnicode=true&characterEncoding=utf-8&serverTimezone=Asia/Shanghai&useSSL=false&allowPublicKeyRetrieval=true
+      url: jdbc:mysql://172.19.119.151:3306/campus_fenbushi?useUnicode=true&characterEncoding=utf-8&serverTimezone=Asia/Shanghai&useSSL=false&allowPublicKeyRetrieval=true
       username: root
       password: 123
     slave:
-      url: jdbc:mysql://192.168.100.100:3306/campus_fenbushi?useUnicode=true&characterEncoding=utf-8&serverTimezone=Asia/Shanghai&useSSL=false&allowPublicKeyRetrieval=true
+      url: jdbc:mysql://172.19.119.151:3306/campus_fenbushi?useUnicode=true&characterEncoding=utf-8&serverTimezone=Asia/Shanghai&useSSL=false&allowPublicKeyRetrieval=true
       username: root
       password: 123
 
   data:
     redis:
-      host: 192.168.100.100
+      host: 172.19.119.151
       port: 6379
       password: 123
 ```
@@ -96,13 +96,13 @@ spring:
 
 ```bash
 # 数据库配置
-DB_HOST=192.168.100.100
+DB_HOST=172.19.119.151
 DB_PORT=3306
 DB_USERNAME=root
 DB_PASSWORD=123
 
 # Redis 配置
-REDIS_HOST=192.168.100.100
+REDIS_HOST=172.19.119.151
 REDIS_PORT=6379
 REDIS_PASSWORD=123
 ```
@@ -111,11 +111,11 @@ REDIS_PASSWORD=123
 
 | 变量名 | 说明 | 默认值 |
 |--------|------|--------|
-| DB_HOST | 数据库地址 | 192.168.100.100 |
+| DB_HOST | 数据库地址 | 172.19.119.151 |
 | DB_PORT | 数据库端口 | 3306 |
 | DB_USERNAME | 数据库用户名 | root |
 | DB_PASSWORD | 数据库密码 | 123 |
-| REDIS_HOST | Redis 地址 | 192.168.100.100 |
+| REDIS_HOST | Redis 地址 | 172.19.119.151 |
 | REDIS_PORT | Redis 端口 | 6379 |
 | REDIS_PASSWORD | Redis 密码 | 123 |
 
@@ -149,7 +149,7 @@ npm run dev       # 开发服务器
 
 ```bash
 # SSH 连接后检查
-ssh root@192.168.100.100
+ssh root@172.19.119.151
 docker ps | grep mysql
 docker exec -it campus-mysql mysql -uroot -p123 -e "SHOW DATABASES;"
 ```
@@ -158,7 +158,7 @@ docker exec -it campus-mysql mysql -uroot -p123 -e "SHOW DATABASES;"
 
 ```bash
 # SSH 连接后检查
-ssh root@192.168.100.100
+ssh root@172.19.119.151
 docker ps | grep redis
 docker exec -it campus-redis redis-cli -a 123 ping
 ```
@@ -170,20 +170,20 @@ docker exec -it campus-redis redis-cli -a 123 ping
 1. 检查容器是否运行
 
    ```bash
-   ssh root@192.168.100.100
+   ssh root@172.19.119.151
    docker ps | grep mysql
    ```
 
 2. 检查端口是否开放
 
    ```bash
-   telnet 192.168.100.100 3306
+   telnet 172.19.119.151 3306
    ```
 
 3. 检查防火墙
 
    ```bash
-   ssh root@192.168.100.100
+   ssh root@172.19.119.151
    firewall-cmd --list-ports
    ```
 
@@ -192,14 +192,14 @@ docker exec -it campus-redis redis-cli -a 123 ping
 1. 检查容器是否运行
 
    ```bash
-   ssh root@192.168.100.100
+   ssh root@172.19.119.151
    docker ps | grep redis
    ```
 
 2. 验证密码
 
    ```bash
-   redis-cli -h 192.168.100.100 -p 6379 -a 123 ping
+   redis-cli -h 172.19.119.151 -p 6379 -a 123 ping
    ```
 
 ## 注意事项

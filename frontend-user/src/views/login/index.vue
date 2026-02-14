@@ -56,11 +56,12 @@
 
 <script setup lang="ts">
 import { ref, reactive, computed } from 'vue';
-import { useRouter } from 'vue-router';
+import { useRouter, useRoute } from 'vue-router';
 import { useUserStore } from '@/stores/user';
 import NavBar from '@/components/navigation/NavBar.vue';
 
 const router = useRouter();
+const route = useRoute();
 const userStore = useUserStore();
 
 const form = reactive({
@@ -86,7 +87,13 @@ async function handleSubmit() {
 
   try {
     await userStore.login(form);
-    router.replace('/');
+    // 登录成功后跳转到 redirect 参数指定的页面，或默认首页
+    const redirect = route.query.redirect as string;
+    // 校验 redirect 参数，防止开放重定向
+    const safeRedirect = (redirect && redirect.startsWith('/') && !redirect.startsWith('//'))
+      ? redirect
+      : '/';
+    router.replace(safeRedirect);
   } catch (error) {
     // 错误已在 request.js 中通过 showToast 处理
     console.error('登录失败', error);

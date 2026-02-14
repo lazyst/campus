@@ -82,17 +82,17 @@
 
    ```bash
    # 测试 MySQL 连接
-   mysql -h 192.168.100.100 -uroot -p123 -e "SHOW DATABASES;"
+   mysql -h 172.19.119.151 -uroot -p123 -e "SHOW DATABASES;"
    ```
 
 3. **检查网络连通性**
 
    ```bash
    # ping 测试
-   ping 192.168.100.100
+   ping 172.19.119.151
 
    # 端口测试
-   telnet 192.168.100.100 3306
+   telnet 172.19.119.151 3306
    ```
 
 4. **检查防火墙设置**
@@ -127,14 +127,14 @@
    docker ps | grep redis
 
    # 测试连接
-   redis-cli -h 192.168.100.100 -p 6379 -a 123 ping
+   redis-cli -h 172.19.119.151 -p 6379 -a 123 ping
    ```
 
 2. **检查密码配置**
 
    ```bash
    # 测试带密码连接
-   redis-cli -h 192.168.100.100 -p 6379 -a 123 ping
+   redis-cli -h 172.19.119.151 -p 6379 -a 123 ping
    # 应该返回 PONG
    ```
 
@@ -412,7 +412,7 @@
 2. **检查初始化脚本**
 
    ```bash
-   mysql -h 192.168.100.100 -uroot -p123 campus_fenbushi < backend/sql/init.sql
+   mysql -h 172.19.119.151 -uroot -p123 campus_fenbushi < backend/sql/init.sql
    ```
 
 3. **检查表结构**
@@ -502,13 +502,13 @@
 1. **检查内存使用**
 
    ```bash
-   redis-cli -h 192.168.100.100 -a 123 info memory
+   redis-cli -h 172.19.119.151 -a 123 info memory
    ```
 
 2. **检查最大内存配置**
 
    ```bash
-   redis-cli -h 192.168.100.100 -a 123 config get maxmemory
+   redis-cli -h 172.19.119.151 -a 123 config get maxmemory
    ```
 
 **解决方案**：
@@ -528,8 +528,8 @@
 1. **检查缓存数据**
 
    ```bash
-   redis-cli -h 192.168.100.100 -a 123 keys "*"
-   redis-cli -h 192.168.100.100 -a 123 get <key>
+   redis-cli -h 172.19.119.151 -a 123 keys "*"
+   redis-cli -h 172.19.119.151 -a 123 get <key>
    ```
 
 2. **检查缓存逻辑**
@@ -675,7 +675,7 @@
 3. **检查缓存命中率**
 
    ```bash
-   redis-cli -h 192.168.100.100 -a 123 info stats | grep keyspace_hits
+   redis-cli -h 172.19.119.151 -a 123 info stats | grep keyspace_hits
    ```
 
 **解决方案**：
@@ -766,26 +766,26 @@ jstack <pid>
 
 ```bash
 # 检查 MySQL 连接
-mysql -h 192.168.100.100 -uroot -p123 -e "SHOW PROCESSLIST;"
+mysql -h 172.19.119.151 -uroot -p123 -e "SHOW PROCESSLIST;"
 
 # 检查表状态
-mysql -h 192.168.100.100 -uroot -p123 -e "CHECK TABLE post;"
+mysql -h 172.19.119.151 -uroot -p123 -e "CHECK TABLE post;"
 
 # 优化表
-mysql -h 192.168.100.100 -uroot -p123 -e "OPTIMIZE TABLE post;"
+mysql -h 172.19.119.151 -uroot -p123 -e "OPTIMIZE TABLE post;"
 ```
 
 ### Redis 诊断
 
 ```bash
 # 检查连接
-redis-cli -h 192.168.100.100 -a 123 ping
+redis-cli -h 172.19.119.151 -a 123 ping
 
 # 检查内存
-redis-cli -h 192.168.100.100 -a 123 info memory
+redis-cli -h 172.19.119.151 -a 123 info memory
 
 # 检查慢查询
-redis-cli -h 192.168.100.100 -a 123 slowlog get 10
+redis-cli -h 172.19.119.151 -a 123 slowlog get 10
 ```
 
 ### Docker 诊断

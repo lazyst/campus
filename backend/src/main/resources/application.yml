@@ -18,7 +18,7 @@ spring:
         # 主库配置（写操作）
         master:
           driver-class-name: com.mysql.cj.jdbc.Driver
-          url: jdbc:mysql://${DB_HOST:192.168.100.100}:3306/campus_fenbushi?useUnicode=true&characterEncoding=utf-8&serverTimezone=Asia/Shanghai&useSSL=false&allowPublicKeyRetrieval=true
+          url: jdbc:mysql://${DB_HOST:localhost}:3306/campus_fenbushi?useUnicode=true&characterEncoding=UTF-8&serverTimezone=Asia/Shanghai&useSSL=false&allowPublicKeyRetrieval=true
           username: root
           password: ${DB_PASSWORD:123}
           druid:
@@ -37,7 +37,7 @@ spring:
         # 从库配置（读操作）
         slave:
           driver-class-name: com.mysql.cj.jdbc.Driver
-          url: jdbc:mysql://${DB_SLAVE_HOST:192.168.100.100}:${DB_SLAVE_PORT:3307}/campus_fenbushi?useUnicode=true&characterEncoding=utf-8&serverTimezone=Asia/Shanghai&useSSL=false&allowPublicKeyRetrieval=true
+          url: jdbc:mysql://${DB_SLAVE_HOST:localhost}:${DB_SLAVE_PORT:3307}/campus_fenbushi?useUnicode=true&characterEncoding=UTF-8&serverTimezone=Asia/Shanghai&useSSL=false&allowPublicKeyRetrieval=true
           username: root
           password: ${DB_SLAVE_PASSWORD:123}
           druid:
@@ -64,13 +64,17 @@ spring:
   jackson:
     date-format: yyyy-MM-dd HH:mm:ss
     time-zone: GMT+8
+    default-property-inclusion: non_null
     serialization:
       write-dates-as-timestamps: false
+      write-durations-as-timestamps: false
+    parser:
+      allow-unquoted-control-chars: true
 
   # Redis配置
   data:
     redis:
-      host: ${REDIS_HOST:192.168.100.100}
+      host: ${REDIS_HOST:172.19.119.151}
       port: 6379
       password: ${REDIS_PASSWORD:123}
       database: 0
