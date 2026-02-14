@@ -109,17 +109,34 @@ public class CommentController {
 
             commentService.save(comment);
 
-            // 创建评论通知并推送（如果评论的不是自己的帖子）
-            if (!post.getUserId().equals(userId)) {
+            // 创建通知并推送
+            Long notifyUserId = null;
+            String notifyContent = "";
+
+            if (request.getParentId() != null) {
+                // 楼中楼回复：通知被回复的评论作者
+                Comment parentComment = commentService.getById(request.getParentId());
+                if (parentComment != null && !parentComment.getUserId().equals(userId)) {
+                    notifyUserId = parentComment.getUserId();
+                    notifyContent = "回复了你的评论";
+                }
+            } else if (!post.getUserId().equals(userId)) {
+                // 普通评论：通知帖子作者
+                notifyUserId = post.getUserId();
+                notifyContent = "评论了你的帖子";
+            }
+
+            // 发送通知
+            if (notifyUserId != null) {
                 try {
                     Notification notification = new Notification();
-                    notification.setUserId(post.getUserId()); // 通知给帖子作者
-                    notification.setFromUserId(userId); // 评论者
+                    notification.setUserId(notifyUserId);
+                    notification.setFromUserId(userId);
                     notification.setPostId(request.getPostId());
                     notification.setCommentId(comment.getId());
                     notification.setType(1); // 1=评论通知
                     notification.setIsRead(0);
-                    notification.setContent("评论了你的帖子");
+                    notification.setContent(notifyContent);
                     notificationService.save(notification);
 
                     // 通过 WebSocket 实时推送通知
@@ -134,7 +151,7 @@ public class CommentController {
                             .createdAt(notification.getCreatedAt())
                             .build();
 
-                    notificationPublisher.publish(post.getUserId(), dto);
+                    notificationPublisher.publish(notifyUserId, dto);
 
                 } catch (Exception e) {
                     // 通知创建失败不影响评论功能

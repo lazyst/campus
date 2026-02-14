@@ -115,8 +115,9 @@
 
       <!-- 评论列表 -->
       <div v-else-if="comments.length > 0" class="detail-comments-list">
+        <!-- 根评论 -->
         <div
-          v-for="comment in comments"
+          v-for="comment in treeComments"
           :key="comment.id"
           class="detail-comment-item"
           :class="{ 'detail-comment-item--highlighted': comment.id === highlightedCommentId }"
@@ -132,6 +133,40 @@
               <span class="detail-comment-time">{{ formatTime(comment.createdAt) }}</span>
             </div>
             <p class="detail-comment-text">{{ comment.content }}</p>
+            <!-- 回复按钮 -->
+            <button class="detail-comment-reply-btn" @click="handleReply(comment.id, comment.userNickname)">
+              回复
+            </button>
+
+            <!-- 子评论（楼中楼） -->
+            <div v-if="comment.children && comment.children.length > 0" class="detail-comment-children">
+              <div
+                v-for="childComment in comment.children"
+                :key="childComment.id"
+                class="detail-comment-item detail-comment-item--child"
+                :class="{ 'detail-comment-item--highlighted': childComment.id === highlightedCommentId }"
+                :ref="el => { if (childComment.id === highlightedCommentId) highlightedCommentRef = el as HTMLElement }"
+              >
+                <div class="detail-comment-avatar small">
+                  <img v-if="childComment.userAvatar" :src="getImageUrl(childComment.userAvatar)" alt="头像" />
+                  <span v-else>{{ childComment.userNickname?.charAt(0) || '匿名' }}</span>
+                </div>
+                <div class="detail-comment-content">
+                  <div class="detail-comment-header">
+                    <span class="detail-comment-author">{{ childComment.userNickname || '匿名用户' }}</span>
+                    <span class="detail-comment-time">{{ formatTime(childComment.createdAt) }}</span>
+                  </div>
+                  <p class="detail-comment-text">
+                    <span v-if="childComment.replyToUsername" class="detail-comment-reply-to">回复 @{{ childComment.replyToUsername }}</span>
+                    {{ childComment.content }}
+                  </p>
+                  <!-- 子评论回复按钮 -->
+                  <button class="detail-comment-reply-btn" @click="handleReply(childComment.id, childComment.userNickname)">
+                    回复
+                  </button>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -144,15 +179,20 @@
 
     <!-- 评论输入框 -->
     <div class="detail-comment-input-area">
-      <input 
+      <!-- 回复状态提示 -->
+      <div v-if="replyingToCommentId" class="detail-replying-to">
+        <span>回复 @{{ replyingToUsername }}</span>
+        <button class="detail-cancel-reply" @click="cancelReply">×</button>
+      </div>
+      <input
         v-model="newComment"
         type="text"
         class="detail-comment-input"
-        placeholder="说点什么..."
+        :placeholder="replyingToCommentId ? '写下你的回复...' : '说点什么...'"
         @keyup.enter="handleSubmitComment"
       />
-      <button 
-        class="detail-send-btn" 
+      <button
+        class="detail-send-btn"
         @click="handleSubmitComment"
         :disabled="isSubmitting || !newComment.trim()"
       >
@@ -240,6 +280,52 @@ function previewImage(index: number) {
 
 // 评论列表
 const comments = ref<any[]>([]);
+
+// 树形结构的评论（二级嵌套）
+const treeComments = computed(() => {
+  const commentMap = new Map<number, any>();
+  const rootComments: any[] = [];
+
+  // 先创建所有评论的映射
+  comments.value.forEach(comment => {
+    commentMap.set(comment.id, { ...comment, children: [] });
+  });
+
+  // 构建树形结构（只处理二级，三级及以上扁平化）
+  comments.value.forEach(comment => {
+    const currentComment = commentMap.get(comment.id);
+    const parentComment = comment.parentId ? commentMap.get(comment.parentId) : null;
+
+    if (comment.parentId && parentComment) {
+      // 有父评论
+      if (parentComment.parentId) {
+        // 三级及以上评论：添加到根评论的 children 中（扁平化）
+        // 找到根评论
+        let rootComment = parentComment;
+        while (rootComment.parentId && commentMap.get(rootComment.parentId)) {
+          rootComment = commentMap.get(rootComment.parentId);
+        }
+        // 添加回复目标用户名信息
+        currentComment.replyToUsername = parentComment.userNickname || '匿名用户';
+        rootComment.children.push(currentComment);
+      } else {
+        // 二级评论：正常添加到父评论的 children
+        parentComment.children.push(currentComment);
+      }
+    } else {
+      // 根评论
+      rootComments.push(currentComment);
+    }
+  });
+
+  return rootComments;
+});
+
+// 当前回复的评论ID（null表示回复帖子，否则回复评论）
+const replyingToCommentId = ref<number | null>(null);
+
+// 当前回复的用户名
+const replyingToUsername = ref<string>('');
 
 // 高亮的评论ID
 const highlightedCommentId = ref<number | null>(null);
@@ -422,30 +508,60 @@ function focusComment() {
   input?.focus();
 }
 
-// 处理发表评论
+// 处理发表评论/回复
 async function handleSubmitComment() {
   if (!newComment.value.trim()) return;
-  
+
   if (checkLogin(() => handleSubmitComment())) {
     isSubmitting.value = true;
-    
+
     try {
-      await createComment({
+      const commentData: any = {
         postId: postId,
         content: newComment.value.trim()
-      });
-      
+      };
+
+      // 如果有回复目标，添加 parentId
+      if (replyingToCommentId.value) {
+        commentData.parentId = replyingToCommentId.value;
+      }
+
+      await createComment(commentData);
+
       // 刷新评论列表
       await fetchComments();
-      
+
+      // 先保存回复状态用于提示
+      const isReply = replyingToCommentId.value !== null;
+
       newComment.value = '';
-      showToast('评论成功', 'success');
+      // 清除回复状态
+      replyingToCommentId.value = null;
+      replyingToUsername.value = '';
+      showToast(isReply ? '回复成功' : '评论成功', 'success');
     } catch (error) {
       // 忽略错误
     } finally {
       isSubmitting.value = false;
     }
   }
+}
+
+// 处理回复评论
+function handleReply(commentId: number, username: string) {
+  replyingToCommentId.value = commentId;
+  replyingToUsername.value = username;
+  // 聚焦输入框
+  nextTick(() => {
+    const input = document.querySelector('.detail-comment-input') as HTMLInputElement;
+    input?.focus();
+  });
+}
+
+// 取消回复
+function cancelReply() {
+  replyingToCommentId.value = null;
+  replyingToUsername.value = '';
 }
 
 // 保留旧的函数名作为别名（保持兼容性）
@@ -730,6 +846,68 @@ const toggleCollect = handleCollect;
   color: var(--text-secondary);
   margin: 0;
   line-height: var(--line-height-normal);
+}
+
+/* 回复按钮 */
+.detail-comment-reply-btn {
+  background: none;
+  border: none;
+  color: var(--color-primary-700);
+  font-size: var(--text-xs);
+  cursor: pointer;
+  padding: 0;
+  margin-top: var(--space-1);
+}
+
+/* 回复目标样式 */
+.detail-comment-reply-to {
+  color: var(--color-primary-700);
+  margin-right: var(--space-1);
+}
+
+/* 子评论容器（楼中楼） */
+.detail-comment-children {
+  margin-top: var(--space-3);
+  padding-left: var(--space-4);
+  border-left: 2px solid var(--border-light);
+}
+
+/* 子评论项 */
+.detail-comment-item--child {
+  margin-top: var(--space-3);
+}
+
+.detail-comment-avatar.small {
+  width: 28px;
+  height: 28px;
+  font-size: var(--text-xs);
+}
+
+/* 回复状态提示 */
+.detail-replying-to {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-1) var(--space-3);
+  background-color: var(--color-primary-50);
+  border-radius: var(--radius-md);
+  margin-bottom: var(--space-2);
+  font-size: var(--text-xs);
+  color: var(--color-primary-700);
+}
+
+.detail-cancel-reply {
+  background: none;
+  border: none;
+  color: var(--text-tertiary);
+  font-size: var(--text-base);
+  cursor: pointer;
+  padding: 0;
+  line-height: 1;
+}
+
+.detail-cancel-reply:hover {
+  color: var(--text-primary);
 }
 
 .detail-comment-input-area {
