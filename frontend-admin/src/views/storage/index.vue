@@ -127,7 +127,7 @@
                     :icon="View"
                     size="small"
                     title="预览"
-                    @click.stop
+                    @click.stop="handlePreview(file)"
                   />
                   <el-button
                     type="danger"
@@ -170,6 +170,14 @@
           @current-change="handleCurrentChange"
         />
       </div>
+
+      <!-- 图片预览弹窗 -->
+      <el-image-viewer
+        v-if="showPreview"
+        :url-list="previewList"
+        :initial-index="currentPreviewIndex"
+        @close="showPreview = false"
+      />
     </el-card>
   </div>
 </template>
@@ -216,6 +224,13 @@ const selectedDateDir = ref('')
 const activeTab = ref('all')
 const selectedImages = ref([])
 const previewList = computed(() => fileList.value.map(f => f.url))
+const showPreview = ref(false)
+const currentPreviewIndex = ref(0)
+
+const handlePreview = (file) => {
+  currentPreviewIndex.value = previewList.value.indexOf(file.url)
+  showPreview.value = true
+}
 
 const fetchStats = async () => {
   try {
