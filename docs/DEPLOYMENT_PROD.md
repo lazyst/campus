@@ -40,14 +40,35 @@
 ### 1. Nginx配置 (nginx-swarm.conf)
 
 ```nginx
-location /api/ {
-    # 重要：使用Docker服务名而非固定IP
-    proxy_pass http://campus-backend-1:8080;
-    # ...
+server {
+    listen 80;
+
+    # 管理后台 - 使用 root + location 匹配
+    # 重要：必须放在 /api 前面
+    location /admin {
+        root /usr/share/nginx/html;
+        index index.html;
+        try_files $uri $uri/ /admin/index.html;
+    }
+
+    location /admin/ {
+        root /usr/share/nginx/html;
+        index index.html;
+        try_files $uri $uri/ /admin/index.html;
+    }
+
+    # API代理 - 使用Docker服务名而非固定IP
+    location /api/ {
+        proxy_pass http://campus-backend-1:8080;
+        # ...
+    }
 }
 ```
 
-**注意**：禁止使用硬编码IP地址如 `172.18.0.x`，容器重启后IP会变化！
+**注意**：
+1. 禁止使用硬编码IP地址如 `172.18.0.x`，容器重启后IP会变化！
+2. `/admin` location 必须放在 `/api` 前面，否则会被错误匹配
+3. 使用 `root` 代替 `alias`，避免 try_files fallback 路径问题
 
 ### 2. MySQL字符集配置 (mysql-charset.cnf)
 
@@ -89,14 +110,39 @@ url: jdbc:mysql://...campus_fenbushi?useUnicode=true&characterEncoding=UTF-8&ser
    docker build -t campus-nginx:latest -f nginx/Dockerfile nginx/
    ```
 
-2. **配置MySQL字符集**
+2. **创建Docker网络**
+   ```bash
+   # 创建自定义网络（重要：nginx需要和backend通信）
+   docker network create app-network 2>/dev/null || true
+
+   # 将后端容器连接到网络
+   docker network connect app-network campus-backend-1 2>/dev/null || true
+   docker network connect app-network campus-backend-2 2>/dev/null || true
+   ```
+
+3. **配置MySQL字符集**
    ```bash
    # 上传字符集配置文件
    docker cp mysql-charset.cnf campus-mysql:/etc/mysql/conf.d/charset.cnf
    docker restart campus-mysql
    ```
 
-3. **启动服务**
+4. **启动Nginx容器（推荐方式）**
+   ```bash
+   # 方式1：复制文件到容器内（推荐，避免权限问题）
+   docker run -d --name campus-nginx -p 80:80 --network app-network nginx:alpine
+   docker cp /root/nginx/nginx.conf campus-nginx:/etc/nginx/nginx.conf
+   docker cp /path/to/dist/. campus-nginx:/usr/share/nginx/html/
+   docker cp /path/to/dist-admin/. campus-nginx:/usr/share/nginx/html/admin/
+
+   # 方式2：使用挂载（注意权限问题）
+   # docker run -d --name campus-nginx -p 80:80 --network app-network \
+   #   -v /root/nginx/nginx.conf:/etc/nginx/nginx.conf:ro \
+   #   -v /path/to/html:/usr/share/nginx/html:ro \
+   #   nginx:alpine
+   ```
+
+5. **启动服务**
    ```bash
    docker network create -d overlay app-network 2>/dev/null || true
 
@@ -213,15 +259,97 @@ curl http://localhost:8080/api/health
 docker exec campus-nginx nginx -T | grep location
 ```
 
+### 4. Nginx容器无法启动/端口冲突
+
+**原因**：宿主机上可能有 nginx 进程占用了 80 端口
+
+**解决**：
+```bash
+# 检查端口占用
+ss -tlnp | grep :80
+
+# 检查宿主机上的 nginx 进程
+ps aux | grep nginx
+
+# 杀掉所有 nginx 进程（宿主机和Docker的）
+pkill -9 nginx
+
+# 重启 nginx 容器
+docker restart campus-nginx
+```
+
+**注意**：使用 `pkill -9 nginx` 会同时杀掉宿主机和容器内的 nginx，需要重启容器
+
+### 5. Nginx返回500/权限拒绝
+
+**原因**：挂载的静态文件目录权限不足
+
+**解决**：
+```bash
+# 方法1：复制文件到容器内（推荐）
+docker cp /path/to/html/. campus-nginx:/usr/share/nginx/html/
+
+# 方法2：设置权限
+chmod -R 755 /path/to/html/
+chown -R root:root /path/to/html/
+```
+
+### 6. 后台管理页面刷新404
+
+**原因**：Vue Router SPA路由刷新时，nginx未正确配置fallback
+
+**现象**：访问 `/admin/` 正常，但访问 `/admin/items` 后刷新页面返回404
+
+**解决**：
+```nginx
+# 错误配置 - 使用 alias
+location /admin/ {
+    alias /usr/share/nginx/html/admin/;
+    try_files $uri $uri/ /admin/index.html;  # alias下fallback路径问题
+}
+
+# 正确配置 - 使用 root
+location /admin {
+    root /usr/share/nginx/html;
+    try_files $uri $uri/ /admin/index.html;
+}
+
+location /admin/ {
+    root /usr/share/nginx/html;
+    try_files $uri $uri/ /admin/index.html;
+}
+```
+
+**关键点**：
+1. 使用 `root` 代替 `alias`，避免路径拼接问题
+2. 添加不带斜杠的 `/admin` location，确保精确匹配
+3. `try_files` fallback 必须使用绝对路径 `/admin/index.html`
+4. `/admin` location 必须放在 `/api` 之前
+
 ## 验证命令
 
 ```bash
-# 检查服务状态
-curl -s http://192.168.100.133/ | head -5        # 首页
-curl -s http://192.168.100.133/admin/ | head -5    # 管理后台
+# 检查服务状态 - 前端
+curl -s http://192.168.100.133/ | head -5        # 首页 (应该返回HTML)
+curl -s -o /dev/null -w "%{http_code}" http://192.168.100.133/  # 返回200
+
+# 检查服务状态 - 管理后台
+curl -s http://192.168.100.133/admin/ | head -5    # 管理后台首页
+curl -s -o /dev/null -w "%{http_code}" http://192.168.100.133/admin/  # 返回200
+
+# 检查服务状态 - 后台子页面（关键：刷新不返回404）
+curl -s -o /dev/null -w "%{http_code}" http://192.168.100.133/admin/items  # 返回200
+
+# 检查服务状态 - API
 curl -s http://192.168.100.133/api/boards          # 板块API
 curl -s http://192.168.100.133/api/posts           # 帖子API
 curl -s http://192.168.100.133/api/items           # 二手API
+curl -s -o /dev/null -w "%{http_code}" http://192.168.100.133/api/auth/code  # 应返回后端响应
+
+# 检查响应大小（判断是否返回正确页面）
+curl -s -o /dev/null -w "%{size_download}" http://192.168.100.133/        # 前台 ~708字节
+curl -s -o /dev/null -w "%{size_download}" http://192.168.100.133/admin/   # 后台 ~420字节
+curl -s -o /dev/null -w "%{size_download}" http://192.168.100.133/admin/items  # 后台 ~420字节
 
 # 检查数据库字符集
 docker exec campus-mysql mysql -uroot -p123 -e "SHOW VARIABLES LIKE 'character_set%';"
