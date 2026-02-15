@@ -99,6 +99,7 @@ const handleLogout = async () => {
     // 忽略API调用错误
   }
   localStorage.removeItem('admin_token')
+  localStorage.removeItem('admin_info')
   router.push('/login')
 }
 </script>
