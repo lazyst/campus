@@ -50,12 +50,14 @@
         <el-table-column prop="viewCount" label="浏览" width="80" />
         <el-table-column prop="userNickname" label="发布者" width="120" />
         <el-table-column prop="createdAt" label="发布时间" width="180" />
-        <el-table-column label="操作" width="180">
+        <el-table-column label="操作" width="220">
           <template #default="{ row }">
-            <el-button type="primary" size="small" @click="handleView(row)">查看</el-button>
-            <el-button v-if="row.status === 3" type="success" size="small" @click="handleOnline(row)">上架</el-button>
-            <el-button v-if="row.status === 1" type="warning" size="small" @click="handleOffline(row)">下架</el-button>
-            <el-button type="danger" size="small" @click="handleDelete(row)">删除</el-button>
+            <div class="action-buttons">
+              <el-button type="primary" size="small" @click="handleView(row)">查看</el-button>
+              <el-button v-if="row.status === 3" type="success" size="small" @click="handleOnline(row)">上架</el-button>
+              <el-button v-if="row.status === 1" type="warning" size="small" @click="handleOffline(row)">下架</el-button>
+              <el-button type="danger" size="small" @click="handleDelete(row)">删除</el-button>
+            </div>
           </template>
         </el-table-column>
       </el-table>
@@ -317,6 +319,12 @@ onMounted(() => {
   .card-header {
     display: flex;
     align-items: center;
+  }
+
+  .action-buttons {
+    display: flex;
+    gap: 4px;
+    flex-wrap: nowrap;
   }
 
   .pagination-container {
