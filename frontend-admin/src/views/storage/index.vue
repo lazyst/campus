@@ -539,6 +539,7 @@ onMounted(() => {
           width: 100%;
           height: 100%;
           object-fit: cover;
+          z-index: 1;
         }
 
         .image-overlay {
@@ -554,6 +555,7 @@ onMounted(() => {
           gap: 12px;
           opacity: 0;
           transition: opacity 0.3s ease;
+          z-index: 10;
         }
 
         .select-checkbox {
