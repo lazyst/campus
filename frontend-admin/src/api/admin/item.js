@@ -20,6 +20,11 @@ export function offlineItem(itemId) {
   return put(`/api/admin/items/${itemId}/offline`)
 }
 
+// 上架闲置物品
+export function onlineItem(itemId) {
+  return put(`/api/admin/items/${itemId}/online`)
+}
+
 // 获取闲置物品统计
 export function getItemStats() {
   return get('/api/admin/items/stats')

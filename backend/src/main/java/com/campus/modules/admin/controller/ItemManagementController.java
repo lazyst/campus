@@ -44,48 +44,57 @@ public class ItemManagementController {
             @RequestParam(required = false) Long userId,
             @RequestParam(required = false) String keyword,
             @RequestParam(required = false) BigDecimal minPrice,
-            @RequestParam(required = false) BigDecimal maxPrice) {
-        
+            @RequestParam(required = false) BigDecimal maxPrice,
+            @RequestParam(required = false, defaultValue = "createdAt_desc") String sortBy) {
+
         verifyAdmin(authHeader);
 
         Page<Item> pageParam = new Page<>(page, size);
-        
-        com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper<Item> wrapper = 
+
+        com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper<Item> wrapper =
             new com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper<>();
-        
+
         // 默认排除已删除的物品
         wrapper.ne(Item::getStatus, 0);
-        
+
         if (type != null) {
             wrapper.eq(Item::getType, type);
         }
-        
+
         if (status != null) {
             wrapper.eq(Item::getStatus, status);
         }
-        
+
         if (userId != null) {
             wrapper.eq(Item::getUserId, userId);
         }
-        
+
         if (keyword != null && !keyword.isEmpty()) {
             wrapper.and(w -> w.like(Item::getTitle, keyword)
                             .or()
                             .like(Item::getDescription, keyword));
         }
-        
+
         if (minPrice != null) {
             wrapper.ge(Item::getPrice, minPrice);
         }
-        
+
         if (maxPrice != null) {
             wrapper.le(Item::getPrice, maxPrice);
         }
-        
-        wrapper.orderByDesc(Item::getCreatedAt);
-        
+
+        // 排序处理
+        switch (sortBy) {
+            case "createdAt_asc" -> wrapper.orderByAsc(Item::getCreatedAt);
+            case "price_asc" -> wrapper.orderByAsc(Item::getPrice);
+            case "price_desc" -> wrapper.orderByDesc(Item::getPrice);
+            case "viewCount_asc" -> wrapper.orderByAsc(Item::getViewCount);
+            case "viewCount_desc" -> wrapper.orderByDesc(Item::getViewCount);
+            default -> wrapper.orderByDesc(Item::getCreatedAt);
+        }
+
         Page<Item> result = itemService.page(pageParam, wrapper);
-        
+
         return Result.success(result);
     }
 
@@ -162,17 +171,36 @@ public class ItemManagementController {
     public Result<Void> offline(
             @RequestHeader("Authorization") String authHeader,
             @PathVariable Long itemId) {
-        
+
         verifyAdmin(authHeader);
-        
+
         Item item = itemService.getById(itemId);
         if (item == null || (item.getStatus() != null && item.getStatus() == 0)) {
             return Result.error("物品不存在");
         }
-        
+
         item.setStatus(3); // 3 = 已下架
         itemService.updateById(item);
-        
+
+        return Result.success();
+    }
+
+    @Operation(summary = "上架物品")
+    @PutMapping("/{itemId}/online")
+    public Result<Void> online(
+            @RequestHeader("Authorization") String authHeader,
+            @PathVariable Long itemId) {
+
+        verifyAdmin(authHeader);
+
+        Item item = itemService.getById(itemId);
+        if (item == null || (item.getStatus() != null && item.getStatus() == 0)) {
+            return Result.error("物品不存在");
+        }
+
+        item.setStatus(1); // 1 = 在售
+        itemService.updateById(item);
+
         return Result.success();
     }
 
