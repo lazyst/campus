@@ -7,6 +7,8 @@ import com.campus.modules.auth.service.AuthService;
 import com.campus.modules.trade.controller.ItemController.ItemUpdateRequest;
 import com.campus.modules.trade.entity.Item;
 import com.campus.modules.trade.service.ItemService;
+import com.campus.modules.user.entity.User;
+import com.campus.modules.user.service.UserService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -26,11 +28,13 @@ public class ItemManagementController {
     private final ItemService itemService;
     private final AdminService adminService;
     private final AuthService authService;
+    private final UserService userService;
 
-    public ItemManagementController(ItemService itemService, AdminService adminService, AuthService authService) {
+    public ItemManagementController(ItemService itemService, AdminService adminService, AuthService authService, UserService userService) {
         this.itemService = itemService;
         this.adminService = adminService;
         this.authService = authService;
+        this.userService = userService;
     }
 
     @Operation(summary = "获取物品列表")
@@ -94,6 +98,11 @@ public class ItemManagementController {
         }
 
         Page<Item> result = itemService.page(pageParam, wrapper);
+
+        // 填充用户信息
+        for (Item item : result.getRecords()) {
+            enrichItemWithUserInfo(item);
+        }
 
         return Result.success(result);
     }
@@ -247,6 +256,22 @@ public class ItemManagementController {
 
         if (adminId == null || !adminService.isSuperAdmin(adminId)) {
             throw new SecurityException("权限不足");
+        }
+    }
+
+    /**
+     * 填充物品的用户信息
+     */
+    private void enrichItemWithUserInfo(Item item) {
+        if (item == null || item.getUserId() == null) {
+            return;
+        }
+
+        User user = userService.getById(item.getUserId());
+        if (user != null) {
+            item.setUserNickname(user.getNickname());
+        } else {
+            item.setUserNickname("匿名用户");
         }
     }
 }
