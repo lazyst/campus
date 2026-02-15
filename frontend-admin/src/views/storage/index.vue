@@ -517,10 +517,10 @@ onMounted(() => {
         border-color: #1E3A8A;
         box-shadow: 0 4px 12px rgba(30, 58, 138, 0.15);
         transform: translateY(-2px);
+      }
 
-        .image-overlay {
-          opacity: 1;
-        }
+      &:hover .image-overlay {
+        opacity: 1;
       }
 
       &.selected {
