@@ -10,7 +10,8 @@
 - [前端问题](#前端问题)
 - [数据库问题](#数据库问题)
 - [Redis 问题](#redis-问题)
-- [Docker 部署问题](#docker-部署问题)
+- [Docker Swarm 部署问题](#docker-swarm-部署问题)
+- [生产环境问题](#生产环境问题)
 - [性能问题](#性能问题)
 
 ---
@@ -812,8 +813,68 @@ docker system prune -af
 2. **搜索已有问题**：查看 GitHub Issues 是否已有类似问题
 3. **创建新 Issue**：提供详细的问题描述和复现步骤
 
-**联系方式**：
+---
 
-- 项目地址：https://github.com/your-org/campus
-- 问题反馈：https://github.com/your-org/campus/issues
-- 文档更新：查看 @docs/DEPLOYMENT.md 获取更多部署相关问题解决方案
+## 生产环境问题
+
+### 问题 1：页面数据加载失败 (502/500错误)
+
+**症状**：前端页面无法加载数据
+
+**排查步骤**：
+
+1. **检查Nginx配置**
+   ```bash
+   # 使用ssh-mcp连接服务器
+   docker exec campus-nginx nginx -T | grep proxy_pass
+   ```
+
+2. **检查后端容器状态**
+   ```bash
+   docker ps | grep backend
+   docker logs campus-backend-1 --tail 50
+   ```
+
+3. **检查后端健康状态**
+   ```bash
+   curl http://localhost:8080/api/health
+   ```
+
+**解决方案**：
+- 确保使用Docker服务名而非固定IP：`proxy_pass http://campus-backend-1:8080`
+- 重启Nginx：`docker restart campus-nginx`
+
+---
+
+### 问题 2：中文乱码
+
+**症状**：API返回数据中文显示乱码
+
+**排查步骤**：
+
+1. **检查MySQL字符集配置**
+   ```bash
+   docker exec campus-mysql mysql -uroot -p123 -e "SHOW VARIABLES LIKE 'character_set%';"
+   ```
+
+2. **检查数据库数据**
+   ```bash
+   docker exec campus-mysql mysql -uroot -p123 campus_fenbushi -e "SELECT id, name FROM board;"
+   ```
+
+**解决方案**：
+- 添加字符集配置文件：
+   ```bash
+   docker cp mysql-charset.cnf campus-mysql:/etc/mysql/conf.d/charset.cnf
+   docker restart campus-mysql
+   ```
+- 修复乱码数据：
+   ```bash
+   docker exec campus-mysql mysql -uroot -p123 campus_fenbushi -e "UPDATE board SET name='正确中文' WHERE id=1;"
+   ```
+
+---
+
+## 联系方式
+
+- 项目文档：[DEPLOYMENT_PROD.md](./DEPLOYMENT_PROD.md)
