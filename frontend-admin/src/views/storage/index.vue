@@ -520,7 +520,7 @@ onMounted(() => {
       }
 
       &:hover .image-overlay {
-        opacity: 1;
+        opacity: 1 !important;
       }
 
       &.selected {
