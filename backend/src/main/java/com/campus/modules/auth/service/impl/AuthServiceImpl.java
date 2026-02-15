@@ -86,7 +86,7 @@ public class AuthServiceImpl implements AuthService {
     public String refreshToken(String token) {
         try {
             // 验证 token 是否有效
-            if (!jwtConfig.validateToken(token)) {
+            if (!jwtConfig.validateToken(token, null)) {
                 return null;
             }
             // 刷新 token
