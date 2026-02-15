@@ -1,5 +1,0 @@
-# 前端静态资源目录
-# 部署时将前端构建产物复制到此目录
-#
-# user/     - 用户前端 (npm run build 产物)
-# admin/    - 管理后台 (npm run build 产物)
