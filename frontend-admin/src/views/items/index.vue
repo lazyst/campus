@@ -50,7 +50,7 @@
         <el-table-column prop="viewCount" label="浏览" width="80" />
         <el-table-column prop="userNickname" label="发布者" width="120" />
         <el-table-column prop="createdAt" label="发布时间" width="180" />
-        <el-table-column label="操作" width="260">
+        <el-table-column label="操作" width="300">
           <template #default="{ row }">
             <div class="action-buttons">
               <el-button type="primary" size="small" @click="handleView(row)">查看</el-button>
