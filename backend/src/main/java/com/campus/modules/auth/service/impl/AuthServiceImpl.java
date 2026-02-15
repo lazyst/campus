@@ -81,4 +81,18 @@ public class AuthServiceImpl implements AuthService {
             return null;
         }
     }
+
+    @Override
+    public String refreshToken(String token) {
+        try {
+            // 验证 token 是否有效
+            if (!jwtConfig.validateToken(token)) {
+                return null;
+            }
+            // 刷新 token
+            return jwtConfig.refreshToken(token);
+        } catch (Exception e) {
+            return null;
+        }
+    }
 }

@@ -34,4 +34,9 @@ public interface AuthService {
      * 从令牌获取用户ID
      */
     Long getUserIdFromToken(String token);
+
+    /**
+     * 刷新令牌
+     */
+    String refreshToken(String token);
 }

@@ -17,6 +17,10 @@ const request = axios.create({
 // 请求队列管理（用于Loading状态）
 let requestCount = 0
 
+// Token 刷新相关
+let isRefreshing = false
+let requestsQueue = []
+
 /**
  * 请求拦截器
  */
@@ -41,6 +45,77 @@ request.interceptors.request.use(
     return Promise.reject(error)
   }
 )
+
+/**
+ * Token 刷新函数
+ */
+function refreshToken() {
+  return request.post('/auth/refresh', {}, {
+    showLoading: false,
+    showError: false
+  }).then(res => {
+    if (res.token) {
+      localStorage.setItem('token', res.token)
+      return res.token
+    }
+    throw new Error('Token刷新失败')
+  }).catch(() => {
+    // 刷新失败，清除 token 并提示登录
+    localStorage.removeItem('token')
+    showToast('登录已过期，请重新登录', 'error')
+    import('@/stores/loginConfirm').then(({ showLoginConfirm }) => {
+      showLoginConfirm()
+    })
+    return null
+  })
+}
+
+/**
+ * 处理 token 刷新
+ */
+function handleTokenRefresh(error) {
+  const originalRequest = error.config
+
+  // 如果不是 401 或者已经在刷新中或者没有重试过
+  if (!error.response || error.response.status !== 401 || isRefreshing || originalRequest._retry) {
+    return Promise.reject(error)
+  }
+
+  originalRequest._retry = true
+
+  if (!isRefreshing) {
+    isRefreshing = true
+
+    return refreshToken().then(newToken => {
+      isRefreshing = false
+
+      if (newToken) {
+        // 更新原请求的 token 并重试
+        originalRequest.headers.Authorization = `Bearer ${newToken}`
+
+        // 处理队列中的请求
+        requestsQueue.forEach(cb => cb(newToken))
+        requestsQueue = []
+
+        return request(originalRequest)
+      }
+
+      return Promise.reject(error)
+    }).catch(() => {
+      isRefreshing = false
+      requestsQueue = []
+      return Promise.reject(error)
+    })
+  }
+
+  // 如果正在刷新，把请求加入队列
+  return new Promise((resolve, reject) => {
+    requestsQueue.push((token) => {
+      originalRequest.headers.Authorization = `Bearer ${token}`
+      resolve(request(originalRequest))
+    })
+  })
+}
 
 /**
  * 响应拦截器
@@ -72,13 +147,18 @@ request.interceptors.response.use(
     // 1. 关闭Loading
     finishLoading()
 
-    // 2. 网络错误或超时
+    // 2. 处理 401 错误 - 尝试刷新 token
+    if (error.response?.status === 401) {
+      return handleTokenRefresh(error)
+    }
+
+    // 3. 网络错误或超时
     if (!error.response) {
       handleNetworkError(error)
       return Promise.reject(error)
     }
 
-    // 3. HTTP错误状态码
+    // 4. HTTP错误状态码
     handleHttpError(error)
     return Promise.reject(error)
   }

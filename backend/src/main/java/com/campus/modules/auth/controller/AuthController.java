@@ -45,4 +45,18 @@ public class AuthController {
         authService.logout();
         return Result.success();
     }
+
+    @Operation(summary = "刷新Token")
+    @PostMapping("/refresh")
+    public Result<String> refreshToken(@RequestHeader("Authorization") String authorization) {
+        if (authorization == null || !authorization.startsWith("Bearer ")) {
+            return Result.error("无效的令牌");
+        }
+        String token = authorization.substring(7);
+        String newToken = authService.refreshToken(token);
+        if (newToken != null) {
+            return Result.success(newToken).setToken(newToken);
+        }
+        return Result.error("令牌已过期，请重新登录");
+    }
 }
