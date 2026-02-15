@@ -123,20 +123,18 @@
                 <div class="image-overlay">
                   <el-button
                     type="primary"
-                    circle
-                    :icon="View"
                     size="small"
-                    title="预览"
                     @click.stop="handlePreview(file)"
-                  />
+                  >
+                    预览
+                  </el-button>
                   <el-button
                     type="danger"
-                    circle
-                    :icon="Delete"
                     size="small"
-                    title="删除"
                     @click.stop="handleDelete(file)"
-                  />
+                  >
+                    删除
+                  </el-button>
                 </div>
                 <div class="select-checkbox" v-if="activeTab === 'unused'">
                   <el-checkbox
