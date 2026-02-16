@@ -20,15 +20,23 @@
       <router-view />
     </div>
 
-    <!-- 浮动发布按钮 - 移动端和PC端共用 -->
+    <!-- PC端固定发布按钮 - 始终显示在视口右下角 -->
     <button
-      v-if="showFloatingButton"
-      class="fab-button"
-      :class="{ 'fab-button--pc': showSidebar }"
+      v-if="showFloatingButton && showSidebar"
+      class="fab-button-pc"
       @click="onCreate"
     >
-      <span v-if="showSidebar" class="fab-button__icon">+</span>
-      <span>{{ showSidebar ? '发布' : '发布' }}</span>
+      <span class="fab-button-pc__icon">+</span>
+      <span>发布</span>
+    </button>
+
+    <!-- 移动端浮动发布按钮 -->
+    <button
+      v-if="showFloatingButton && !showSidebar"
+      class="fab-button"
+      @click="onCreate"
+    >
+      发布
     </button>
 
     <!-- 移动端底部TabBar -->
@@ -254,9 +262,10 @@ onUnmounted(() => {
 
 .main-layout__content--with-sidebar {
   padding-left: var(--sidebar-width);
+  position: relative;
 }
 
-/* 浮动发布按钮样式 */
+/* 移动端浮动发布按钮样式 */
 .fab-button {
   position: fixed;
   right: var(--space-4);
@@ -274,10 +283,6 @@ onUnmounted(() => {
   cursor: pointer;
   transition: all var(--transition-normal);
   z-index: var(--z-fixed);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: var(--space-1);
 }
 
 .fab-button:active {
@@ -286,26 +291,36 @@ onUnmounted(() => {
   box-shadow: var(--shadow-md);
 }
 
-/* PC端发布按钮样式 */
-.fab-button--pc {
-  right: calc(var(--sidebar-width) + var(--space-6));
+/* PC端固定发布按钮 - 始终显示在视口右下角 */
+.fab-button-pc {
+  position: fixed;
+  right: var(--space-6);
   bottom: var(--space-6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
   min-width: 100px;
-  height: 48px;
+  height: 44px;
   padding: 0 var(--space-5);
   font-size: var(--text-base);
   font-weight: var(--font-weight-semibold);
-  border-radius: var(--radius-lg);
+  color: var(--text-inverse);
   background: linear-gradient(135deg, var(--color-primary-600) 0%, var(--color-primary-700) 100%);
+  border: none;
+  border-radius: var(--radius-lg);
   box-shadow: 0 4px 16px rgba(37, 99, 235, 0.3);
+  cursor: pointer;
+  transition: all var(--transition-normal);
+  z-index: var(--z-fixed);
 }
 
-.fab-button--pc:hover {
+.fab-button-pc:hover {
   transform: translateY(-2px);
   box-shadow: 0 6px 20px rgba(37, 99, 235, 0.4);
 }
 
-.fab-button__icon {
+.fab-button-pc__icon {
   font-size: var(--text-lg);
   font-weight: var(--font-weight-bold);
 }
