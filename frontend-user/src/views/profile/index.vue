@@ -9,7 +9,7 @@
         </div>
         <div class="profile-user-details">
           <h2 class="profile-name">{{ userName }}</h2>
-          <p class="profile-phone">{{ userPhone }}</p>
+          <p class="profile-phone" :class="{ 'profile-phone--clickable': userStore.userInfo?.phone }" @click="togglePhone">{{ userPhone }}</p>
         </div>
         
         <!-- 未登录时显示登录按钮 -->
@@ -154,12 +154,22 @@ onMounted(async () => {
 })
 
 const userName = computed(() => userStore.userInfo?.nickname || '校园小助手');
+const showFullPhone = ref(false);
 const userPhone = computed(() => {
   if (userStore.userInfo?.phone) {
+    if (showFullPhone.value) {
+      return userStore.userInfo.phone;
+    }
     return userStore.userInfo.phone.replace(/(\d{3})\d{4}(\d{4})/, '$1****$2');
   }
   return '未登录';
 });
+
+function togglePhone() {
+  if (userStore.userInfo?.phone) {
+    showFullPhone.value = !showFullPhone.value;
+  }
+}
 
 const dialogVisible = ref(false);
 const deactivateDialogVisible = ref(false);
@@ -274,6 +284,15 @@ async function confirmDeactivate() {
   font-size: var(--text-sm);
   color: var(--text-secondary);
   margin: 0;
+}
+
+.profile-phone--clickable {
+  cursor: pointer;
+  user-select: none;
+}
+
+.profile-phone--clickable:active {
+  opacity: 0.7;
 }
 
 .profile-login-btn {
