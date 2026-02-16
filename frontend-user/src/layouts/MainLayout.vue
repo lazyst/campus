@@ -17,13 +17,22 @@
       :class="{ 'main-layout__content--with-sidebar': showSidebar }"
     >
       <router-view />
+      
+      <!-- PC端发布按钮 - 位于内容区域内部 -->
+      <button
+        v-if="showFloatingButton && showSidebar"
+        class="fab-button-pc"
+        @click="onCreate"
+      >
+        <span class="fab-button-pc__icon">+</span>
+        <span class="fab-button-pc__text">发布</span>
+      </button>
     </div>
 
-    <!-- 浮动发布按钮 -->
+    <!-- 移动端浮动发布按钮 -->
     <button
-      v-if="showFloatingButton"
+      v-if="showFloatingButton && !showSidebar"
       class="fab-button"
-      :class="{ 'fab-button--with-sidebar': showSidebar }"
       @click="onCreate"
     >
       发布
@@ -251,7 +260,7 @@ onUnmounted(() => {
   padding-left: var(--sidebar-width);
 }
 
-/* 浮动发布按钮样式 */
+/* 移动端浮动发布按钮样式 */
 .fab-button {
   position: fixed;
   right: var(--space-4);
@@ -277,14 +286,46 @@ onUnmounted(() => {
   box-shadow: var(--shadow-md);
 }
 
-.fab-button--with-sidebar {
+/* PC端发布按钮 - 位于内容区域右下角 */
+.fab-button-pc {
+  position: absolute;
+  right: var(--space-6);
   bottom: var(--space-6);
-  right: calc(var(--sidebar-width) + var(--space-6));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  min-width: 100px;
+  height: 44px;
+  padding: 0 var(--space-5);
+  font-size: var(--text-base);
+  font-weight: var(--font-weight-semibold);
+  color: var(--text-inverse);
+  background: linear-gradient(135deg, var(--color-primary-600) 0%, var(--color-primary-700) 100%);
+  border: none;
+  border-radius: var(--radius-lg);
+  box-shadow: 0 4px 16px rgba(37, 99, 235, 0.3);
+  cursor: pointer;
+  transition: all var(--transition-normal);
+  z-index: var(--z-fixed);
 }
 
-@media (min-width: 1024px) {
-  .fab-button--with-sidebar {
-    right: calc(var(--sidebar-width) + var(--space-6));
-  }
+.fab-button-pc:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(37, 99, 235, 0.4);
+}
+
+.fab-button-pc:active {
+  transform: translateY(0);
+}
+
+.fab-button-pc__icon {
+  font-size: var(--text-lg);
+  font-weight: var(--font-weight-bold);
+  line-height: 1;
+}
+
+.fab-button-pc__text {
+  letter-spacing: 0.02em;
 }
 </style>
