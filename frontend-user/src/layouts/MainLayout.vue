@@ -12,6 +12,14 @@
       @change="onTabChange"
     />
 
+    <!-- 主内容区域 -->
+    <div
+      class="main-layout__content"
+      :class="{ 'main-layout__content--with-sidebar': showSidebar }"
+    >
+      <router-view />
+    </div>
+
     <!-- 浮动发布按钮 - 移动端和PC端共用 -->
     <button
       v-if="showFloatingButton"
