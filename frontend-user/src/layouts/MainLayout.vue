@@ -12,30 +12,15 @@
       @change="onTabChange"
     />
 
-    <div
-      class="main-layout__content"
-      :class="{ 'main-layout__content--with-sidebar': showSidebar }"
-    >
-      <router-view class="main-layout__router-view" />
-      
-      <!-- PC端发布按钮 - 位于内容区域右下角 -->
-      <button
-        v-if="showFloatingButton && showSidebar"
-        class="fab-button-pc"
-        @click="onCreate"
-      >
-        <span class="fab-button-pc__icon">+</span>
-        <span class="fab-button-pc__text">发布</span>
-      </button>
-    </div>
-
-    <!-- 移动端浮动发布按钮 -->
+    <!-- 浮动发布按钮 - 移动端和PC端共用 -->
     <button
-      v-if="showFloatingButton && !showSidebar"
+      v-if="showFloatingButton"
       class="fab-button"
+      :class="{ 'fab-button--pc': showSidebar }"
       @click="onCreate"
     >
-      发布
+      <span v-if="showSidebar" class="fab-button__icon">+</span>
+      <span>{{ showSidebar ? '发布' : '发布' }}</span>
     </button>
 
     <!-- 移动端底部TabBar -->
@@ -140,6 +125,9 @@ const activeTab = computed(() => {
 
 // Compute whether to show tabbar
 const showTabbar = computed(() => {
+  // PC端隐藏底部TabBar
+  if (showSidebar.value) return false
+  
   const routeName = route.name as string || ''
   return !hiddenTabbarRoutes.includes(routeName)
 })
@@ -256,17 +244,11 @@ onUnmounted(() => {
   transition: padding-left var(--transition-normal);
 }
 
-.main-layout__router-view {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-}
-
 .main-layout__content--with-sidebar {
   padding-left: var(--sidebar-width);
 }
 
-/* 移动端浮动发布按钮样式 */
+/* 浮动发布按钮样式 */
 .fab-button {
   position: fixed;
   right: var(--space-4);
@@ -284,6 +266,10 @@ onUnmounted(() => {
   cursor: pointer;
   transition: all var(--transition-normal);
   z-index: var(--z-fixed);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-1);
 }
 
 .fab-button:active {
@@ -292,46 +278,27 @@ onUnmounted(() => {
   box-shadow: var(--shadow-md);
 }
 
-/* PC端发布按钮 - 位于内容区域右下角，随滚动移动 */
-.fab-button-pc {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: var(--space-2);
-  margin-top: auto;
-  margin-left: auto;
+/* PC端发布按钮样式 */
+.fab-button--pc {
+  right: calc(var(--sidebar-width) + var(--space-6));
+  bottom: var(--space-6);
   min-width: 100px;
-  height: 44px;
+  height: 48px;
   padding: 0 var(--space-5);
   font-size: var(--text-base);
   font-weight: var(--font-weight-semibold);
-  color: var(--text-inverse);
-  background: linear-gradient(135deg, var(--color-primary-600) 0%, var(--color-primary-700) 100%);
-  border: none;
   border-radius: var(--radius-lg);
+  background: linear-gradient(135deg, var(--color-primary-600) 0%, var(--color-primary-700) 100%);
   box-shadow: 0 4px 16px rgba(37, 99, 235, 0.3);
-  cursor: pointer;
-  transition: all var(--transition-normal);
-  z-index: var(--z-fixed);
-  align-self: flex-end;
 }
 
-.fab-button-pc:hover {
+.fab-button--pc:hover {
   transform: translateY(-2px);
   box-shadow: 0 6px 20px rgba(37, 99, 235, 0.4);
 }
 
-.fab-button-pc:active {
-  transform: translateY(0);
-}
-
-.fab-button-pc__icon {
+.fab-button__icon {
   font-size: var(--text-lg);
   font-weight: var(--font-weight-bold);
-  line-height: 1;
-}
-
-.fab-button-pc__text {
-  letter-spacing: 0.02em;
 }
 </style>
