@@ -97,7 +97,7 @@ export const useUserStore = defineStore('user', () => {
       console.warn('登出API调用失败:', e)
     }
     removeToken()
-    router.push('/login')
+    // 留在当前页面，不跳转
   }
 
   async function fetchUserInfo() {
