@@ -5,67 +5,69 @@
       <h1 class="page-title">消息</h1>
     </div>
 
-    <!-- 未登录状态 -->
-    <div v-if="!isLoggedIn" class="empty-state">
-      <div class="empty-icon">
-        <svg width="64" height="64" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <path d="M20 4H4C2.9 4 2 4.9 2 6V18C2 19.1 2.9 20 4 20H20C21.1 20 22 19.1 22 18V6C22 4.9 21.1 4 20 4ZM20 6L12 11L4 6V6L12 11L20 6V6Z" fill="currentColor"/>
-          <path d="M12 13C13.66 13 15 12.34 15 11V5C15 3.34 13.66 3 12 3C10.34 3 9 3.34 9 5V11C9 12.34 10.34 13 12 13Z" fill="currentColor"/>
-        </svg>
-      </div>
-      <p class="empty-text">登录后查看消息</p>
-      <button class="empty-btn" @click="goToLogin">去登录</button>
-    </div>
-
-    <!-- 加载状态 -->
-    <div v-else-if="loading" class="loading-state">
-      <div class="loading-spinner"></div>
-      <p class="loading-text">加载中...</p>
-    </div>
-
-    <!-- 错误状态 -->
-    <div v-else-if="error" class="error-state">
-      <p class="error-text">{{ error }}</p>
-      <button class="error-btn" @click="retryLoad">重试</button>
-    </div>
-
-    <!-- 空状态 -->
-    <div v-else-if="conversations.length === 0" class="empty-state">
-      <div class="empty-icon">
-        <svg width="64" height="64" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <path d="M20 4H4C2.9 4 2 4.9 2 6V18C2 19.1 2.9 20 4 20H20C21.1 20 22 19.1 22 18V6C22 4.9 21.1 4 20 4ZM20 6L12 11L4 6V6L12 11L20 6V6Z" fill="currentColor"/>
-        </svg>
-      </div>
-      <p class="empty-text">暂无消息</p>
-      <p class="empty-hint">快去和别人聊天吧~</p>
-    </div>
-
-    <!-- 消息列表 -->
-    <div v-else class="messages-list">
-      <div
-        v-for="conversation in conversations"
-        :key="conversation.id"
-        class="message-item"
-        @click="goToChat(conversation)"
-      >
-        <div class="message-avatar-container">
-          <div class="message-avatar">
-            <span>{{ conversation.otherUserNickname?.charAt(0) || '匿' }}</span>
-          </div>
-          <span v-if="conversation.unreadCount > 0" class="message-unread-badge">
-            {{ conversation.unreadCount > 99 ? '99+' : conversation.unreadCount }}
-          </span>
+    <ResponsiveContainer>
+      <!-- 未登录状态 -->
+      <div v-if="!isLoggedIn" class="empty-state">
+        <div class="empty-icon">
+          <svg width="64" height="64" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M20 4H4C2.9 4 2 4.9 2 6V18C2 19.1 2.9 20 4 20H20C21.1 20 22 19.1 22 18V6C22 4.9 21.1 4 20 4ZM20 6L12 11L4 6V6L12 11L20 6V6Z" fill="currentColor"/>
+            <path d="M12 13C13.66 13 15 12.34 15 11V5C15 3.34 13.66 3 12 3C10.34 3 9 3.34 9 5V11C9 12.34 10.34 13 12 13Z" fill="currentColor"/>
+          </svg>
         </div>
+        <p class="empty-text">登录后查看消息</p>
+        <button class="empty-btn" @click="goToLogin">去登录</button>
+      </div>
 
-        <div class="message-content">
-          <div class="message-header">
-            <span class="message-sender">{{ conversation.otherUserNickname || '未知用户' }}</span>
-            <span class="message-time">{{ formatTime(conversation.lastMessageTime) }}</span>
+      <!-- 加载状态 -->
+      <div v-else-if="loading" class="loading-state">
+        <div class="loading-spinner"></div>
+        <p class="loading-text">加载中...</p>
+      </div>
+
+      <!-- 错误状态 -->
+      <div v-else-if="error" class="error-state">
+        <p class="error-text">{{ error }}</p>
+        <button class="error-btn" @click="retryLoad">重试</button>
+      </div>
+
+      <!-- 空状态 -->
+      <div v-else-if="conversations.length === 0" class="empty-state">
+        <div class="empty-icon">
+          <svg width="64" height="64" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M20 4H4C2.9 4 2 4.9 2 6V18C2 19.1 2.9 20 4 20H20C21.1 20 22 19.1 22 18V6C22 4.9 21.1 4 20 4ZM20 6L12 11L4 6V6L12 11L20 6V6Z" fill="currentColor"/>
+          </svg>
+        </div>
+        <p class="empty-text">暂无消息</p>
+        <p class="empty-hint">快去和别人聊天吧~</p>
+      </div>
+
+      <!-- 消息列表 -->
+      <div v-else class="messages-list">
+        <div
+          v-for="conversation in conversations"
+          :key="conversation.id"
+          class="message-item"
+          @click="goToChat(conversation)"
+        >
+          <div class="message-avatar-container">
+            <div class="message-avatar">
+              <span>{{ conversation.otherUserNickname?.charAt(0) || '匿' }}</span>
+            </div>
+            <span v-if="conversation.unreadCount > 0" class="message-unread-badge">
+              {{ conversation.unreadCount > 99 ? '99+' : conversation.unreadCount }}
+            </span>
           </div>
-          <p class="message-preview">{{ formatMessagePreview(conversation.lastMessageContent, conversation.lastMessageType) }}</p>
+
+          <div class="message-content">
+            <div class="message-header">
+              <span class="message-sender">{{ conversation.otherUserNickname || '未知用户' }}</span>
+              <span class="message-time">{{ formatTime(conversation.lastMessageTime) }}</span>
+            </div>
+            <p class="message-preview">{{ formatMessagePreview(conversation.lastMessageContent, conversation.lastMessageType) }}</p>
+          </div>
         </div>
       </div>
-    </div>
+    </ResponsiveContainer>
   </div>
 </template>
 
@@ -77,6 +79,7 @@ import { getConversations } from '@/api/modules/conversation';
 import { showToast } from '@/services/toastService';
 import dayjs from 'dayjs';
 import 'dayjs/locale/zh-cn';
+import ResponsiveContainer from '@/components/layout/ResponsiveContainer.vue';
 
 dayjs.locale('zh-cn');
 
@@ -329,6 +332,12 @@ onUnmounted(() => {
   min-height: 100vh;
   background-color: var(--bg-page);
   padding-bottom: var(--tabbar-height);
+}
+
+@media (min-width: 1024px) {
+  .messages-page {
+    padding-bottom: var(--space-6);
+  }
 }
 
 .page-header {

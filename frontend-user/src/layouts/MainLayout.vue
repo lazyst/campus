@@ -3,18 +3,33 @@
     class="main-layout"
     :class="{ 'main-layout--with-top-padding': showTopPadding }"
   >
-    <router-view class="main-layout__content" />
+    <!-- 桌面端侧边栏导航 -->
+    <Sidebar
+      v-show="showSidebar"
+      :model-value="activeTab"
+      :items="tabItems"
+      :unread-count="totalUnreadCount"
+      @change="onTabChange"
+    />
+
+    <div
+      class="main-layout__content"
+      :class="{ 'main-layout__content--with-sidebar': showSidebar }"
+    >
+      <router-view />
+    </div>
 
     <!-- 浮动发布按钮 -->
     <button
       v-if="showFloatingButton"
       class="fab-button"
+      :class="{ 'fab-button--with-sidebar': showSidebar }"
       @click="onCreate"
     >
       发布
     </button>
 
-    <!-- 自定义 TabBar -->
+    <!-- 移动端底部TabBar -->
     <TabBar
       v-show="showTabbar"
       :model-value="activeTab"
@@ -26,11 +41,12 @@
 </template>
 
 <script setup lang="ts">
-import { computed, inject, ref } from 'vue'
+import { computed, inject, ref, onMounted, onUnmounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useUserStore } from '@/stores/user'
 import { showLoginConfirm } from '@/stores/loginConfirm'
 import TabBar from '../components/navigation/TabBar.vue'
+import Sidebar from '../components/navigation/Sidebar.vue'
 
 interface TabItem {
   name: string
@@ -40,6 +56,15 @@ interface TabItem {
 const router = useRouter()
 const route = useRoute()
 const userStore = useUserStore()
+
+// 响应式状态
+const windowWidth = ref(typeof window !== 'undefined' ? window.innerWidth : 1024)
+
+// 响应式断点
+const breakpoint = 1024
+
+// 是否显示桌面端侧边栏
+const showSidebar = computed(() => windowWidth.value >= breakpoint)
 
 // 从 App.vue 注入全局未读数
 const totalUnreadCount = inject<ref<number>>('totalUnreadCount', ref(0))
@@ -187,6 +212,19 @@ function onCreate() {
     router.push('/forum/create')
   }
 }
+
+// 窗口大小变化处理
+function handleResize() {
+  windowWidth.value = window.innerWidth
+}
+
+onMounted(() => {
+  window.addEventListener('resize', handleResize)
+})
+
+onUnmounted(() => {
+  window.removeEventListener('resize', handleResize)
+})
 </script>
 
 <style scoped>
@@ -206,6 +244,11 @@ function onCreate() {
   display: flex;
   flex-direction: column;
   overflow-y: auto;
+  transition: padding-left var(--transition-normal);
+}
+
+.main-layout__content--with-sidebar {
+  padding-left: var(--sidebar-width);
 }
 
 /* 浮动发布按钮样式 */
@@ -232,5 +275,16 @@ function onCreate() {
   transform: scale(0.95);
   background-color: var(--color-primary-800);
   box-shadow: var(--shadow-md);
+}
+
+.fab-button--with-sidebar {
+  bottom: var(--space-6);
+  right: calc(var(--sidebar-width) + var(--space-6));
+}
+
+@media (min-width: 1024px) {
+  .fab-button--with-sidebar {
+    right: calc(var(--sidebar-width) + var(--space-6));
+  }
 }
 </style>

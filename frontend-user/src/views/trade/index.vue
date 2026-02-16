@@ -19,38 +19,39 @@
       </div>
     </div>
 
-    <!-- 加载中 -->
-    <div v-if="loading && products.length === 0" class="loading-state">
-      <div class="loading-spinner"></div>
-      <p class="loading-text">加载中...</p>
-    </div>
-
-    <!-- 错误状态 -->
-    <div v-else-if="error" class="error-state">
-      <p class="error-text">{{ error }}</p>
-      <button class="error-btn" @click="loadItems">重试</button>
-    </div>
-
-    <!-- 空状态 -->
-    <div v-else-if="products.length === 0" class="empty-state">
-      <div class="empty-icon">
-        <svg width="80" height="80" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <path d="M20 4H4C2.9 4 2 4.9 2 6V18C2 19.1 2.9 20 4 20H20C21.1 20 22 19.1 22 18V6C22 4.9 21.1 4 20 4Z" stroke="currentColor" stroke-width="1.5"/>
-          <path d="M12 11L8 7M12 11L16 7M12 11L12 15" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
-        </svg>
+    <ResponsiveContainer size="full">
+      <!-- 加载中 -->
+      <div v-if="loading && products.length === 0" class="loading-state">
+        <div class="loading-spinner"></div>
+        <p class="loading-text">加载中...</p>
       </div>
-      <p class="empty-text">暂无闲置物品</p>
-      <p class="empty-hint">快去发布一个吧~</p>
-    </div>
 
-    <!-- 瀑布流布局 -->
-    <div v-else class="waterfall-container">
-      <div 
-        v-for="product in products" 
-        :key="product.id"
-        class="waterfall-item"
-        @click="goToProductDetail(product.id)"
-      >
+      <!-- 错误状态 -->
+      <div v-else-if="error" class="error-state">
+        <p class="error-text">{{ error }}</p>
+        <button class="error-btn" @click="loadItems">重试</button>
+      </div>
+
+      <!-- 空状态 -->
+      <div v-else-if="products.length === 0" class="empty-state">
+        <div class="empty-icon">
+          <svg width="80" height="80" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M20 4H4C2.9 4 2 4.9 2 6V18C2 19.1 2.9 20 4 20H20C21.1 20 22 19.1 22 18V6C22 4.9 21.1 4 20 4Z" stroke="currentColor" stroke-width="1.5"/>
+            <path d="M12 11L8 7M12 11L16 7M12 11L12 15" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+          </svg>
+        </div>
+        <p class="empty-text">暂无闲置物品</p>
+        <p class="empty-hint">快去发布一个吧~</p>
+      </div>
+
+      <!-- 瀑布流布局 -->
+      <div v-else class="waterfall-container">
+        <div 
+          v-for="product in products" 
+          :key="product.id"
+          class="waterfall-item"
+          @click="goToProductDetail(product.id)"
+        >
         <!-- 商品图片 -->
         <div class="waterfall-image">
           <img v-if="product.image" :src="product.image" :alt="product.title" />
@@ -131,6 +132,7 @@ import { getItems } from '@/api/modules/item';
 import { checkItemCollected, toggleItemCollect } from '@/api/modules/itemCollect';
 import { showToast } from '@/services/toastService';
 import BottomNav from '@/components/BottomNav.vue';
+import ResponsiveContainer from '@/components/layout/ResponsiveContainer.vue';
 import { useUserStore } from '@/stores/user';
 import { getImageUrl } from '@/utils/imageUrl';
 
@@ -334,6 +336,12 @@ onMounted(() => {
   min-height: 100vh;
   background: linear-gradient(180deg, #F8FAFC 0%, #F1F5F9 100%);
   padding-bottom: 100px;
+}
+
+@media (min-width: 1024px) {
+  .trade-page {
+    padding-bottom: var(--space-6);
+  }
 }
 
 /* 页面标题区域 */

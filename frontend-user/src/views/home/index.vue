@@ -1,12 +1,12 @@
 <template>
   <div class="home-page">
-    <!-- 状态栏 -->
-    <div class="status-bar">
+    <!-- 状态栏 - 移动端显示 -->
+    <div class="status-bar status-bar--mobile">
       <span class="time">9:41</span>
       <div class="status-icons">
-        <span>📶</span>
-        <span>📡</span>
-        <span>🔋</span>
+        <span class="status-icon">📶</span>
+        <span class="status-icon">📡</span>
+        <span class="status-icon">🔋</span>
       </div>
     </div>
 
@@ -17,72 +17,74 @@
         @search="handleSearch"
       />
       <div class="message-btn" @click="goToMessages">
-        <span>💬</span>
+        <span class="message-icon">💬</span>
       </div>
     </div>
 
-    <!-- 分类导航 -->
-    <div class="categories-section">
-      <CategoryCard 
-        v-for="category in categories" 
-        :key="category.name"
-        :name="category.name"
-        :color="category.color"
-        size="medium"
-        @click="handleCategoryClick(category.name)"
-      />
-    </div>
-
-    <!-- 帖子列表 -->
-    <div ref="listRef" class="posts-section">
-      <div class="section-header">
-        <h2>{{ isSearching ? '搜索结果' : '最新帖子' }}</h2>
-        <span v-if="searchQuery" class="clear-search-btn" @click="clearSearch">清除 ›</span>
-      </div>
-
-      <!-- 搜索中状态 -->
-      <div v-if="loading && posts.length === 0" class="posts-loading">
-        <div class="loading-spinner"></div>
-        <p class="loading-text">加载中...</p>
-      </div>
-
-      <!-- 无结果状态 -->
-      <div v-else-if="posts.length === 0" class="posts-empty">
-        <p class="empty-text">{{ searchQuery ? '未找到相关帖子' : '暂无帖子' }}</p>
-      </div>
-
-      <!-- 帖子列表 -->
-      <div v-else class="posts-list">
-        <PostCard
-          v-for="post in posts"
-          :key="post.id"
-          :id="post.id"
-          :author="post.author"
-          :avatar="post.avatar"
-          :title="post.title"
-          :excerpt="post.excerpt"
-          :time="post.time"
-          :tags="post.tags"
-          :likes="post.likes"
-          :comments="post.comments"
-          :views="post.views"
-          @click="goToPostDetail"
+    <ResponsiveContainer>
+      <!-- 分类导航 -->
+      <div class="categories-section">
+        <CategoryCard 
+          v-for="category in categories" 
+          :key="category.name"
+          :name="category.name"
+          :color="category.color"
+          size="medium"
+          @click="handleCategoryClick(category.name)"
         />
       </div>
 
-      <!-- 加载中 -->
-      <div v-if="loading && posts.length > 0" class="posts-loading-more">
-        <span class="loading-text">加载中...</span>
-      </div>
+      <!-- 帖子列表 -->
+      <div ref="listRef" class="posts-section">
+        <div class="section-header">
+          <h2>{{ isSearching ? '搜索结果' : '最新帖子' }}</h2>
+          <span v-if="searchQuery" class="clear-search-btn" @click="clearSearch">清除 ›</span>
+        </div>
 
-      <!-- 已加载完 -->
-      <div v-if="finished && posts.length > 0" class="posts-finished">
-        <span class="finished-text">没有更多了</span>
-      </div>
+        <!-- 搜索中状态 -->
+        <div v-if="loading && posts.length === 0" class="posts-loading">
+          <div class="loading-spinner"></div>
+          <p class="loading-text">加载中...</p>
+        </div>
 
-      <!-- 无限滚动 sentinel -->
-      <div ref="sentinelRef" class="scroll-sentinel"></div>
-    </div>
+        <!-- 无结果状态 -->
+        <div v-else-if="posts.length === 0" class="posts-empty">
+          <p class="empty-text">{{ searchQuery ? '未找到相关帖子' : '暂无帖子' }}</p>
+        </div>
+
+        <!-- 帖子列表 -->
+        <div v-else class="posts-list">
+          <PostCard
+            v-for="post in posts"
+            :key="post.id"
+            :id="post.id"
+            :author="post.author"
+            :avatar="post.avatar"
+            :title="post.title"
+            :excerpt="post.excerpt"
+            :time="post.time"
+            :tags="post.tags"
+            :likes="post.likes"
+            :comments="post.comments"
+            :views="post.views"
+            @click="goToPostDetail"
+          />
+        </div>
+
+        <!-- 加载中 -->
+        <div v-if="loading && posts.length > 0" class="posts-loading-more">
+          <span class="loading-text">加载中...</span>
+        </div>
+
+        <!-- 已加载完 -->
+        <div v-if="finished && posts.length > 0" class="posts-finished">
+          <span class="finished-text">没有更多了</span>
+        </div>
+
+        <!-- 无限滚动 sentinel -->
+        <div ref="sentinelRef" class="scroll-sentinel"></div>
+      </div>
+    </ResponsiveContainer>
 
     <!-- 底部导航 -->
     <BottomNav 
@@ -93,7 +95,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted } from 'vue';
+import { ref, onMounted, onUnmounted, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import { useInfiniteScroll } from '@vueuse/core';
 import { getPosts, searchPosts } from '@/api/modules/post';
@@ -102,6 +104,7 @@ import BottomNav from '@/components/BottomNav.vue';
 import SearchBar from '@/components/SearchBar.vue';
 import CategoryCard from '@/components/CategoryCard.vue';
 import PostCard from '@/components/PostCard.vue';
+import ResponsiveContainer from '@/components/layout/ResponsiveContainer.vue';
 
 const router = useRouter();
 
@@ -273,7 +276,6 @@ onUnmounted(() => {
 .home-page {
   min-height: 100vh;
   background: #F8FAFC;
-  /* 底部导航栏高度 + 安全区域 + 额外空间 */
   padding-bottom: calc(var(--tabbar-height) + var(--page-safe-bottom, 16px));
 }
 
@@ -288,10 +290,28 @@ onUnmounted(() => {
   color: #1E293B;
 }
 
+.status-bar--mobile {
+  display: flex;
+}
+
+@media (min-width: 1024px) {
+  .status-bar--mobile {
+    display: none;
+  }
+
+  .home-page {
+    padding-bottom: var(--space-6);
+  }
+}
+
 .status-icons {
   display: flex;
   gap: 4px;
   font-size: 12px;
+}
+
+.status-icon {
+  display: inline-block;
 }
 
 .search-section {
@@ -318,12 +338,23 @@ onUnmounted(() => {
   cursor: pointer;
 }
 
+.message-icon {
+  display: inline-block;
+}
+
 .categories-section {
   display: flex;
   gap: 12px;
   padding: 16px;
   background: white;
   overflow-x: auto;
+}
+
+@media (min-width: 768px) {
+  .categories-section {
+    flex-wrap: wrap;
+    justify-content: center;
+  }
 }
 
 .posts-section {

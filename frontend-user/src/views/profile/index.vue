@@ -2,30 +2,33 @@
   <div class="profile-page">
     <!-- 用户信息头部 -->
     <div class="profile-header">
-      <div class="profile-user-info">
-        <div class="profile-avatar">
-          <img v-if="userStore.userInfo?.avatar" :src="getImageUrl(userStore.userInfo.avatar)" alt="头像" />
-          <span v-else>{{ userName.charAt(0) }}</span>
-        </div>
-        <div class="profile-user-details">
-          <h2 class="profile-name">{{ userName }}</h2>
-          <div class="profile-phone-wrapper">
-            <p class="profile-phone">{{ userPhone }}</p>
-            <span v-if="userStore.userInfo?.phone" class="profile-phone-toggle" @click="togglePhone">
-              {{ showFullPhone ? '隐藏' : '显示' }}
-            </span>
+      <ResponsiveContainer>
+        <div class="profile-user-info">
+          <div class="profile-avatar">
+            <img v-if="userStore.userInfo?.avatar" :src="getImageUrl(userStore.userInfo.avatar)" alt="头像" />
+            <span v-else>{{ userName.charAt(0) }}</span>
+          </div>
+          <div class="profile-user-details">
+            <h2 class="profile-name">{{ userName }}</h2>
+            <div class="profile-phone-wrapper">
+              <p class="profile-phone">{{ userPhone }}</p>
+              <span v-if="userStore.userInfo?.phone" class="profile-phone-toggle" @click="togglePhone">
+                {{ showFullPhone ? '隐藏' : '显示' }}
+              </span>
+            </div>
+          </div>
+          
+          <!-- 未登录时显示登录按钮 -->
+          <div v-if="!userStore.token" class="profile-login-btn" @click="goToLogin">
+            去登录
           </div>
         </div>
-        
-        <!-- 未登录时显示登录按钮 -->
-        <div v-if="!userStore.token" class="profile-login-btn" @click="goToLogin">
-          去登录
-        </div>
-      </div>
+      </ResponsiveContainer>
     </div>
 
     <!-- 菜单列表 -->
     <div class="profile-menu" :class="{ 'profile-menu--disabled': !userStore.token }">
+      <ResponsiveContainer>
       <div class="profile-menu-group">
         <div class="profile-menu-title">账号管理</div>
         <div 
@@ -99,6 +102,7 @@
         @confirm="confirmDeactivate"
         @update:visible="deactivateDialogVisible = $event"
       />
+      </ResponsiveContainer>
     </div>
   </div>
 </template>
@@ -108,6 +112,7 @@ import { computed, ref, onMounted, inject, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import { useUserStore } from '@/stores/user';
 import Dialog from '@/components/interactive/Dialog.vue';
+import ResponsiveContainer from '@/components/layout/ResponsiveContainer.vue';
 import { getImageUrl } from '@/utils/imageUrl';
 import { getUnreadCount } from '@/api/modules/notification';
 import { deactivateAccount } from '@/api/modules/user';

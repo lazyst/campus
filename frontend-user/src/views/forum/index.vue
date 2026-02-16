@@ -1,7 +1,9 @@
 <template>
-  <div class="forum-page min-h-screen bg-gray-100">
+  <div class="forum-page">
     <NavBar title="论坛" :left-arrow="true" @click-left="onClickLeft" />
-    <ForumList class="forum-page__list" />
+    <ResponsiveContainer>
+      <ForumList class="forum-page__list" />
+    </ResponsiveContainer>
   </div>
 </template>
 
@@ -9,6 +11,7 @@
 import { useRouter } from 'vue-router'
 import NavBar from '@/components/navigation/NavBar.vue'
 import ForumList from './components/ForumList.vue'
+import ResponsiveContainer from '@/components/layout/ResponsiveContainer.vue'
 
 const router = useRouter()
 
@@ -28,8 +31,13 @@ function onClickLeft() {
 
 .forum-page__list {
   flex: 1;
-  /* 确保列表底部不被 TabBar 遮挡 - 使用 padding 替代 margin */
   padding-bottom: calc(var(--tabbar-height) + var(--page-safe-bottom, 16px));
   overflow-y: auto;
+}
+
+@media (min-width: 1024px) {
+  .forum-page__list {
+    padding-bottom: var(--space-6);
+  }
 }
 </style>

@@ -72,6 +72,19 @@ wsl -d Ubuntu-24.04 -- docker stop campus-mysql campus-redis-master
 
 ## Architecture Patterns
 
+### Responsive Design (用户端)
+用户端采用移动端优先的响应式设计：
+
+| 断点 | 宽度 | 布局 |
+|------|------|------|
+| Mobile | ≤640px | 底部TabBar导航，全屏宽度 |
+| Tablet | 768-1023px | 底部TabBar导航，内容居中(最大480px) |
+| Desktop | ≥1024px | 左侧边栏导航，内容居中(最大640px) |
+
+**响应式组件:**
+- `src/components/layout/ResponsiveContainer.vue` - 响应式布局容器
+- `src/components/navigation/Sidebar.vue` - PC端侧边栏导航
+
 ### Backend Layer Pattern
 ```
 Controller → Service → Mapper → Entity
