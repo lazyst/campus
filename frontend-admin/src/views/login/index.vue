@@ -219,6 +219,13 @@ const handleLogin = async () => {
   color: #9CA3AF;
 }
 
+@media (max-width: 768px) {
+  .login-box {
+    width: 380px;
+    padding: 40px 35px;
+  }
+}
+
 @media (max-width: 480px) {
   .login-box {
     width: calc(100% - 32px);

@@ -91,6 +91,11 @@ const displayValue = computed(() => props.value ?? '-')
   color: #111827;
   text-align: center;
   padding: 16px 0;
+
+  @media (max-width: 480px) {
+    font-size: 28px;
+    padding: 12px 0;
+  }
 }
 
 .stat-footer {
@@ -100,5 +105,12 @@ const displayValue = computed(() => props.value ?? '-')
   color: #6B7280;
   padding-top: 12px;
   border-top: 1px solid #F3F4F6;
+
+  @media (max-width: 480px) {
+    flex-wrap: wrap;
+    gap: 8px;
+    justify-content: space-between;
+    font-size: 12px;
+  }
 }
 </style>

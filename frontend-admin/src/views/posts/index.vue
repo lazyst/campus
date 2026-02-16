@@ -22,7 +22,8 @@
         </div>
       </template>
 
-      <el-table :data="postList" v-loading="loading" stripe style="width: 100%">
+      <div class="table-container">
+        <el-table :data="postList" v-loading="loading" stripe style="width: 100%">
         <el-table-column prop="id" label="ID" width="80" />
         <el-table-column prop="title" label="标题" min-width="200" show-overflow-tooltip />
         <el-table-column prop="userNickname" label="作者" width="120" />
@@ -43,7 +44,8 @@
             <el-button type="danger" size="small" @click="handleDelete(row)">删除</el-button>
           </template>
         </el-table-column>
-      </el-table>
+        </el-table>
+      </div>
 
       <div class="pagination-container">
         <el-pagination
@@ -277,12 +279,54 @@ onMounted(() => {
   .card-header {
     display: flex;
     align-items: center;
+    flex-wrap: wrap;
+    gap: 10px;
+
+    @media (max-width: 768px) {
+      flex-direction: column;
+      align-items: stretch;
+    }
+
+    :deep(.el-input),
+    :deep(.el-select) {
+      @media (max-width: 768px) {
+        width: 100% !important;
+        margin-left: 0 !important;
+      }
+    }
+
+    :deep(.el-button) {
+      @media (max-width: 768px) {
+        width: 100%;
+        margin-left: 0 !important;
+      }
+    }
   }
 
   .pagination-container {
     margin-top: 20px;
     display: flex;
     justify-content: flex-end;
+
+    @media (max-width: 480px) {
+      flex-direction: column;
+      gap: 12px;
+      align-items: stretch;
+    }
+  }
+
+  // 表格容器 - 允许水平滚动
+  .table-container {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  // 操作按钮 - 移动端堆叠
+  :deep(.el-table .cell) {
+    @media (max-width: 480px) {
+      padding-left: 4px;
+      padding-right: 4px;
+    }
   }
 
   :deep(.el-card) {

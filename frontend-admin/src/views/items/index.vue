@@ -25,7 +25,8 @@
         </div>
       </template>
 
-      <el-table :data="itemList" v-loading="loading" stripe style="width: 100%">
+      <div class="table-container">
+        <el-table :data="itemList" v-loading="loading" stripe style="width: 100%">
         <el-table-column prop="id" label="ID" width="80" />
         <el-table-column prop="title" label="标题" min-width="200" show-overflow-tooltip />
         <el-table-column prop="price" label="价格" width="100">
@@ -60,7 +61,8 @@
             </div>
           </template>
         </el-table-column>
-      </el-table>
+        </el-table>
+      </div>
 
       <div class="pagination-container">
         <el-pagination
@@ -319,6 +321,28 @@ onMounted(() => {
   .card-header {
     display: flex;
     align-items: center;
+    flex-wrap: wrap;
+    gap: 10px;
+
+    @media (max-width: 768px) {
+      flex-direction: column;
+      align-items: stretch;
+    }
+
+    :deep(.el-input),
+    :deep(.el-select) {
+      @media (max-width: 768px) {
+        width: 100% !important;
+        margin-left: 0 !important;
+      }
+    }
+
+    :deep(.el-button) {
+      @media (max-width: 768px) {
+        width: 100%;
+        margin-left: 0 !important;
+      }
+    }
   }
 
   .action-buttons {
@@ -331,6 +355,18 @@ onMounted(() => {
     margin-top: 20px;
     display: flex;
     justify-content: flex-end;
+
+    @media (max-width: 480px) {
+      flex-direction: column;
+      gap: 12px;
+      align-items: stretch;
+    }
+  }
+
+  // 表格容器 - 允许水平滚动
+  .table-container {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
   }
 
   :deep(.el-card) {

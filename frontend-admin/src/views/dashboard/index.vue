@@ -7,7 +7,7 @@
 
     <!-- 统计卡片 -->
     <el-row :gutter="20" class="stats-row">
-      <el-col :span="6">
+      <el-col :xs="24" :sm="12" :md="6">
         <StatCard
           title="用户总数"
           :value="stats.users?.total || 0"
@@ -20,7 +20,7 @@
           </template>
         </StatCard>
       </el-col>
-      <el-col :span="6">
+      <el-col :xs="24" :sm="12" :md="6">
         <StatCard
           title="帖子总数"
           :value="stats.posts?.total || 0"
@@ -33,7 +33,7 @@
           </template>
         </StatCard>
       </el-col>
-      <el-col :span="6">
+      <el-col :xs="24" :sm="12" :md="6">
         <StatCard
           title="闲置物品"
           :value="stats.items?.total || 0"
@@ -46,7 +46,7 @@
           </template>
         </StatCard>
       </el-col>
-      <el-col :span="6">
+      <el-col :xs="24" :sm="12" :md="6">
         <StatCard
           title="板块数量"
           :value="stats.boards?.total || 0"
@@ -62,26 +62,26 @@
 
     <!-- 第二行：趋势图 + 快捷操作 -->
     <el-row :gutter="20" class="middle-row">
-      <el-col :span="16">
+      <el-col :xs="24" :md="16">
         <TrendChart v-if="hasTrendData" :data="trend" />
         <el-card v-else shadow="hover" class="placeholder-card">
           <el-skeleton :rows="5" animated />
         </el-card>
       </el-col>
-      <el-col :span="8">
+      <el-col :xs="24" :md="8">
         <QuickActions @refresh="fetchData" />
       </el-col>
     </el-row>
 
     <!-- 第三行：最近活跃 + 系统状态 -->
     <el-row :gutter="20" class="bottom-row">
-      <el-col :span="12">
+      <el-col :xs="24" :md="12">
         <RecentActivity v-if="hasRecentData" :data="recent" />
         <el-card v-else shadow="hover" class="placeholder-card">
           <el-skeleton :rows="6" animated />
         </el-card>
       </el-col>
-      <el-col :span="12">
+      <el-col :xs="24" :md="12">
         <SystemStatus v-if="hasStatusData" :data="status" />
         <el-card v-else shadow="hover" class="placeholder-card">
           <el-skeleton :rows="5" animated />
@@ -188,5 +188,51 @@ onMounted(() => {
 
 :deep(.el-card) {
   border: none;
+}
+
+@media (max-width: 768px) {
+  .dashboard-header {
+    flex-direction: column;
+    gap: 4px;
+    margin-bottom: 16px;
+  }
+
+  .dashboard-title {
+    font-size: 20px;
+  }
+
+  .dashboard-subtitle {
+    font-size: 12px;
+  }
+
+  .stats-row {
+    margin-bottom: 12px;
+  }
+
+  .middle-row {
+    margin-bottom: 12px;
+  }
+
+  .bottom-row {
+    margin-bottom: 12px;
+  }
+}
+
+@media (max-width: 480px) {
+  .dashboard-title {
+    font-size: 18px;
+  }
+
+  .stats-row {
+    margin-bottom: 8px;
+  }
+
+  .middle-row {
+    margin-bottom: 8px;
+  }
+
+  .bottom-row {
+    margin-bottom: 8px;
+  }
 }
 </style>

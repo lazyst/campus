@@ -12,31 +12,35 @@
         </div>
       </template>
 
-      <el-table :data="userList" v-loading="loading" stripe style="width: 100%">
-        <el-table-column prop="id" label="ID" width="60" />
-        <el-table-column prop="phone" label="手机号" width="110" />
-        <el-table-column prop="nickname" label="昵称" min-width="80" />
-        <el-table-column prop="gender" label="性别" width="60">
-          <template #default="{ row }">
-            {{ row.gender === 1 ? '男' : row.gender === 2 ? '女' : '未知' }}
-          </template>
-        </el-table-column>
-        <el-table-column prop="status" label="状态" width="70">
-          <template #default="{ row }">
-            <el-tag :type="row.status === 1 ? 'success' : 'danger'">
-              {{ row.status === 1 ? '正常' : '已封禁' }}
-            </el-tag>
-          </template>
-        </el-table-column>
-        <el-table-column prop="createdAt" label="注册时间" width="150" />
-        <el-table-column label="操作" width="180">
-          <template #default="{ row }">
-            <el-button v-if="row.status === 1" type="warning" size="small" @click="handleBan(row)">封禁</el-button>
-            <el-button v-else type="success" size="small" @click="handleUnban(row)">解封</el-button>
-            <el-button type="danger" size="small" @click="handleDelete(row)">删除</el-button>
-          </template>
-        </el-table-column>
-      </el-table>
+      <div class="table-container">
+        <el-table :data="userList" v-loading="loading" stripe style="width: 100%">
+          <el-table-column prop="id" label="ID" width="60" />
+          <el-table-column prop="phone" label="手机号" width="110" />
+          <el-table-column prop="nickname" label="昵称" min-width="80" />
+          <el-table-column prop="gender" label="性别" width="60">
+            <template #default="{ row }">
+              {{ row.gender === 1 ? '男' : row.gender === 2 ? '女' : '未知' }}
+            </template>
+          </el-table-column>
+          <el-table-column prop="status" label="状态" width="70">
+            <template #default="{ row }">
+              <el-tag :type="row.status === 1 ? 'success' : 'danger'">
+                {{ row.status === 1 ? '正常' : '已封禁' }}
+              </el-tag>
+            </template>
+          </el-table-column>
+          <el-table-column prop="createdAt" label="注册时间" width="150" />
+          <el-table-column label="操作" width="180">
+            <template #default="{ row }">
+              <div class="action-buttons">
+                <el-button v-if="row.status === 1" type="warning" size="small" @click="handleBan(row)">封禁</el-button>
+                <el-button v-else type="success" size="small" @click="handleUnban(row)">解封</el-button>
+                <el-button type="danger" size="small" @click="handleDelete(row)">删除</el-button>
+              </div>
+            </template>
+          </el-table-column>
+        </el-table>
+      </div>
 
       <div class="pagination-container">
         <el-pagination
@@ -149,6 +153,63 @@ onMounted(() => {
     margin-top: 20px;
     display: flex;
     justify-content: flex-end;
+
+    @media (max-width: 480px) {
+      flex-direction: column;
+      gap: 12px;
+      align-items: stretch;
+    }
+  }
+
+  // 搜索区域
+  .card-header {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 10px;
+
+    @media (max-width: 768px) {
+      flex-direction: column;
+      align-items: stretch;
+    }
+
+    :deep(.el-input),
+    :deep(.el-select) {
+      @media (max-width: 768px) {
+        width: 100% !important;
+        margin-left: 0 !important;
+      }
+    }
+
+    :deep(.el-button) {
+      @media (max-width: 768px) {
+        width: 100%;
+        margin-left: 0 !important;
+      }
+    }
+  }
+
+  // 表格容器 - 允许水平滚动
+  .table-container {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  // 操作按钮 - 移动端堆叠
+  .action-buttons {
+    display: flex;
+    gap: 4px;
+    flex-wrap: wrap;
+
+    @media (max-width: 480px) {
+      flex-direction: column;
+      
+      .el-button {
+        width: 100%;
+        margin-left: 0 !important;
+        margin-bottom: 4px;
+      }
+    }
   }
 
   // 表格容器

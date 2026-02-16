@@ -16,6 +16,56 @@ html, body {
   height: 100%;
 }
 
+// Responsive breakpoints
+$breakpoint-tablet: 768px;
+$breakpoint-mobile: 480px;
+
+// Mixins
+@mixin tablet {
+  @media (max-width: $breakpoint-tablet) {
+    @content;
+  }
+}
+
+@mixin mobile {
+  @media (max-width: $breakpoint-mobile) {
+    @content;
+  }
+}
+
+@mixin tablet-up {
+  @media (min-width: ($breakpoint-tablet + 1)) {
+    @content;
+  }
+}
+
+// Global responsive utility classes
+.hide-tablet {
+  @include tablet {
+    display: none !important;
+  }
+}
+
+.hide-mobile {
+  @include mobile {
+    display: none !important;
+  }
+}
+
+.show-mobile {
+  display: none !important;
+  @include mobile {
+    display: block !important;
+  }
+}
+
+.show-tablet {
+  display: none !important;
+  @include tablet {
+    display: block !important;
+  }
+}
+
 // Element Plus 覆盖样式 - 浅色简洁主题
 .el-card {
   border-radius: 12px;
@@ -183,4 +233,53 @@ html, body {
 .el-dialog__footer {
   border-top: 1px solid #E5E7EB;
   padding: 16px 24px;
+}
+
+// Global responsive styles
+@include tablet {
+  .el-dialog {
+    width: 90% !important;
+    max-width: 90% !important;
+    margin: 16px auto !important;
+  }
+  
+  .el-dialog__header {
+    padding: 16px 20px;
+  }
+  
+  .el-dialog__body {
+    padding: 20px;
+  }
+  
+  .el-dialog__footer {
+    padding: 12px 20px;
+  }
+}
+
+@include mobile {
+  .el-dialog {
+    width: 95% !important;
+    max-width: 95% !important;
+    margin: 12px auto !important;
+  }
+  
+  .el-dialog__header {
+    padding: 12px 16px;
+  }
+  
+  .el-dialog__body {
+    padding: 16px;
+  }
+  
+  .el-dialog__footer {
+    padding: 10px 16px;
+  }
+  
+  .el-form-item {
+    margin-bottom: 16px;
+  }
+  
+  .el-form-item__label {
+    font-size: 13px;
+  }
 }
