@@ -16,9 +16,9 @@
       class="main-layout__content"
       :class="{ 'main-layout__content--with-sidebar': showSidebar }"
     >
-      <router-view />
+      <router-view class="main-layout__router-view" />
       
-      <!-- PC端发布按钮 - 位于内容区域内部 -->
+      <!-- PC端发布按钮 - 位于内容区域右下角 -->
       <button
         v-if="showFloatingButton && showSidebar"
         class="fab-button-pc"
@@ -256,6 +256,12 @@ onUnmounted(() => {
   transition: padding-left var(--transition-normal);
 }
 
+.main-layout__router-view {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
 .main-layout__content--with-sidebar {
   padding-left: var(--sidebar-width);
 }
@@ -288,13 +294,12 @@ onUnmounted(() => {
 
 /* PC端发布按钮 - 位于内容区域右下角，随滚动移动 */
 .fab-button-pc {
-  position: sticky;
-  float: right;
-  margin: var(--space-6);
   display: flex;
   align-items: center;
   justify-content: center;
   gap: var(--space-2);
+  margin-top: auto;
+  margin-left: auto;
   min-width: 100px;
   height: 44px;
   padding: 0 var(--space-5);
@@ -308,6 +313,7 @@ onUnmounted(() => {
   cursor: pointer;
   transition: all var(--transition-normal);
   z-index: var(--z-fixed);
+  align-self: flex-end;
 }
 
 .fab-button-pc:hover {
