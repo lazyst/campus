@@ -286,11 +286,11 @@ onUnmounted(() => {
   box-shadow: var(--shadow-md);
 }
 
-/* PC端发布按钮 - 位于内容区域右下角 */
+/* PC端发布按钮 - 位于内容区域右下角，随滚动移动 */
 .fab-button-pc {
-  position: absolute;
-  right: var(--space-6);
-  bottom: var(--space-6);
+  position: sticky;
+  float: right;
+  margin: var(--space-6);
   display: flex;
   align-items: center;
   justify-content: center;
