@@ -9,7 +9,12 @@
         </div>
         <div class="profile-user-details">
           <h2 class="profile-name">{{ userName }}</h2>
-          <p class="profile-phone" :class="{ 'profile-phone--clickable': userStore.userInfo?.phone }" @click="togglePhone">{{ userPhone }}</p>
+          <div class="profile-phone-wrapper">
+            <p class="profile-phone">{{ userPhone }}</p>
+            <span v-if="userStore.userInfo?.phone" class="profile-phone-toggle" @click="togglePhone">
+              {{ showFullPhone ? '🙈' : '👁' }}
+            </span>
+          </div>
         </div>
         
         <!-- 未登录时显示登录按钮 -->
@@ -280,19 +285,22 @@ async function confirmDeactivate() {
   margin: 0;
 }
 
+.profile-phone-wrapper {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+}
+
 .profile-phone {
   font-size: var(--text-sm);
   color: var(--text-secondary);
   margin: 0;
 }
 
-.profile-phone--clickable {
+.profile-phone-toggle {
   cursor: pointer;
+  font-size: var(--text-sm);
   user-select: none;
-}
-
-.profile-phone--clickable:active {
-  opacity: 0.7;
 }
 
 .profile-login-btn {
