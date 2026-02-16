@@ -299,7 +299,11 @@ async function confirmDeactivate() {
 
 .profile-phone-toggle {
   cursor: pointer;
-  font-size: var(--text-sm);
+  font-size: var(--text-xs);
+  color: var(--text-tertiary);
+  background-color: var(--bg-secondary);
+  padding: 2px 6px;
+  border-radius: var(--radius-sm);
   user-select: none;
 }
 
