@@ -12,7 +12,7 @@
 
 <script setup lang="ts">
 interface Props {
-  size?: 'sm' | 'md' | 'lg' | 'full'
+  size?: 'sm' | 'md' | 'lg' | 'xl' | 'full'
   fullHeight?: boolean
 }
 
@@ -43,6 +43,10 @@ withDefaults(defineProps<Props>(), {
   max-width: 960px;
 }
 
+.responsive-container--xl {
+  max-width: var(--container-pc-width);
+}
+
 .responsive-container--full {
   max-width: 100%;
 }
@@ -63,14 +67,17 @@ withDefaults(defineProps<Props>(), {
   }
 
   .responsive-container--md {
-    max-width: 720px;
+    max-width: 960px;
   }
 
   .responsive-container--lg {
     max-width: 1100px;
   }
 
-  /* PC端内容区域增加微妙的内阴影 */
+  .responsive-container--xl {
+    max-width: 1400px;
+  }
+
   .responsive-container {
     position: relative;
   }
@@ -90,6 +97,20 @@ withDefaults(defineProps<Props>(), {
       rgba(37, 99, 235, 0.02) 0%,
       transparent 70%
     );
+  }
+}
+
+@media (min-width: 1280px) {
+  .responsive-container--md {
+    max-width: 1100px;
+  }
+
+  .responsive-container--lg {
+    max-width: 1300px;
+  }
+
+  .responsive-container--xl {
+    max-width: 1600px;
   }
 }
 

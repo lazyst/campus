@@ -667,11 +667,17 @@ const toggleCollect = handleCollect;
   }
 
   .detail-comment-input-area {
-    max-width: 800px;
+    position: fixed;
+    bottom: 0;
     left: 50%;
     transform: translateX(-50%);
+    width: 100%;
+    max-width: 800px;
     border-radius: var(--radius-xl) var(--radius-xl) 0 0;
     padding: var(--space-4) var(--space-8);
+    background: #FFFFFF;
+    box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.06);
+    border-top: 1px solid var(--color-gray-100);
   }
 
   .detail-comment-input {

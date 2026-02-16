@@ -1,11 +1,119 @@
 <template>
-  <div class="messages-page">
-    <!-- 页面标题 -->
-    <div class="page-header">
-      <h1 class="page-title">消息</h1>
-    </div>
+  <!-- PC端布局 -->
+  <template v-if="isPC">
+    <div class="messages-page messages-page--pc">
+      <!-- 页面标题 -->
+      <div class="page-header">
+        <h1 class="page-title">消息</h1>
+      </div>
 
-    <ResponsiveContainer>
+      <!-- PC端分栏布局 -->
+      <div class="messages-container">
+        <!-- 左侧：消息列表 -->
+        <div class="messages-sidebar">
+          <!-- 未登录状态 -->
+          <div v-if="!isLoggedIn" class="empty-state">
+            <div class="empty-icon">
+              <svg width="64" height="64" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M20 4H4C2.9 4 2 4.9 2 6V18C2 19.1 2.9 20 4 20H20C21.1 20 22 19.1 22 18V6C22 4.9 21.1 4 20 4ZM20 6L12 11L4 6V6L12 11L20 6V6Z" fill="currentColor"/>
+                <path d="M12 13C13.66 13 15 12.34 15 11V5C15 3.34 13.66 3 12 3C10.34 3 9 3.34 9 5V11C9 12.34 10.34 13 12 13Z" fill="currentColor"/>
+              </svg>
+            </div>
+            <p class="empty-text">登录后查看消息</p>
+            <button class="empty-btn" @click="goToLogin">去登录</button>
+          </div>
+
+          <!-- 加载状态 -->
+          <div v-else-if="loading" class="loading-state">
+            <div class="loading-spinner"></div>
+            <p class="loading-text">加载中...</p>
+          </div>
+
+          <!-- 错误状态 -->
+          <div v-else-if="error" class="error-state">
+            <p class="error-text">{{ error }}</p>
+            <button class="error-btn" @click="retryLoad">重试</button>
+          </div>
+
+          <!-- 空状态 -->
+          <div v-else-if="conversations.length === 0" class="empty-state">
+            <div class="empty-icon">
+              <svg width="64" height="64" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M20 4H4C2.9 4 2 4.9 2 6V18C2 19.1 2.9 20 4 20H20C21.1 20 22 19.1 22 18V6C22 4.9 21.1 4 20 4ZM20 6L12 11L4 6V6L12 11L20 6V6Z" fill="currentColor"/>
+              </svg>
+            </div>
+            <p class="empty-text">暂无消息</p>
+            <p class="empty-hint">快去和别人聊天吧~</p>
+          </div>
+
+          <!-- 消息列表 -->
+          <div v-else class="messages-list">
+            <div
+              v-for="conversation in conversations"
+              :key="conversation.id"
+              class="message-item"
+              @click="goToChat(conversation)"
+            >
+              <div class="message-avatar-container">
+                <div class="message-avatar">
+                  <span>{{ conversation.otherUserNickname?.charAt(0) || '匿' }}</span>
+                </div>
+                <span v-if="conversation.unreadCount > 0" class="message-unread-badge">
+                  {{ conversation.unreadCount > 99 ? '99+' : conversation.unreadCount }}
+                </span>
+              </div>
+
+              <div class="message-content">
+                <div class="message-header">
+                  <span class="message-sender">{{ conversation.otherUserNickname || '未知用户' }}</span>
+                  <span class="message-time">{{ formatTime(conversation.lastMessageTime) }}</span>
+                </div>
+                <p class="message-preview">{{ formatMessagePreview(conversation.lastMessageContent, conversation.lastMessageType) }}</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 右侧：聊天详情/提示区域 -->
+        <div class="messages-detail">
+          <!-- 未登录 -->
+          <div v-if="!isLoggedIn" class="messages-detail-empty">
+            <svg width="80" height="80" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M18 8H19C20.1 8 21 8.9 21 10V20C21 21.1 20.1 22 19 22H5C3.9 22 3 21.1 3 20V10C3 8.9 3.9 8 5 8H6V6C6 3.9 7.9 2 10 2C12.1 2 14 3.9 14 6V8H18ZM10 4C8.9 4 8 4.9 8 6V8H16V6C16 4.9 15.1 4 14 4C12.1 4 10 4 10 4Z" fill="currentColor"/>
+              <path d="M12 12C13.66 12 15 12.67 15 14V17H9V14C9 12.67 10.34 12 12 12Z" fill="currentColor"/>
+            </svg>
+            <p>登录后与好友聊天</p>
+          </div>
+          <!-- 已登录但无会话 -->
+          <div v-else-if="conversations.length === 0 && !loading" class="messages-detail-empty">
+            <svg width="80" height="80" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M20 2H4C2.9 2 2 2.9 2 4V22L6 18H20C21.1 18 22 17.1 22 16V4C22 2.9 21.1 2 20 2ZM20 16H5.17L4 17.17V4H20V16Z" fill="currentColor"/>
+              <path d="M7 9H17V11H7V9ZM7 6H17V8H7V6ZM7 12H14V14H7V12Z" fill="currentColor"/>
+            </svg>
+            <p>暂无会话，快去找好友聊天吧</p>
+          </div>
+          <!-- 有会话但未选择 -->
+          <div v-else class="messages-detail-empty">
+            <svg width="80" height="80" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M20 2H4C2.9 2 2 2.9 2 4V22L6 18H20C21.1 18 22 17.1 22 16V4C22 2.9 21.1 2 20 2ZM20 16H5.17L4 17.17V4H20V16Z" fill="currentColor"/>
+              <path d="M7 9H17V11H7V9ZM7 6H17V8H7V6ZM7 12H14V14H7V12Z" fill="currentColor"/>
+            </svg>
+            <p>选择会话开始聊天</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </template>
+
+  <!-- 移动端布局 -->
+  <template v-else>
+    <div class="messages-page">
+      <!-- 页面标题 -->
+      <div class="page-header">
+        <h1 class="page-title">消息</h1>
+      </div>
+
+      <ResponsiveContainer>
       <!-- 未登录状态 -->
       <div v-if="!isLoggedIn" class="empty-state">
         <div class="empty-icon">
@@ -68,7 +176,8 @@
         </div>
       </div>
     </ResponsiveContainer>
-  </div>
+    </div>
+  </template>
 </template>
 
 <script setup lang="ts">
@@ -91,6 +200,15 @@ const messageUpdateEvent = inject<Ref<number>>('messageUpdateEvent', ref(0))
 
 // 计算属性：是否已登录
 const isLoggedIn = computed(() => !!userStore.token);
+
+// PC端检测
+const isPC = ref(typeof window !== 'undefined' ? window.innerWidth >= 1024 : false);
+
+if (typeof window !== 'undefined') {
+  window.addEventListener('resize', () => {
+    isPC.value = window.innerWidth >= 1024;
+  });
+}
 
 // 响应式数据
 const conversations = ref<any[]>([]);
@@ -334,78 +452,198 @@ onUnmounted(() => {
   padding-bottom: var(--tabbar-height);
 }
 
-/* PC端样式增强 */
+.messages-page--pc {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  overflow: hidden;
+}
+
+.messages-page--pc .page-header {
+  flex-shrink: 0;
+  display: block;
+  background: #FFFFFF;
+  padding: var(--space-4) var(--space-8);
+  border-bottom: 1px solid var(--color-gray-200);
+}
+
+.messages-page--pc .page-title {
+  font-size: var(--text-xl);
+  font-weight: var(--font-weight-semibold);
+  color: var(--text-primary);
+  margin: 0;
+}
+
+/* PC端分栏布局 */
+.messages-page--pc .messages-container {
+  flex: 1;
+  display: flex;
+  overflow: hidden;
+}
+
+.messages-page--pc .messages-sidebar {
+  width: 500px;
+  flex-shrink: 0;
+  background: #FFFFFF;
+  border-right: 1px solid var(--color-gray-200);
+  overflow-y: auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.messages-page--pc .messages-sidebar .empty-state {
+  text-align: center;
+  padding: var(--space-8);
+}
+
+.messages-page--pc .messages-detail {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #F8FAFC;
+}
+
+.messages-page--pc .messages-detail-empty {
+  text-align: center;
+  color: var(--text-tertiary);
+}
+
+.messages-page--pc .messages-detail-empty svg {
+  width: 96px;
+  height: 96px;
+  color: var(--color-gray-300);
+  margin-bottom: var(--space-4);
+}
+
+.messages-page--pc .messages-detail-empty p {
+  font-size: var(--text-lg);
+  color: var(--text-secondary);
+}
+
+/* 移动端样式增强 */
 @media (min-width: 1024px) {
   .messages-page {
-    background: linear-gradient(180deg, #F8FAFC 0%, #F1F5F9 100%);
-    padding-bottom: var(--space-6);
+    background: #F1F5F9;
+    padding-bottom: 0;
+    display: flex;
+    flex-direction: column;
   }
 
   .page-header {
-    background: linear-gradient(180deg, #FFFFFF 0%, #F8FAFC 100%);
-    padding: var(--space-6) var(--space-8);
+    display: none;
+  }
+
+  /* 移动端内容隐藏 */
+  .mobile-messages {
+    display: none;
+  }
+
+  /* 分栏容器 */
+  .messages-container {
+    flex: 1;
+    display: flex;
+    width: 100%;
+    height: calc(100vh - 64px);
+    overflow: hidden;
+  }
+
+  /* 左侧列表 - 增加宽度 */
+  .messages-sidebar {
+    width: 480px;
+    flex-shrink: 0;
+    background: #FFFFFF;
+    border-right: 1px solid var(--color-gray-200);
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .messages-sidebar .responsive-container {
+    flex: 1;
+    overflow-y: auto;
+  }
+
+  .messages-sidebar .messages-list {
+    padding: 0;
+  }
+
+  .messages-sidebar .message-item {
+    padding: var(--space-4) var(--space-5);
+    border-radius: 0;
     border-bottom: 1px solid var(--color-gray-100);
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
+    margin-bottom: 0;
+    cursor: pointer;
   }
 
-  .page-title {
-    font-size: var(--text-2xl);
+  .messages-sidebar .message-item:hover {
+    background-color: var(--color-primary-50);
+    transform: none;
+    box-shadow: none;
+    border-color: var(--color-primary-100);
   }
 
-  .messages-list {
-    padding: var(--space-4) 0;
-    max-width: 720px;
-    margin: 0 auto;
-  }
-
-  .message-item {
-    padding: var(--space-5);
-    border-radius: var(--radius-xl);
-    margin-bottom: var(--space-3);
-    border: 1px solid transparent;
-    transition: all var(--transition-normal);
-  }
-
-  .message-item:hover {
-    background-color: #FFFFFF;
-    border-color: rgba(37, 99, 235, 0.1);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
-    transform: translateY(-1px);
-  }
-
-  .message-avatar {
-    width: 56px;
-    height: 56px;
-    font-size: var(--text-xl);
-  }
-
-  .message-sender {
+  .messages-sidebar .message-avatar {
+    width: 48px;
+    height: 48px;
     font-size: var(--text-lg);
   }
 
-  .message-preview {
+  .messages-sidebar .message-sender {
     font-size: var(--text-base);
   }
 
-  .empty-state {
-    max-width: 400px;
-    margin: 0 auto;
-    padding: var(--space-16);
+  .messages-sidebar .message-preview {
+    font-size: var(--text-sm);
+  }
+
+  /* 右侧详情 */
+  .messages-detail {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     background: #FFFFFF;
-    border-radius: var(--radius-xl);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
   }
 
-  .empty-icon {
-    width: 80px;
-    height: 80px;
-    margin: 0 auto var(--space-4);
-    color: var(--color-gray-300);
+  .messages-detail-empty {
+    text-align: center;
+    color: var(--text-tertiary);
+    padding: var(--space-8);
   }
 
-  .empty-icon svg {
-    width: 100%;
-    height: 100%;
+  .messages-detail-empty svg {
+    width: 96px;
+    height: 96px;
+    color: var(--color-gray-200);
+    margin-bottom: var(--space-6);
+  }
+
+  .messages-detail-empty p {
+    font-size: var(--text-lg);
+    color: var(--text-secondary);
+  }
+
+  /* 左侧空状态 */
+  .messages-sidebar .empty-state {
+    padding: var(--space-8);
+  }
+
+  .messages-sidebar .empty-icon {
+    width: 64px;
+    height: 64px;
+    margin-bottom: var(--space-4);
+  }
+
+  .messages-sidebar .empty-icon svg {
+    width: 32px;
+    height: 32px;
+  }
+
+  .messages-sidebar .empty-text {
+    font-size: var(--text-base);
+    margin-bottom: var(--space-2);
   }
 }
 
@@ -619,5 +857,16 @@ onUnmounted(() => {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+/* 移动端内容在PC端隐藏 */
+.mobile-messages {
+  display: block;
+}
+
+@media (min-width: 1024px) {
+  .mobile-messages {
+    display: none;
+  }
 }
 </style>

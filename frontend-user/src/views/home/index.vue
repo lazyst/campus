@@ -322,6 +322,16 @@ onUnmounted(() => {
   background: white;
 }
 
+@media (min-width: 1024px) {
+  .search-section {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 16px 24px;
+    border-radius: 0 0 16px 16px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  }
+}
+
 .search-section .search-bar {
   flex: 1;
 }
@@ -336,6 +346,14 @@ onUnmounted(() => {
   justify-content: center;
   font-size: 18px;
   cursor: pointer;
+}
+
+@media (min-width: 1024px) {
+  .message-btn {
+    width: 44px;
+    height: 44px;
+    font-size: 20px;
+  }
 }
 
 .message-icon {
@@ -357,8 +375,25 @@ onUnmounted(() => {
   }
 }
 
+@media (min-width: 1024px) {
+  .categories-section {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 20px 24px;
+    gap: 16px;
+  }
+}
+
 .posts-section {
   padding: 16px;
+}
+
+@media (min-width: 1024px) {
+  .posts-section {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 24px;
+  }
 }
 
 .section-header {
@@ -375,6 +410,12 @@ onUnmounted(() => {
   margin: 0;
 }
 
+@media (min-width: 1024px) {
+  .section-header h2 {
+    font-size: 20px;
+  }
+}
+
 .more-btn {
   font-size: 14px;
   color: #94A3B8;
@@ -385,6 +426,12 @@ onUnmounted(() => {
   display: flex;
   flex-direction: column;
   gap: 12px;
+}
+
+@media (min-width: 1024px) {
+  .posts-list {
+    gap: 16px;
+  }
 }
 
 .posts-loading,

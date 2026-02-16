@@ -1,6 +1,6 @@
 <template>
   <div class="profile-page">
-    <!-- 用户信息头部 -->
+    <!-- PC端分栏布局 -->
     <div class="profile-header">
       <ResponsiveContainer>
         <div class="profile-user-info">
@@ -8,15 +8,8 @@
             <img v-if="userStore.userInfo?.avatar" :src="getImageUrl(userStore.userInfo.avatar)" alt="头像" />
             <span v-else>{{ userName.charAt(0) }}</span>
           </div>
-          <div class="profile-user-details">
-            <h2 class="profile-name">{{ userName }}</h2>
-            <div class="profile-phone-wrapper">
-              <p class="profile-phone">{{ userPhone }}</p>
-              <span v-if="userStore.userInfo?.phone" class="profile-phone-toggle" @click="togglePhone">
-                {{ showFullPhone ? '隐藏' : '显示' }}
-              </span>
-            </div>
-          </div>
+          <h2 class="profile-name">{{ userName }}</h2>
+          <p class="profile-phone">{{ userPhone }}</p>
           
           <!-- 未登录时显示登录按钮 -->
           <div v-if="!userStore.token" class="profile-login-btn" @click="goToLogin">
@@ -26,84 +19,101 @@
       </ResponsiveContainer>
     </div>
 
-    <!-- 菜单列表 -->
-    <div class="profile-menu" :class="{ 'profile-menu--disabled': !userStore.token }">
-      <ResponsiveContainer>
-      <div class="profile-menu-group">
-        <div class="profile-menu-title">账号管理</div>
-        <div 
-          v-for="(item, index) in mainMenuItems" 
-          :key="index"
-          class="profile-menu-item"
-          @click="handleMenuClick(item.route)"
-        >
-          <span class="profile-menu-label">{{ item.label }}</span>
-          <span class="profile-menu-arrow">›</span>
+    <div class="profile-content">
+      <!-- 左侧用户信息 -->
+      <div class="profile-sidebar">
+        <div class="profile-user-info">
+          <div class="profile-avatar">
+            <img v-if="userStore.userInfo?.avatar" :src="getImageUrl(userStore.userInfo.avatar)" alt="头像" />
+            <span v-else>{{ userName.charAt(0) }}</span>
+          </div>
+          <h2 class="profile-name">{{ userName }}</h2>
+          <p class="profile-phone">{{ userPhone }}</p>
+          
+          <!-- 未登录时显示登录按钮 -->
+          <div v-if="!userStore.token" class="profile-login-btn" @click="goToLogin">
+            去登录
+          </div>
         </div>
       </div>
 
-      <div class="profile-menu-group">
-        <div class="profile-menu-title">我的内容</div>
-        <div 
-          v-for="(item, index) in contentMenuItems" 
-          :key="index"
-          class="profile-menu-item"
-          @click="handleMenuClick(item.route)"
-        >
-          <span class="profile-menu-label">{{ item.label }}</span>
-          <span class="profile-menu-arrow">›</span>
+      <!-- 右侧菜单 -->
+      <div class="profile-menu" :class="{ 'profile-menu--disabled': !userStore.token }">
+        <div class="profile-menu-group">
+          <div class="profile-menu-title">账号管理</div>
+          <div 
+            v-for="(item, index) in mainMenuItems" 
+            :key="index"
+            class="profile-menu-item"
+            @click="handleMenuClick(item.route)"
+          >
+            <span class="profile-menu-label">{{ item.label }}</span>
+            <span class="profile-menu-arrow">›</span>
+          </div>
+        </div>
+
+        <div class="profile-menu-group">
+          <div class="profile-menu-title">我的内容</div>
+          <div 
+            v-for="(item, index) in contentMenuItems" 
+            :key="index"
+            class="profile-menu-item"
+            @click="handleMenuClick(item.route)"
+          >
+            <span class="profile-menu-label">{{ item.label }}</span>
+            <span class="profile-menu-arrow">›</span>
+          </div>
+        </div>
+
+        <div class="profile-menu-group">
+          <div class="profile-menu-title">其他</div>
+          <div
+            v-for="(item, index) in otherMenuItems"
+            :key="index"
+            class="profile-menu-item"
+            @click="handleMenuClick(item.route)"
+          >
+            <span class="profile-menu-label">{{ item.label }}</span>
+            <span v-if="item.route === '/profile/messages' && unreadNotificationCount > 0" class="profile-menu-badge">
+              {{ unreadNotificationCount > 99 ? '99+' : unreadNotificationCount }}
+            </span>
+            <span class="profile-menu-arrow">›</span>
+          </div>
+        </div>
+
+        <!-- 退出登录按钮 -->
+        <div v-if="userStore.token" class="profile-logout" @click="handleLogout">
+          退出登录
+        </div>
+
+        <!-- 注销账号按钮 -->
+        <div v-if="userStore.token" class="profile-deactivate" @click="handleDeactivate">
+          注销账号
         </div>
       </div>
-
-      <div class="profile-menu-group">
-        <div class="profile-menu-title">其他</div>
-        <div
-          v-for="(item, index) in otherMenuItems"
-          :key="index"
-          class="profile-menu-item"
-          @click="handleMenuClick(item.route)"
-        >
-          <span class="profile-menu-label">{{ item.label }}</span>
-          <span v-if="item.route === '/profile/messages' && unreadNotificationCount > 0" class="profile-menu-badge">
-            {{ unreadNotificationCount > 99 ? '99+' : unreadNotificationCount }}
-          </span>
-          <span class="profile-menu-arrow">›</span>
-        </div>
-      </div>
-
-      <!-- 退出登录按钮 -->
-      <div v-if="userStore.token" class="profile-logout" @click="handleLogout">
-        退出登录
-      </div>
-
-      <!-- 注销账号按钮 -->
-      <div v-if="userStore.token" class="profile-deactivate" @click="handleDeactivate">
-        注销账号
-      </div>
-
-      <!-- 退出确认弹窗 -->
-      <Dialog
-        :visible="dialogVisible"
-        title="退出登录"
-        message="确定要退出登录吗？"
-        confirmText="退出"
-        cancelText="取消"
-        @confirm="confirmLogout"
-        @update:visible="dialogVisible = $event"
-      />
-
-      <!-- 注销账号确认弹窗 -->
-      <Dialog
-        :visible="deactivateDialogVisible"
-        title="注销账号"
-        message="注销后将清除所有数据，且该手机号需30天后才可重新注册。确定要注销吗？"
-        confirmText="确定注销"
-        cancelText="取消"
-        @confirm="confirmDeactivate"
-        @update:visible="deactivateDialogVisible = $event"
-      />
-      </ResponsiveContainer>
     </div>
+
+    <!-- 退出确认弹窗 -->
+    <Dialog
+      :visible="dialogVisible"
+      title="退出登录"
+      message="确定要退出登录吗？"
+      confirmText="退出"
+      cancelText="取消"
+      @confirm="confirmLogout"
+      @update:visible="dialogVisible = $event"
+    />
+
+    <!-- 注销账号确认弹窗 -->
+    <Dialog
+      :visible="deactivateDialogVisible"
+      title="注销账号"
+      message="注销后将清除所有数据，且该手机号需30天后才可重新注册。确定要注销吗？"
+      confirmText="确定注销"
+      cancelText="取消"
+      @confirm="confirmDeactivate"
+      @update:visible="deactivateDialogVisible = $event"
+    />
   </div>
 </template>
 
@@ -244,46 +254,79 @@ async function confirmDeactivate() {
   background-color: var(--bg-secondary);
 }
 
-/* PC端样式增强 */
-@media (min-width: 1024px) {
-  .profile-page {
-    background: linear-gradient(180deg, #F8FAFC 0%, #F1F5F9 100%);
-  }
+  /* PC端样式增强 - 分栏布局 */
+  @media (min-width: 1024px) {
+    .profile-page {
+      background: #F1F5F9;
+      min-height: 100vh;
+    }
 
-  .profile-header {
-    padding: var(--space-10) var(--space-8) var(--space-8);
-    background: linear-gradient(180deg, #EFF6FF 0%, #FFFFFF 50%, #F8FAFC 100%);
-    border-bottom: 1px solid var(--color-gray-100);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
-  }
+    .profile-header {
+      display: none;
+    }
 
-  .profile-user-info {
-    max-width: 600px;
-    margin: 0 auto;
-    padding: var(--space-8);
-    background: #FFFFFF;
-    border-radius: var(--radius-xl);
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.04);
-  }
+    /* 分栏容器 */
+    .profile-content {
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+      width: 100%;
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: var(--space-12) var(--space-16);
+      gap: var(--space-10);
+      box-sizing: border-box;
+    }
 
-  .profile-avatar {
-    width: 96px;
-    height: 96px;
-    font-size: var(--text-3xl);
-  }
+    /* 左侧用户信息 */
+    .profile-sidebar {
+      width: 380px;
+      flex-shrink: 0;
+    }
+
+    .profile-sidebar .profile-user-info {
+      background: #FFFFFF;
+      border-radius: var(--radius-2xl);
+      box-shadow: 0 4px 24px rgba(0, 0, 0, 0.06);
+      padding: var(--space-12);
+      text-align: center;
+      min-height: 320px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .profile-avatar {
+      width: 120px;
+      height: 120px;
+      font-size: var(--text-4xl);
+      margin: 0 auto var(--space-6);
+    }
 
   .profile-name {
-    font-size: var(--text-2xl);
+    font-size: var(--text-3xl);
+    margin-bottom: var(--space-3);
   }
 
   .profile-phone {
-    font-size: var(--text-base);
+    font-size: var(--text-lg);
+    margin-bottom: var(--space-6);
   }
 
+  .profile-login-btn {
+    width: 100%;
+    max-width: 200px;
+    padding: var(--space-4) var(--space-8);
+    font-size: var(--text-lg);
+  }
+
+  /* 右侧菜单 */
   .profile-menu {
+    flex: 1;
+    padding: 0;
     max-width: 600px;
-    margin: 0 auto;
-    padding: var(--space-6);
+    width: 100%;
   }
 
   .profile-menu-group {
@@ -292,6 +335,14 @@ async function confirmDeactivate() {
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
     border: 1px solid rgba(0, 0, 0, 0.04);
     overflow: hidden;
+    background: #FFFFFF;
+  }
+
+  .profile-menu-title {
+    padding: var(--space-4) var(--space-5);
+    font-size: var(--text-sm);
+    background: #F8FAFC;
+    border-bottom: 1px solid var(--color-gray-100);
   }
 
   .profile-menu-item {
@@ -322,17 +373,46 @@ async function confirmDeactivate() {
   }
 
   .profile-logout {
-    max-width: 600px;
-    margin: var(--space-6) auto 0;
-    padding: var(--space-5);
+    max-width: none;
+    margin: var(--space-5) 0 0;
+    padding: var(--space-4) var(--space-5);
     border-radius: var(--radius-xl);
+    background: #FFFFFF;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
+    border: 1px solid rgba(0, 0, 0, 0.04);
+    text-align: center;
+    cursor: pointer;
+    transition: all var(--transition-fast);
+  }
+
+  .profile-logout:hover {
+    background: #FEF2F2;
+    color: var(--color-error-600);
+    border-color: var(--color-error-200);
   }
 
   .profile-deactivate {
-    max-width: 600px;
-    margin: var(--space-4) auto 0;
-    padding: var(--space-5);
+    max-width: none;
+    margin: var(--space-3) 0 0;
+    padding: var(--space-4) var(--space-5);
     border-radius: var(--radius-xl);
+    background: #FFFFFF;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
+    border: 1px solid rgba(0, 0, 0, 0.04);
+    text-align: center;
+    cursor: pointer;
+    transition: all var(--transition-fast);
+  }
+
+  .profile-deactivate:hover {
+    background: #FEF2F2;
+    color: var(--color-error-600);
+    border-color: var(--color-error-200);
+  }
+
+  /* 禁用状态 */
+  .profile-menu--disabled {
+    opacity: 0.6;
   }
 }
 

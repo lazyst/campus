@@ -135,12 +135,13 @@ function select(name: string) {
 
 .sidebar__item--active {
   color: var(--color-primary-700);
-  background: linear-gradient(90deg, rgba(37, 99, 235, 0.1) 0%, rgba(37, 99, 235, 0.04) 100%);
+  background: linear-gradient(90deg, rgba(37, 99, 235, 0.12) 0%, rgba(37, 99, 235, 0.04) 100%);
   font-weight: var(--font-weight-semibold);
 }
 
 .sidebar__item--active::before {
-  height: 24px;
+  height: 28px;
+  background: var(--color-primary-600);
 }
 
 .sidebar__label {
