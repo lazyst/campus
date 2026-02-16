@@ -55,37 +55,51 @@ public class PostManagementController {
             @RequestParam(required = false) Long boardId,
             @RequestParam(required = false) Long userId,
             @RequestParam(required = false) String keyword,
-            @RequestParam(required = false) Integer status) {
-        
+            @RequestParam(required = false) Integer status,
+            @RequestParam(required = false) String sortField,
+            @RequestParam(required = false) String sortOrder) {
+
         verifyAdmin(authHeader);
 
         Page<Post> pageParam = new Page<>(page, size);
-        
-        com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper<Post> wrapper = 
+
+        com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper<Post> wrapper =
             new com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper<>();
-        
+
         wrapper.eq(Post::getStatus, 1); // 默认只查询正常状态的帖子
-        
+
         if (boardId != null) {
             wrapper.eq(Post::getBoardId, boardId);
         }
-        
+
         if (userId != null) {
             wrapper.eq(Post::getUserId, userId);
         }
-        
+
         if (keyword != null && !keyword.isEmpty()) {
             wrapper.and(w -> w.like(Post::getTitle, keyword)
                             .or()
                             .like(Post::getContent, keyword));
         }
-        
+
         if (status != null) {
             wrapper.eq(Post::getStatus, status);
         }
-        
-        wrapper.orderByDesc(Post::getCreatedAt);
-        
+
+        // 处理排序
+        boolean isAsc = "asc".equalsIgnoreCase(sortOrder);
+        if (sortField != null && !sortField.isEmpty()) {
+            switch (sortField) {
+                case "viewCount" -> wrapper.orderBy(true, isAsc, Post::getViewCount);
+                case "likeCount" -> wrapper.orderBy(true, isAsc, Post::getLikeCount);
+                case "commentCount" -> wrapper.orderBy(true, isAsc, Post::getCommentCount);
+                case "createdAt" -> wrapper.orderBy(true, isAsc, Post::getCreatedAt);
+                default -> wrapper.orderByDesc(Post::getCreatedAt);
+            }
+        } else {
+            wrapper.orderByDesc(Post::getCreatedAt);
+        }
+
         Page<Post> result = postService.page(pageParam, wrapper);
 
         // 填充每个帖子的用户信息

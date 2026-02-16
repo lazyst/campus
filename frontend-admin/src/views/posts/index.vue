@@ -5,6 +5,17 @@
         <div class="card-header">
           <el-input v-model="searchKeyword" placeholder="搜索帖子标题/内容" style="width: 250px" clearable @keyup.enter="handleSearch" />
           <el-button type="primary" style="margin-left: 10px" @click="handleSearch">搜索</el-button>
+          <el-select v-model="sortField" placeholder="排序字段" style="margin-left: 10px; width: 120px" @change="handleSortChange">
+            <el-option label="默认" value="" />
+            <el-option label="浏览量" value="viewCount" />
+            <el-option label="点赞数" value="likeCount" />
+            <el-option label="评论数" value="commentCount" />
+            <el-option label="发布时间" value="createdAt" />
+          </el-select>
+          <el-select v-model="sortOrder" placeholder="排序方式" style="margin-left: 10px; width: 100px" @change="handleSortChange">
+            <el-option label="降序" value="desc" />
+            <el-option label="升序" value="asc" />
+          </el-select>
         </div>
       </template>
 
@@ -131,6 +142,8 @@ const pageSize = ref(20)
 const pageSizes = [10, 20, 50, 100]
 const total = ref(0)
 const searchKeyword = ref('')
+const sortField = ref('')
+const sortOrder = ref('desc')
 
 const detailVisible = ref(false)
 const currentPost = ref<Post | null>(null)
@@ -144,7 +157,9 @@ const fetchData = async () => {
     const res = await getPostList({
       page: currentPage.value,
       size: pageSize.value,
-      keyword: searchKeyword.value || undefined
+      keyword: searchKeyword.value || undefined,
+      sortField: sortField.value || undefined,
+      sortOrder: sortOrder.value || undefined
     })
     postList.value = res.data.records
     total.value = res.data.total
@@ -153,6 +168,11 @@ const fetchData = async () => {
   } finally {
     loading.value = false
   }
+}
+
+const handleSortChange = () => {
+  currentPage.value = 1
+  fetchData()
 }
 
 const handleSearch = () => {
