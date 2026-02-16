@@ -95,4 +95,20 @@ public class AuthServiceImpl implements AuthService {
             return null;
         }
     }
+
+    @Override
+    public boolean isPhoneRegistered(String phone) {
+        // 查询包括已删除的用户
+        User deletedUser = userService.getByPhoneIncludingDeleted(phone);
+        return deletedUser != null;
+    }
+
+    @Override
+    public User getDeletedUserByPhone(String phone) {
+        User user = userService.getByPhoneIncludingDeleted(phone);
+        if (user != null && user.getDeleted() != null && user.getDeleted() == 1) {
+            return user;
+        }
+        return null;
+    }
 }

@@ -18,20 +18,20 @@
 
 | 变量名 | 必填 | 默认值 | 说明 |
 |--------|------|--------|------|
-| `DB_HOST` | 是 | 172.19.119.151 | MySQL 数据库地址 |
+| `DB_HOST` | 是 | localhost | MySQL 数据库地址 (WSL Docker) |
 | `DB_PORT` | 否 | 3306 | MySQL 数据库端口 |
 | `DB_NAME` | 是 | campus_fenbushi | 数据库名称 |
 | `DB_USERNAME` | 否 | root | 数据库用户名 |
 | `DB_PASSWORD` | 是 | 123 | 数据库密码 |
-| `DB_SLAVE_HOST` | 否 | 同 DB_HOST | 从库地址（读写分离） |
-| `DB_SLAVE_PORT` | 否 | 3306 | 从库端口 |
+| `DB_SLAVE_HOST` | 否 | localhost | 从库地址（读写分离） |
+| `DB_SLAVE_PORT` | 否 | 3307 | 从库端口 |
 | `DB_SLAVE_PASSWORD` | 否 | 同 DB_PASSWORD | 从库密码 |
 
 ### Redis 配置
 
 | 变量名 | 必填 | 默认值 | 说明 |
 |--------|------|--------|------|
-| `REDIS_HOST` | 是 | 172.19.119.151 | Redis 服务器地址 |
+| `REDIS_HOST` | 是 | localhost | Redis 服务器地址 (WSL Docker) |
 | `REDIS_PORT` | 否 | 6379 | Redis 服务器端口 |
 | `REDIS_PASSWORD` | 否 | 123 | Redis 访问密码 |
 

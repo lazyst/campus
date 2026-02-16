@@ -32,4 +32,19 @@ public interface UserService extends IService<User> {
      * 更新用户头像
      */
     void updateAvatar(Long userId, String avatarUrl);
+
+    /**
+     * 根据手机号查询用户（包括已删除的）
+     */
+    User getByPhoneIncludingDeleted(String phone);
+
+    /**
+     * 重新激活已删除的用户账号
+     */
+    void reactivateUser(Long userId, String newPassword);
+
+    /**
+     * 注销当前用户账号（软删除）
+     */
+    void deactivateAccount(Long userId);
 }

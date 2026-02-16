@@ -44,11 +44,23 @@ npm run lint       # ESLint with auto-fix
 
 ## Development Environment
 
-### Remote Database (VM 192.168.100.100)
+### Database (WSL Docker)
+开发环境使用WSL中的Docker容器运行MySQL和Redis。
+
+**启动数据库容器:**
+```bash
+wsl -d Ubuntu-24.04 -- docker start campus-mysql campus-redis-master
+```
+
+**停止数据库容器:**
+```bash
+wsl -d Ubuntu-24.04 -- docker stop campus-mysql campus-redis-master
+```
+
 | Service | Port | Credentials |
 |---------|------|-------------|
-| MySQL | 3306 | root/123, database: campus_fenbushi |
-| Redis | 6379 | password: 123 |
+| MySQL | localhost:3306 | root/123, database: campus_fenbushi |
+| Redis | localhost:6379 | password: 123 |
 
 ### Local Service Ports
 | Service | URL |
@@ -172,7 +184,7 @@ import '@/styles/main.css'
 | Role | Username | Password |
 |------|----------|----------|
 | Admin | admin | admin123 |
-| User | 13800000000 | 123456 |
+| User | 13800000001 | 123456 |
 
 ## Documentation Reference
 

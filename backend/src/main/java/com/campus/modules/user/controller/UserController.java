@@ -174,4 +174,19 @@ public class UserController {
             return Result.error("头像上传失败: " + e.getMessage());
         }
     }
+
+    @Operation(summary = "注销账号")
+    @DeleteMapping("/account")
+    public Result<Void> deactivateAccount(
+            @RequestHeader("Authorization") String authHeader) {
+        String token = authHeader.replace("Bearer ", "");
+        Long userId = authService.getUserIdFromToken(token);
+
+        if (userId == null) {
+            return Result.error("无效的认证令牌");
+        }
+
+        userService.deactivateAccount(userId);
+        return Result.success();
+    }
 }

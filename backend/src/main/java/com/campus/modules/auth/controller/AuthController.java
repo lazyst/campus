@@ -59,4 +59,35 @@ public class AuthController {
         }
         return Result.error("令牌已过期，请重新登录");
     }
+
+    @Operation(summary = "检查手机号是否已注册")
+    @GetMapping("/check-phone")
+    public Result<PhoneCheckResult> checkPhoneRegistered(@RequestParam String phone) {
+        boolean registered = authService.isPhoneRegistered(phone);
+        User deletedUser = authService.getDeletedUserByPhone(phone);
+
+        PhoneCheckResult result = new PhoneCheckResult();
+        result.setRegistered(registered);
+        result.setWasDeleted(deletedUser != null);
+        if (deletedUser != null) {
+            result.setPreviousNickname(deletedUser.getNickname());
+        }
+        return Result.success(result);
+    }
+
+    /**
+     * 手机号检查结果
+     */
+    public static class PhoneCheckResult {
+        private boolean registered;
+        private boolean wasDeleted;
+        private String previousNickname;
+
+        public boolean isRegistered() { return registered; }
+        public void setRegistered(boolean registered) { this.registered = registered; }
+        public boolean isWasDeleted() { return wasDeleted; }
+        public void setWasDeleted(boolean wasDeleted) { this.wasDeleted = wasDeleted; }
+        public String getPreviousNickname() { return previousNickname; }
+        public void setPreviousNickname(String previousNickname) { this.previousNickname = previousNickname; }
+    }
 }

@@ -31,8 +31,26 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
 
     @Override
     public User register(String phone, String password, String nickname) {
-        if (existsByPhone(phone)) {
-            throw new IllegalArgumentException("手机号已注册");
+        // 先检查是否存在（包括已删除的）
+        User existingUser = getByPhoneIncludingDeleted(phone);
+        if (existingUser != null) {
+            if (existingUser.getDeleted() != null && existingUser.getDeleted() == 1) {
+                // 用户已删除，更新deleted=0状态（使用原生SQL绕过逻辑删除）
+                existingUser.setDeleted(0);
+                existingUser.setPassword(passwordEncoder.encode(password));
+                if (nickname != null && !nickname.isEmpty()) {
+                    existingUser.setNickname(nickname);
+                }
+                existingUser.setStatus(1);
+                // 先更新deleted状态
+                baseMapper.updateDeletedStatus(existingUser.getId(), 0);
+                // 再更新其他字段
+                baseMapper.updateById(existingUser);
+                return existingUser;
+            } else {
+                // 用户未删除，已存在
+                throw new IllegalArgumentException("手机号已注册");
+            }
         }
 
         User user = new User();
@@ -41,6 +59,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         user.setNickname(nickname);
         user.setGender(0);
         user.setStatus(1);
+        user.setDeleted(0);
 
         baseMapper.insert(user);
         return user;
@@ -84,5 +103,38 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         }
         user.setAvatar(avatarUrl);
         baseMapper.updateById(user);
+    }
+
+    @Override
+    public User getByPhoneIncludingDeleted(String phone) {
+        // 使用原生SQL查询，忽略逻辑删除
+        return baseMapper.selectByPhoneIncludingDeleted(phone);
+    }
+
+    @Override
+    public void reactivateUser(Long userId, String newPassword) {
+        User user = baseMapper.selectById(userId);
+        if (user == null) {
+            throw new IllegalArgumentException("用户不存在");
+        }
+        if (user.getDeleted() == null || user.getDeleted() != 1) {
+            throw new IllegalArgumentException("该用户未被删除，无需重新激活");
+        }
+        // 重新激活：设置deleted=0，更新密码
+        user.setDeleted(0);
+        if (newPassword != null && !newPassword.isEmpty()) {
+            user.setPassword(passwordEncoder.encode(newPassword));
+        }
+        baseMapper.updateById(user);
+    }
+
+    @Override
+    public void deactivateAccount(Long userId) {
+        User user = baseMapper.selectById(userId);
+        if (user == null) {
+            throw new IllegalArgumentException("用户不存在");
+        }
+        // 软删除用户（使用原生SQL绕过逻辑删除）
+        baseMapper.updateDeletedStatus(userId, 1);
     }
 }

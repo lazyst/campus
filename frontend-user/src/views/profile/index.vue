@@ -68,6 +68,11 @@
         退出登录
       </div>
 
+      <!-- 注销账号按钮 -->
+      <div v-if="userStore.token" class="profile-deactivate" @click="handleDeactivate">
+        注销账号
+      </div>
+
       <!-- 退出确认弹窗 -->
       <Dialog
         :visible="dialogVisible"
@@ -77,6 +82,17 @@
         cancelText="取消"
         @confirm="confirmLogout"
         @update:visible="dialogVisible = $event"
+      />
+
+      <!-- 注销账号确认弹窗 -->
+      <Dialog
+        :visible="deactivateDialogVisible"
+        title="注销账号"
+        message="注销后将清除所有数据，且该手机号需30天后才可重新注册。确定要注销吗？"
+        confirmText="确定注销"
+        cancelText="取消"
+        @confirm="confirmDeactivate"
+        @update:visible="deactivateDialogVisible = $event"
       />
     </div>
   </div>
@@ -89,6 +105,7 @@ import { useUserStore } from '@/stores/user';
 import Dialog from '@/components/interactive/Dialog.vue';
 import { getImageUrl } from '@/utils/imageUrl';
 import { getUnreadCount } from '@/api/modules/notification';
+import { deactivateAccount } from '@/api/modules/user';
 
 const router = useRouter();
 const userStore = useUserStore();
@@ -145,6 +162,7 @@ const userPhone = computed(() => {
 });
 
 const dialogVisible = ref(false);
+const deactivateDialogVisible = ref(false);
 
 const mainMenuItems = [
   { label: '编辑资料', route: '/profile/edit' },
@@ -183,6 +201,20 @@ function confirmLogout() {
 
 function cancelLogout() {
   dialogVisible.value = false;
+}
+
+function handleDeactivate() {
+  deactivateDialogVisible.value = true;
+}
+
+async function confirmDeactivate() {
+  deactivateDialogVisible.value = false;
+  try {
+    await deactivateAccount();
+    userStore.logout();
+  } catch (error) {
+    console.error('注销账号失败:', error);
+  }
 }
 </script>
 
@@ -350,6 +382,25 @@ function cancelLogout() {
 
 .profile-logout:active {
   background-color: var(--color-error-50);
+  transform: scale(0.98);
+}
+
+/* 注销账号按钮 */
+.profile-deactivate {
+  margin-top: var(--space-3);
+  padding: var(--space-4);
+  text-align: center;
+  font-size: var(--text-base);
+  font-weight: var(--font-weight-medium);
+  color: var(--text-tertiary);
+  background-color: var(--bg-card);
+  border-radius: var(--radius-lg);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.profile-deactivate:active {
+  background-color: var(--bg-secondary);
   transform: scale(0.98);
 }
 </style>

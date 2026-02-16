@@ -49,6 +49,11 @@ public class User extends BaseEntity {
     private Integer status;
 
     /**
+     * 是否删除：0未删除 1已删除
+     */
+    private Integer deleted;
+
+    /**
      * 年级
      */
     private String grade;

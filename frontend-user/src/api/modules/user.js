@@ -57,3 +57,11 @@ export function uploadAvatar(file) {
     loadingText: '上传中...'
   })
 }
+
+/**
+ * 注销账号
+ * @returns {Promise<void>}
+ */
+export function deactivateAccount() {
+  return request.delete('/user/account')
+}

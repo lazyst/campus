@@ -39,4 +39,14 @@ public interface AuthService {
      * 刷新令牌
      */
     String refreshToken(String token);
+
+    /**
+     * 检查手机号是否已注册（被删除的也算已注册）
+     */
+    boolean isPhoneRegistered(String phone);
+
+    /**
+     * 获取被删除的用户信息（如果存在）
+     */
+    com.campus.modules.user.entity.User getDeletedUserByPhone(String phone);
 }
