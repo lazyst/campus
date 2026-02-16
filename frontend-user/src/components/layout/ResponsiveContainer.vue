@@ -51,6 +51,48 @@ withDefaults(defineProps<Props>(), {
   min-height: 100vh;
 }
 
+/* PC端增强 */
+@media (min-width: 1024px) {
+  .responsive-container {
+    padding-left: var(--space-8);
+    padding-right: var(--space-8);
+  }
+
+  .responsive-container--sm {
+    max-width: 560px;
+  }
+
+  .responsive-container--md {
+    max-width: 720px;
+  }
+
+  .responsive-container--lg {
+    max-width: 1100px;
+  }
+
+  /* PC端内容区域增加微妙的内阴影 */
+  .responsive-container {
+    position: relative;
+  }
+
+  .responsive-container::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 100%;
+    height: 100%;
+    max-width: inherit;
+    pointer-events: none;
+    background: radial-gradient(
+      ellipse at center top,
+      rgba(37, 99, 235, 0.02) 0%,
+      transparent 70%
+    );
+  }
+}
+
 @media (max-width: 639px) {
   .responsive-container {
     padding-left: var(--space-4);

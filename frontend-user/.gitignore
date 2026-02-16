@@ -36,3 +36,4 @@ components.d.ts
 # OS
 .DS_Store
 Thumbs.db
+*.png

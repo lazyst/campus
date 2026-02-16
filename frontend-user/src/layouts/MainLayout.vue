@@ -248,6 +248,13 @@ onUnmounted(() => {
   background-color: var(--bg-secondary);
 }
 
+/* PC端背景增强 */
+@media (min-width: 1024px) {
+  .main-layout {
+    background: linear-gradient(180deg, #F8FAFC 0%, #F1F5F9 100%);
+  }
+}
+
 .main-layout--with-top-padding {
   padding-top: var(--nav-height);
 }
@@ -285,43 +292,108 @@ onUnmounted(() => {
   z-index: var(--z-fixed);
 }
 
-.fab-button:active {
-  transform: scale(0.95);
+.fab-button:hover {
   background-color: var(--color-primary-800);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(37, 99, 235, 0.35);
+}
+
+.fab-button:active {
+  transform: scale(0.95) translateY(0);
+  background-color: var(--color-primary-900);
   box-shadow: var(--shadow-md);
 }
 
 /* PC端固定发布按钮 - 始终显示在视口右下角 */
 .fab-button-pc {
   position: fixed;
-  right: var(--space-6);
-  bottom: var(--space-6);
+  right: var(--space-8);
+  bottom: var(--space-8);
   display: flex;
   align-items: center;
   justify-content: center;
   gap: var(--space-2);
-  min-width: 100px;
-  height: 44px;
-  padding: 0 var(--space-5);
-  font-size: var(--text-base);
+  min-width: 120px;
+  height: 52px;
+  padding: 0 var(--space-6);
+  font-size: var(--text-lg);
   font-weight: var(--font-weight-semibold);
   color: var(--text-inverse);
-  background: linear-gradient(135deg, var(--color-primary-600) 0%, var(--color-primary-700) 100%);
+  background: linear-gradient(135deg, #3B82F6 0%, #1D4ED8 50%, #1E40AF 100%);
   border: none;
-  border-radius: var(--radius-lg);
-  box-shadow: 0 4px 16px rgba(37, 99, 235, 0.3);
+  border-radius: var(--radius-xl);
+  box-shadow: 
+    0 4px 6px -1px rgba(37, 99, 235, 0.2),
+    0 2px 4px -1px rgba(37, 99, 235, 0.1),
+    0 0 0 0 rgba(37, 99, 235, 0);
   cursor: pointer;
-  transition: all var(--transition-normal);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   z-index: var(--z-fixed);
+  overflow: hidden;
+}
+
+/* 按钮光效 */
+.fab-button-pc::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.2),
+    transparent
+  );
+  transition: left 0.5s ease;
 }
 
 .fab-button-pc:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(37, 99, 235, 0.4);
+  transform: translateY(-4px);
+  box-shadow: 
+    0 10px 25px -3px rgba(37, 99, 235, 0.35),
+    0 4px 10px -2px rgba(37, 99, 235, 0.15),
+    0 0 20px rgba(37, 99, 235, 0.15);
+}
+
+.fab-button-pc:hover::before {
+  left: 100%;
+}
+
+.fab-button-pc:active {
+  transform: translateY(-2px) scale(0.98);
+  box-shadow: 
+    0 4px 12px -2px rgba(37, 99, 235, 0.25),
+    0 0 10px rgba(37, 99, 235, 0.1);
 }
 
 .fab-button-pc__icon {
-  font-size: var(--text-lg);
+  font-size: var(--text-xl);
   font-weight: var(--font-weight-bold);
+  position: relative;
+  z-index: 1;
+}
+
+/* 按钮点击波纹效果 */
+.fab-button-pc::after {
+  content: '';
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  top: 0;
+  left: 0;
+  pointer-events: none;
+  background: radial-gradient(
+    circle,
+    rgba(255, 255, 255, 0.3) 0%,
+    transparent 70%
+  );
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.fab-button-pc:active::after {
+  opacity: 1;
 }
 </style>

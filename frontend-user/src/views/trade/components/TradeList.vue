@@ -797,13 +797,102 @@ onUnmounted(() => {
     gap: var(--space-4);
     padding: var(--space-4);
   }
+
+  .trade-header {
+    padding: var(--space-8) var(--space-6);
+  }
+
+  .trade-tabs {
+    padding: var(--space-4) var(--space-6);
+  }
 }
 
 @media (min-width: 1024px) {
   .waterfall-container {
     grid-template-columns: repeat(4, 1fr);
-    gap: var(--space-4);
+    gap: var(--space-5);
+    padding: var(--space-6);
+  }
+
+  /* PC端卡片增强 */
+  .waterfall-item {
+    border-radius: var(--radius-xl);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04), 0 4px 12px rgba(0, 0, 0, 0.03);
+  }
+
+  .waterfall-item:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08), 0 16px 48px rgba(0, 0, 0, 0.04);
+  }
+
+  .waterfall-item:active {
+    transform: translateY(-2px);
+  }
+
+  .waterfall-content {
     padding: var(--space-4);
+  }
+
+  .item-title {
+    font-size: var(--text-base);
+  }
+
+  .trade-header {
+    padding: var(--space-10) var(--space-8);
+    background: linear-gradient(180deg, #FFFFFF 0%, #F8FAFC 100%);
+    border-bottom: 1px solid var(--color-gray-100);
+  }
+
+  .trade-title {
+    font-size: var(--text-3xl);
+    margin-bottom: var(--space-2);
+  }
+
+  .trade-subtitle {
+    font-size: var(--text-sm);
+    letter-spacing: 0.15em;
+  }
+
+  .trade-tabs {
+    padding: var(--space-5) var(--space-8);
+    background: linear-gradient(180deg, #FFFFFF 0%, #FAFAFA 100%);
+    border-bottom: 1px solid var(--color-gray-100);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
+  }
+
+  .trade-tab {
+    font-size: var(--text-lg);
+    padding: var(--space-4) 0;
+  }
+
+  .trade-sort-btn {
+    font-size: var(--text-sm);
+    padding: var(--space-2) var(--space-3);
+  }
+
+  .tab-underline {
+    height: 3px;
+  }
+
+  /* 用户信息增强 */
+  .user-avatar {
+    width: 28px;
+    height: 28px;
+    font-size: 12px;
+  }
+
+  .user-name {
+    font-size: var(--text-sm);
+  }
+
+  /* 价格增强 */
+  .item-footer {
+    padding-top: var(--space-3);
+    margin-top: var(--space-3);
+  }
+
+  .item-price {
+    font-size: var(--text-xl);
   }
 }
 </style>

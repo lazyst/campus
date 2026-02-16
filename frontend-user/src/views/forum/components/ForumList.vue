@@ -348,6 +348,54 @@ onUnmounted(() => {
   padding-bottom: calc(var(--tabbar-height) + var(--page-safe-bottom, 16px));
 }
 
+/* PC端增强样式 */
+@media (min-width: 1024px) {
+  .forum-list {
+    padding: var(--space-6);
+  }
+
+  .forum-list__content {
+    gap: var(--space-4);
+  }
+
+  .forum-list__card {
+    padding: var(--space-5);
+    border-radius: var(--radius-xl);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04), 0 4px 12px rgba(0, 0, 0, 0.03);
+    border: 1px solid rgba(0, 0, 0, 0.04);
+  }
+
+  .forum-list__card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06), 0 12px 24px rgba(0, 0, 0, 0.04);
+    border-color: rgba(37, 99, 235, 0.1);
+  }
+
+  .forum-list__card:active {
+    transform: translateY(0);
+  }
+
+  .forum-list__card-title {
+    font-size: var(--text-xl);
+  }
+
+  .forum-list__card-preview {
+    font-size: var(--text-base);
+    -webkit-line-clamp: 3;
+  }
+
+  .forum-list__card-image {
+    width: 100px;
+    height: 100px;
+  }
+
+  .forum-list__card-image-more {
+    width: 100px;
+    height: 100px;
+    font-size: var(--text-xl);
+  }
+}
+
 .forum-list__state {
   display: flex;
   align-items: center;
@@ -467,7 +515,7 @@ onUnmounted(() => {
   display: flex;
   align-items: center;
   gap: var(--space-1);
-  padding: var(--space-1) var(--space-2);
+  padding: var(--space-2) var(--space-3);
   background: none;
   border: none;
   border-radius: var(--radius-full);
@@ -477,8 +525,13 @@ onUnmounted(() => {
   transition: all var(--transition-fast);
 }
 
-.forum-list__action-btn:active {
+.forum-list__action-btn:hover {
   background-color: var(--bg-secondary);
+  color: var(--text-secondary);
+}
+
+.forum-list__action-btn:active {
+  background-color: var(--bg-tertiary);
 }
 
 .forum-list__action-btn--active {
