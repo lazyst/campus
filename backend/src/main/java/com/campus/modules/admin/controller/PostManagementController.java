@@ -87,7 +87,10 @@ public class PostManagementController {
         wrapper.orderByDesc(Post::getCreatedAt);
         
         Page<Post> result = postService.page(pageParam, wrapper);
-        
+
+        // 填充每个帖子的用户信息
+        result.getRecords().forEach(this::enrichPostWithUserInfo);
+
         // Clear sensitive fields if needed
         return Result.success(result);
     }
