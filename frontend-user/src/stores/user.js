@@ -74,22 +74,19 @@ export const useUserStore = defineStore('user', () => {
 
   async function register(params) {
     const result = await registerApi(params)
-    if (result.token) {
-      token.value = result.token
+    // registerApi 返回的是 data 部分（user对象）
+    // token 已被 request 拦截器保存到 localStorage
+    // 从 localStorage 获取 token 并设置到 store
+    const savedToken = localStorage.getItem('token')
+    if (savedToken) {
+      setToken(savedToken)
     }
-    if (result.user) {
-      userInfo.value = result.user
-      // 确保 user 对象中也保存 token
-      try {
-        const stored = localStorage.getItem('user')
-        const parsed = stored ? JSON.parse(stored) : {}
-        parsed.token = result.token
-        parsed.userInfo = result.user
-        localStorage.setItem('user', JSON.stringify(parsed))
-      } catch (e) {
-        console.warn('保存用户状态失败:', e)
-      }
+    // 设置用户信息
+    if (result) {
+      userInfo.value = result
     }
+    // 重新获取完整用户信息确保数据最新
+    await fetchUserInfo()
     return result
   }
 
