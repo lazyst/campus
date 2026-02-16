@@ -12,7 +12,7 @@
           <div class="profile-phone-wrapper">
             <p class="profile-phone">{{ userPhone }}</p>
             <span v-if="userStore.userInfo?.phone" class="profile-phone-toggle" @click="togglePhone">
-              {{ showFullPhone ? '🙈' : '👁' }}
+              {{ showFullPhone ? '隐藏' : '显示' }}
             </span>
           </div>
         </div>
