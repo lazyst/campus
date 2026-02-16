@@ -12,14 +12,13 @@
             <el-option label="评论数" value="commentCount" />
             <el-option label="发布时间" value="createdAt" />
           </el-select>
-          <el-button-group style="margin-left: 10px">
-            <el-button :type="sortOrder === 'desc' ? 'primary' : 'default'" @click="handleSortOrderChange('desc')">
-              <el-icon><ArrowDown /></el-icon>
-            </el-button>
-            <el-button :type="sortOrder === 'asc' ? 'primary' : 'default'" @click="handleSortOrderChange('asc')">
-              <el-icon><ArrowUp /></el-icon>
-            </el-button>
-          </el-button-group>
+          <el-button
+            :type="sortOrder === 'desc' ? 'primary' : 'default'"
+            style="margin-left: 10px"
+            @click="handleSortOrderChange(sortOrder === 'desc' ? 'asc' : 'desc')"
+          >
+            {{ sortOrder === 'desc' ? '降序' : '升序' }}
+          </el-button>
         </div>
       </template>
 
@@ -136,7 +135,6 @@
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
-import { ArrowDown, ArrowUp } from '@element-plus/icons-vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { getPostList, getPostDetail, deletePost, getPostComments, deleteComment, type Post } from '@/api/admin/post'
 
