@@ -334,9 +334,78 @@ onUnmounted(() => {
   padding-bottom: var(--tabbar-height);
 }
 
+/* PC端样式增强 */
 @media (min-width: 1024px) {
   .messages-page {
+    background: linear-gradient(180deg, #F8FAFC 0%, #F1F5F9 100%);
     padding-bottom: var(--space-6);
+  }
+
+  .page-header {
+    background: linear-gradient(180deg, #FFFFFF 0%, #F8FAFC 100%);
+    padding: var(--space-6) var(--space-8);
+    border-bottom: 1px solid var(--color-gray-100);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
+  }
+
+  .page-title {
+    font-size: var(--text-2xl);
+  }
+
+  .messages-list {
+    padding: var(--space-4) 0;
+    max-width: 720px;
+    margin: 0 auto;
+  }
+
+  .message-item {
+    padding: var(--space-5);
+    border-radius: var(--radius-xl);
+    margin-bottom: var(--space-3);
+    border: 1px solid transparent;
+    transition: all var(--transition-normal);
+  }
+
+  .message-item:hover {
+    background-color: #FFFFFF;
+    border-color: rgba(37, 99, 235, 0.1);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
+    transform: translateY(-1px);
+  }
+
+  .message-avatar {
+    width: 56px;
+    height: 56px;
+    font-size: var(--text-xl);
+  }
+
+  .message-sender {
+    font-size: var(--text-lg);
+  }
+
+  .message-preview {
+    font-size: var(--text-base);
+  }
+
+  .empty-state {
+    max-width: 400px;
+    margin: 0 auto;
+    padding: var(--space-16);
+    background: #FFFFFF;
+    border-radius: var(--radius-xl);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
+  }
+
+  .empty-icon {
+    width: 80px;
+    height: 80px;
+    margin: 0 auto var(--space-4);
+    color: var(--color-gray-300);
+  }
+
+  .empty-icon svg {
+    width: 100%;
+    height: 100%;
   }
 }
 
@@ -470,10 +539,19 @@ onUnmounted(() => {
   background-color: var(--bg-card);
   cursor: pointer;
   transition: background-color var(--transition-fast);
+  border-bottom: 1px solid var(--border-light);
+}
+
+.message-item:last-child {
+  border-bottom: none;
+}
+
+.message-item:hover {
+  background-color: var(--bg-secondary);
 }
 
 .message-item:active {
-  background-color: var(--bg-secondary);
+  background-color: var(--bg-tertiary);
 }
 
 .message-avatar-container {

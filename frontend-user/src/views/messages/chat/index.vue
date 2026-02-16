@@ -435,6 +435,112 @@ onUnmounted(() => {
   overflow: hidden;
 }
 
+/* PC端样式增强 */
+@media (min-width: 1024px) {
+  .chat-detail-page {
+    background: linear-gradient(180deg, #F8FAFC 0%, #F1F5F9 100%);
+    max-width: 800px;
+    margin: 0 auto;
+    box-shadow: 0 0 40px rgba(0, 0, 0, 0.08);
+  }
+
+  .status-bar {
+    padding: var(--space-5) var(--space-8);
+    background: linear-gradient(180deg, #FFFFFF 0%, #F8FAFC 100%);
+    border-bottom: 1px solid var(--color-gray-100);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
+  }
+
+  .back-btn {
+    font-size: 32px;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: var(--radius-full);
+    transition: all var(--transition-fast);
+  }
+
+  .back-btn:hover {
+    background-color: var(--bg-secondary);
+  }
+
+  .chat-title {
+    font-size: var(--text-xl);
+    font-weight: var(--font-weight-semibold);
+  }
+
+  .more-btn {
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: var(--radius-full);
+    transition: all var(--transition-fast);
+  }
+
+  .more-btn:hover {
+    background-color: var(--bg-secondary);
+  }
+
+  .chat-messages {
+    padding: var(--space-6) var(--space-8);
+    max-width: 720px;
+    margin: 0 auto;
+    width: 100%;
+  }
+
+  .message-row {
+    margin-bottom: var(--space-4);
+  }
+
+  .message-avatar {
+    width: 44px;
+    height: 44px;
+  }
+
+  .message-bubble {
+    max-width: 400px;
+    padding: var(--space-4) var(--space-5);
+    font-size: var(--text-base);
+  }
+
+  .message-image-container {
+    max-width: 320px;
+  }
+
+  .message-image {
+    width: 280px;
+  }
+
+  .input-area {
+    padding: var(--space-4) var(--space-8);
+    background: linear-gradient(180deg, #FFFFFF 0%, #F8FAFC 100%);
+    border-top: 1px solid var(--color-gray-100);
+    max-width: 800px;
+    margin: 0 auto;
+    width: 100%;
+  }
+
+  .message-input {
+    height: 48px;
+    font-size: var(--text-base);
+  }
+
+  .send-btn {
+    width: 90px;
+    height: 48px;
+    font-size: var(--text-base);
+  }
+
+  .image-btn {
+    width: 48px;
+    height: 48px;
+  }
+}
+
 .status-bar {
   flex-shrink: 0;
   display: flex;

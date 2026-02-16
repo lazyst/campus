@@ -577,6 +577,114 @@ const toggleCollect = handleCollect;
   padding-bottom: 70px;
 }
 
+/* PC端样式增强 */
+@media (min-width: 1024px) {
+  .forum-detail-page {
+    background: linear-gradient(180deg, #F8FAFC 0%, #F1F5F9 100%);
+    padding-bottom: var(--space-6);
+  }
+
+  .detail-status-bar {
+    padding: var(--space-4) var(--space-8);
+    background: linear-gradient(180deg, #FFFFFF 0%, #F8FAFC 100%);
+    border-bottom: 1px solid var(--color-gray-100);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
+  }
+
+  .detail-back-btn,
+  .detail-more-btn {
+    width: 44px;
+    height: 44px;
+    font-size: 24px;
+  }
+
+  .detail-back-btn:hover,
+  .detail-more-btn:hover {
+    background-color: var(--bg-secondary);
+  }
+
+  .detail-content {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: var(--space-8);
+    background: #FFFFFF;
+    border-radius: var(--radius-xl);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.04);
+    margin-top: var(--space-6);
+  }
+
+  .detail-author-avatar {
+    width: 56px;
+    height: 56px;
+    font-size: var(--text-xl);
+  }
+
+  .detail-author-name {
+    font-size: var(--text-lg);
+  }
+
+  .detail-post-meta {
+    font-size: var(--text-sm);
+  }
+
+  .detail-post-title {
+    font-size: var(--text-2xl);
+    margin-bottom: var(--space-6);
+  }
+
+  .detail-post-body {
+    font-size: var(--text-lg);
+    line-height: var(--line-height-relaxed);
+  }
+
+  .detail-post-image {
+    width: 200px;
+    height: 200px;
+  }
+
+  .detail-post-actions {
+    padding-top: var(--space-6);
+    margin-top: var(--space-6);
+  }
+
+  .detail-action-item {
+    padding: var(--space-3) var(--space-5);
+  }
+
+  .detail-action-item:hover {
+    background-color: var(--bg-secondary);
+  }
+
+  .detail-comments-section {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: var(--space-6) var(--space-8);
+    background: #FFFFFF;
+    border-radius: var(--radius-xl);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.04);
+    margin-bottom: var(--space-6);
+    border-top: none;
+  }
+
+  .detail-comment-input-area {
+    max-width: 800px;
+    left: 50%;
+    transform: translateX(-50%);
+    border-radius: var(--radius-xl) var(--radius-xl) 0 0;
+    padding: var(--space-4) var(--space-8);
+  }
+
+  .detail-comment-input {
+    height: 48px;
+    font-size: var(--text-base);
+  }
+
+  .detail-send-btn {
+    width: 80px;
+    height: 48px;
+  }
+}
+
 .detail-status-bar {
   display: flex;
   align-items: center;

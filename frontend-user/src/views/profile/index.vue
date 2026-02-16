@@ -244,6 +244,98 @@ async function confirmDeactivate() {
   background-color: var(--bg-secondary);
 }
 
+/* PC端样式增强 */
+@media (min-width: 1024px) {
+  .profile-page {
+    background: linear-gradient(180deg, #F8FAFC 0%, #F1F5F9 100%);
+  }
+
+  .profile-header {
+    padding: var(--space-10) var(--space-8) var(--space-8);
+    background: linear-gradient(180deg, #EFF6FF 0%, #FFFFFF 50%, #F8FAFC 100%);
+    border-bottom: 1px solid var(--color-gray-100);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
+  }
+
+  .profile-user-info {
+    max-width: 600px;
+    margin: 0 auto;
+    padding: var(--space-8);
+    background: #FFFFFF;
+    border-radius: var(--radius-xl);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.04);
+  }
+
+  .profile-avatar {
+    width: 96px;
+    height: 96px;
+    font-size: var(--text-3xl);
+  }
+
+  .profile-name {
+    font-size: var(--text-2xl);
+  }
+
+  .profile-phone {
+    font-size: var(--text-base);
+  }
+
+  .profile-menu {
+    max-width: 600px;
+    margin: 0 auto;
+    padding: var(--space-6);
+  }
+
+  .profile-menu-group {
+    border-radius: var(--radius-xl);
+    margin-bottom: var(--space-5);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
+    border: 1px solid rgba(0, 0, 0, 0.04);
+    overflow: hidden;
+  }
+
+  .profile-menu-item {
+    padding: var(--space-5);
+    position: relative;
+  }
+
+  .profile-menu-item::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: var(--space-5);
+    right: var(--space-5);
+    height: 1px;
+    background: var(--color-gray-100);
+  }
+
+  .profile-menu-item:last-child::after {
+    display: none;
+  }
+
+  .profile-menu-item:hover {
+    background: linear-gradient(90deg, rgba(37, 99, 235, 0.03) 0%, transparent 100%);
+  }
+
+  .profile-menu-label {
+    font-size: var(--text-base);
+  }
+
+  .profile-logout {
+    max-width: 600px;
+    margin: var(--space-6) auto 0;
+    padding: var(--space-5);
+    border-radius: var(--radius-xl);
+  }
+
+  .profile-deactivate {
+    max-width: 600px;
+    margin: var(--space-4) auto 0;
+    padding: var(--space-5);
+    border-radius: var(--radius-xl);
+  }
+}
+
 .profile-header {
   padding: var(--space-6) var(--space-4) var(--space-4);
   background: linear-gradient(180deg, var(--color-primary-50) 0%, var(--bg-card) 100%);

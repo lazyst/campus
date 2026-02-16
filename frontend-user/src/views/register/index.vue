@@ -163,6 +163,96 @@ async function handleSubmit() {
   flex-direction: column;
 }
 
+/* PC端样式增强 */
+@media (min-width: 1024px) {
+  .register-page {
+    background: linear-gradient(135deg, #EFF6FF 0%, #F8FAFC 50%, #F0FDF4 100%);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .register-page::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -20%;
+    width: 60%;
+    height: 200%;
+    background: radial-gradient(ellipse, rgba(16, 185, 129, 0.08) 0%, transparent 70%);
+    pointer-events: none;
+  }
+
+  .register-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: var(--space-8);
+    max-width: 440px;
+    margin: 0 auto;
+    width: 100%;
+  }
+
+  .register-header {
+    text-align: center;
+    margin-bottom: var(--space-8);
+  }
+
+  .register-title {
+    font-size: var(--text-3xl);
+    font-weight: var(--font-weight-bold);
+    background: linear-gradient(135deg, var(--color-primary-600) 0%, var(--color-primary-800) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin-bottom: var(--space-2);
+  }
+
+  .register-subtitle {
+    font-size: var(--text-lg);
+    color: var(--text-secondary);
+  }
+
+  .register-form {
+    width: 100%;
+    background: #FFFFFF;
+    padding: var(--space-8);
+    border-radius: var(--radius-xl);
+    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.06);
+    border: 1px solid rgba(0, 0, 0, 0.04);
+  }
+
+  .form-field {
+    margin-bottom: var(--space-4);
+  }
+
+  .form-label {
+    font-size: var(--text-base);
+    margin-bottom: var(--space-2);
+  }
+
+  .input {
+    height: 52px;
+    font-size: var(--text-base);
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--color-gray-200);
+    transition: all var(--transition-fast);
+  }
+
+  .input:focus {
+    border-color: var(--color-primary-500);
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+  }
+
+  .register-submit {
+    height: 56px;
+    font-size: var(--text-lg);
+    margin-top: var(--space-6);
+    border-radius: var(--radius-lg);
+  }
+}
+
 .register-content {
   flex: 1;
   padding: calc(var(--nav-height) + var(--space-6)) var(--space-4) var(--space-4);
