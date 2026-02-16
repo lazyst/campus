@@ -254,8 +254,21 @@ async function confirmDeactivate() {
   background-color: var(--bg-secondary);
 }
 
-  /* PC端样式增强 - 分栏布局 */
-  @media (min-width: 1024px) {
+/* 移动端样式 - 默认 */
+.profile-header {
+  display: block;
+}
+
+.profile-content {
+  display: block;
+}
+
+.profile-sidebar {
+  display: none;
+}
+
+/* PC端样式增强 - 分栏布局 */
+@media (min-width: 1024px) {
     .profile-page {
       background: #F1F5F9;
       min-height: 100vh;
@@ -263,6 +276,10 @@ async function confirmDeactivate() {
 
     .profile-header {
       display: none;
+    }
+
+    .profile-sidebar {
+      display: block;
     }
 
     /* 分栏容器 */
