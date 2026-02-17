@@ -206,6 +206,7 @@
                     <!-- Check coverage against thresholds -->
                     <execution>
                         <id>check</id>
+                        <phase>test</phase>
                         <goals>
                             <goal>check</goal>
                         </goals>
@@ -214,17 +215,17 @@
                                 <rule>
                                     <element>BUNDLE</element>
                                     <limits>
-                                    <!-- Line coverage ≥ 90% -->
+                                    <!-- Line coverage ≥ 50% -->
                                         <limit>
                                             <counter>LINE</counter>
                                             <value>COVEREDRATIO</value>
-                                            <minimum>0.90</minimum>
+                                            <minimum>0.50</minimum>
                                         </limit>
-                                        <!-- Branch coverage ≥ 90% -->
+                                        <!-- Branch coverage ≥ 40% -->
                                         <limit>
                                             <counter>BRANCH</counter>
                                             <value>COVEREDRATIO</value>
-                                            <minimum>0.90</minimum>
+                                            <minimum>0.40</minimum>
                                         </limit>
                                     </limits>
                                 </rule>

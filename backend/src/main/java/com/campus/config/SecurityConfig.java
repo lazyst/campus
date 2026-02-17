@@ -56,10 +56,14 @@ public class SecurityConfig {
                 // 公开的API端点
                 .requestMatchers("/api/auth/**").permitAll()
                 .requestMatchers("/api/user/**").permitAll()
+                .requestMatchers("/api/users/**").permitAll()
                 .requestMatchers("/api/boards/**").permitAll()
                 .requestMatchers("/api/posts/**").permitAll()
                 .requestMatchers("/api/comments/**").permitAll()
+                .requestMatchers("/api/notifications/**").permitAll()
                 .requestMatchers("/api/items/**").permitAll()
+                .requestMatchers("/api/conversations/**").permitAll()
+                .requestMatchers("/api/messages/**").permitAll()
                 .requestMatchers("/api/upload/**").permitAll()
                 .requestMatchers("/api/test/**").permitAll()  // 测试接口
                 .requestMatchers("/api/health/**").permitAll()  // 健康检查端点

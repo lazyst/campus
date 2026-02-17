@@ -4,7 +4,10 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { getMessages, getMessagesWithUser } from '../modules/message'
 
 // Mock the request instance
-const mockRequest = vi.fn()
+const { mockRequest } = vi.hoisted(() => ({
+  mockRequest: vi.fn()
+}))
+
 vi.mock('../request', () => ({
   default: mockRequest
 }))

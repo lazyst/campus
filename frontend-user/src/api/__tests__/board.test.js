@@ -3,8 +3,11 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { getBoards, getBoardById } from '../modules/board'
 
-// Mock the request instance
-const mockRequest = vi.fn()
+// Use vi.hoisted to get reference to mock functions before they're hoisted
+const { mockRequest } = vi.hoisted(() => ({
+  mockRequest: vi.fn()
+}))
+
 vi.mock('../request', () => ({
   default: mockRequest
 }))

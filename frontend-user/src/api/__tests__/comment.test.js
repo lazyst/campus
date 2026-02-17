@@ -3,8 +3,10 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { getCommentsByPost, createComment, deleteComment } from '../modules/comment'
 
-// Mock the request instance
-const mockRequest = vi.fn()
+const { mockRequest } = vi.hoisted(() => ({
+  mockRequest: vi.fn()
+}))
+
 vi.mock('../request', () => ({
   default: mockRequest
 }))

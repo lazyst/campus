@@ -184,19 +184,15 @@ public class UserManagementController {
 
         verifyAdmin(authHeader);
 
-        // 直接用 Mapper 查询，强制走主库
-        User user = userService.getBaseMapper().selectOne(
-            new LambdaQueryWrapper<User>().eq(User::getId, userId)
-        );
+        // 直接用 getById 查询，强制走主库
+        User user = userService.getById(userId);
         if (user == null || (user.getDeleted() != null && user.getDeleted() == 1)) {
             return Result.error("用户不存在");
         }
 
-        // Soft delete - 只更新 deleted 字段
-        userService.lambdaUpdate()
-                .eq(User::getId, userId)
-                .set(User::getDeleted, 1)
-                .update();
+        // Soft delete - 更新 deleted 字段
+        user.setDeleted(1);
+        userService.updateById(user);
 
         return Result.success();
     }

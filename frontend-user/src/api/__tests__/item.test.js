@@ -15,7 +15,10 @@ import {
 } from '../modules/item'
 
 // Mock the request instance
-const mockRequest = vi.fn()
+const { mockRequest } = vi.hoisted(() => ({
+  mockRequest: vi.fn()
+}))
+
 vi.mock('../request', () => ({
   default: mockRequest
 }))
