@@ -33,15 +33,15 @@
     <!-- 互动数据 -->
     <div class="post-stats">
       <div class="stat-item">
-        <span class="stat-icon">❤️</span>
+        <span class="stat-icon">赞</span>
         <span class="stat-value">{{ likes }}</span>
       </div>
       <div class="stat-item">
-        <span class="stat-icon">💬</span>
+        <span class="stat-icon">评</span>
         <span class="stat-value">{{ comments }}</span>
       </div>
       <div class="stat-item">
-        <span class="stat-icon">👁️</span>
+        <span class="stat-icon">阅</span>
         <span class="stat-value">{{ views }}</span>
       </div>
     </div>

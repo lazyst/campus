@@ -35,11 +35,11 @@ const emit = defineEmits<{
 }>();
 
 const navItems = computed<NavItem[]>(() => [
-  { name: 'home', label: '首页', icon: '🏠' },
-  { name: 'trade', label: '闲置', icon: '🛒' },
+  { name: 'home', label: '首页', icon: '首' },
+  { name: 'trade', label: '闲置', icon: '商' },
   { name: 'publish', label: '发布', icon: '+' },
-  { name: 'messages', label: '消息', icon: '💬' },
-  { name: 'profile', label: '我的', icon: '👤' },
+  { name: 'messages', label: '消息', icon: '信' },
+  { name: 'profile', label: '我的', icon: '我' },
 ]);
 
 function handleNavClick(item: NavItem) {

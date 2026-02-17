@@ -4,9 +4,9 @@
     <div class="status-bar status-bar--mobile">
       <span class="time">9:41</span>
       <div class="status-icons">
-        <span class="status-icon">📶</span>
-        <span class="status-icon">📡</span>
-        <span class="status-icon">🔋</span>
+        <span class="status-icon">信号</span>
+        <span class="status-icon">4G</span>
+        <span class="status-icon">电量</span>
       </div>
     </div>
 
@@ -17,7 +17,7 @@
         @search="handleSearch"
       />
       <div class="message-btn" @click="goToMessages">
-        <span class="message-icon">💬</span>
+        <span class="message-icon">消息</span>
       </div>
     </div>
 

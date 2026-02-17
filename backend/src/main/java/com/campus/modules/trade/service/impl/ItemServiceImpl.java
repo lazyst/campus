@@ -1,9 +1,7 @@
 package com.campus.modules.trade.service.impl;
-import com.baomidou.dynamic.datasource.annotation.DS;
 
 import com.baomidou.dynamic.datasource.annotation.DS;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
-import com.baomidou.dynamic.datasource.annotation.DS;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.campus.modules.trade.entity.Item;
 import com.campus.modules.trade.mapper.ItemMapper;
