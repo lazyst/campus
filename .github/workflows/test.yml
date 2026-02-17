@@ -1,0 +1,37 @@
+name: Test
+
+on:
+  push:
+    branches: [main, master, develop]
+  pull_request:
+    branches: [main, master, develop]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          cache: 'maven'
+      
+      - name: Backend Test
+        run: cd backend && mvn test
+      
+      - name: JaCoCo Coverage Report
+        run: cd backend && mvn jacoco:report
+      
+      - name: Upload coverage reports
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-reports
+          path: backend/target/site/jacoco/
+      
+      - name: JaCoCo Coverage Check
+        run: cd backend && mvn jacoco:check

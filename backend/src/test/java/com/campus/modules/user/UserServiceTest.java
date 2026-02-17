@@ -119,7 +119,7 @@ class UserServiceTest {
         @Test
         @DisplayName("注册新用户成功")
         void shouldRegisterNewUserSuccessfully() {
-            when(userMapper.exists(any(LambdaQueryWrapper.class))).thenReturn(false);
+            when(userMapper.selectByPhoneIncludingDeleted(anyString())).thenReturn(null);
             when(userMapper.insert(any(User.class))).thenReturn(1);
 
             User result = userService.register("13900000000", "password123", "新用户");
@@ -136,7 +136,7 @@ class UserServiceTest {
         @Test
         @DisplayName("手机号已存在时抛出异常")
         void shouldThrowExceptionWhenPhoneAlreadyExists() {
-            when(userMapper.exists(any(LambdaQueryWrapper.class))).thenReturn(true);
+            when(userMapper.selectByPhoneIncludingDeleted("13800000000")).thenReturn(testUser);
 
             IllegalArgumentException exception = assertThrows(
                     IllegalArgumentException.class,

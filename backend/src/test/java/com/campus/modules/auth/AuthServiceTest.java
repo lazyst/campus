@@ -89,7 +89,7 @@ class AuthServiceTest {
                     () -> authService.login("13800000000", "wrongpassword")
             );
 
-            assertEquals("密码错误", exception.getMessage());
+            assertEquals("用户名或密码错误", exception.getMessage());
         }
 
         @Test
