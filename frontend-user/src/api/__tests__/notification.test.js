@@ -1,11 +1,13 @@
-// frontend-user/src/api/__tests__/notification.test.js
-
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { getNotifications, markAsRead, markAllAsRead } from '../modules/notification'
 
-// Mock the request instance
 const { mockRequest } = vi.hoisted(() => ({
-  mockRequest: vi.fn()
+  mockRequest: {
+    get: vi.fn(),
+    post: vi.fn(),
+    put: vi.fn(),
+    delete: vi.fn()
+  }
 }))
 
 vi.mock('../request', () => ({
@@ -27,44 +29,34 @@ describe('Notification API Tests', () => {
         total: 2
       }
 
-      mockRequest.mockResolvedValue(mockNotifications)
+      mockRequest.get.mockResolvedValue(mockNotifications)
 
       const result = await getNotifications({ page: 1, size: 10 })
 
       expect(result.records).toHaveLength(2)
-      expect(mockRequest).toHaveBeenCalledWith({
-        url: '/notifications',
-        method: 'get',
-        params: { page: 1, size: 10 }
-      })
+      expect(mockRequest.get).toHaveBeenCalledWith('/notifications', { params: { page: 1, size: 10 }, showLoading: false })
     })
   })
 
   describe('markAsRead()', () => {
     it('should mark notification as read', async () => {
-      mockRequest.mockResolvedValue({ message: '标记成功' })
+      mockRequest.put.mockResolvedValue({ message: '标记成功' })
 
       const result = await markAsRead(1)
 
       expect(result.message).toBe('标记成功')
-      expect(mockRequest).toHaveBeenCalledWith({
-        url: '/notifications/1/read',
-        method: 'put'
-      })
+      expect(mockRequest.put).toHaveBeenCalledWith('/notifications/1/read')
     })
   })
 
   describe('markAllAsRead()', () => {
     it('should mark all notifications as read', async () => {
-      mockRequest.mockResolvedValue({ message: '全部标记成功' })
+      mockRequest.put.mockResolvedValue({ message: '全部标记成功' })
 
       const result = await markAllAsRead()
 
       expect(result.message).toBe('全部标记成功')
-      expect(mockRequest).toHaveBeenCalledWith({
-        url: '/notifications/read-all',
-        method: 'put'
-      })
+      expect(mockRequest.put).toHaveBeenCalledWith('/notifications/read/all')
     })
   })
 })

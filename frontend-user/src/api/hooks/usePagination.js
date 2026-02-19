@@ -51,18 +51,18 @@ export function usePagination(apiFunc, options = {}) {
 
   const nextPage = () => {
     if (hasNext.value) {
-      loadPage(page.value + 1)
+      return loadPage(page.value + 1)
     }
   }
 
   const prevPage = () => {
     if (hasPrev.value) {
-      loadPage(page.value - 1)
+      return loadPage(page.value - 1)
     }
   }
 
   const refresh = () => {
-    loadPage(page.value)
+    return loadPage(page.value)
   }
 
   if (immediate) {

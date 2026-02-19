@@ -1,10 +1,13 @@
-// frontend-user/src/api/__tests__/comment.test.js
-
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { getCommentsByPost, createComment, deleteComment } from '../modules/comment'
 
 const { mockRequest } = vi.hoisted(() => ({
-  mockRequest: vi.fn()
+  mockRequest: {
+    get: vi.fn(),
+    post: vi.fn(),
+    put: vi.fn(),
+    delete: vi.fn()
+  }
 }))
 
 vi.mock('../request', () => ({
@@ -26,16 +29,12 @@ describe('Comment API Tests', () => {
         total: 2
       }
 
-      mockRequest.mockResolvedValue(mockComments)
+      mockRequest.get.mockResolvedValue(mockComments)
 
-      const result = await getCommentsByPost(1, { page: 1, size: 10 })
+      const result = await getCommentsByPost(1)
 
       expect(result.records).toHaveLength(2)
-      expect(mockRequest).toHaveBeenCalledWith({
-        url: '/posts/1/comments',
-        method: 'get',
-        params: { page: 1, size: 10 }
-      })
+      expect(mockRequest.get).toHaveBeenCalledWith('/comments/post/1', { showLoading: false })
     })
   })
 
@@ -53,30 +52,23 @@ describe('Comment API Tests', () => {
         createdAt: '2026-01-27T10:00:00'
       }
 
-      mockRequest.mockResolvedValue(createdComment)
+      mockRequest.post.mockResolvedValue(createdComment)
 
       const result = await createComment(newComment)
 
       expect(result.content).toBe('这是新评论')
-      expect(mockRequest).toHaveBeenCalledWith({
-        url: '/comments',
-        method: 'post',
-        data: newComment
-      })
+      expect(mockRequest.post).toHaveBeenCalledWith('/comments', newComment, { loadingText: '发表中...' })
     })
   })
 
   describe('deleteComment()', () => {
     it('should delete a comment successfully', async () => {
-      mockRequest.mockResolvedValue({ message: '删除成功' })
+      mockRequest.delete.mockResolvedValue({ message: '删除成功' })
 
       const result = await deleteComment(1)
 
       expect(result.message).toBe('删除成功')
-      expect(mockRequest).toHaveBeenCalledWith({
-        url: '/comments/1',
-        method: 'delete'
-      })
+      expect(mockRequest.delete).toHaveBeenCalledWith('/comments/1', { loadingText: '删除中...' })
     })
   })
 })

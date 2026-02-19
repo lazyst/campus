@@ -29,7 +29,8 @@ export function useInfiniteList(apiFunc, options = {}) {
   })
 
   const loadMore = async () => {
-    if (loading.value || !hasMore.value) return
+    if (loading.value) return
+    if (records.value.length > 0 && !hasMore.value) return
 
     loading.value = true
     error.value = null

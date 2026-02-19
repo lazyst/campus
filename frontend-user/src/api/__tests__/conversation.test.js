@@ -1,10 +1,13 @@
-// frontend-user/src/api/__tests__/conversation.test.js
-
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { getConversations, createConversation } from '../modules/conversation'
 
 const { mockRequest } = vi.hoisted(() => ({
-  mockRequest: vi.fn()
+  mockRequest: {
+    get: vi.fn(),
+    post: vi.fn(),
+    put: vi.fn(),
+    delete: vi.fn()
+  }
 }))
 
 vi.mock('../request', () => ({
@@ -23,16 +26,13 @@ describe('Conversation API Tests', () => {
         { id: 2, targetId: 3, targetNickname: '用户C', lastMessage: '在吗', updatedAt: '2026-01-26' }
       ]
 
-      mockRequest.mockResolvedValue(mockConversations)
+      mockRequest.get.mockResolvedValue(mockConversations)
 
       const result = await getConversations()
 
       expect(result).toHaveLength(2)
       expect(result[0].targetNickname).toBe('用户B')
-      expect(mockRequest).toHaveBeenCalledWith({
-        url: '/conversations',
-        method: 'get'
-      })
+      expect(mockRequest.get).toHaveBeenCalledWith('/conversations', { showLoading: false })
     })
   })
 
@@ -44,16 +44,12 @@ describe('Conversation API Tests', () => {
         createdAt: '2026-01-27T10:00:00'
       }
 
-      mockRequest.mockResolvedValue(newConversation)
+      mockRequest.post.mockResolvedValue(newConversation)
 
       const result = await createConversation(2)
 
       expect(result.targetId).toBe(2)
-      expect(mockRequest).toHaveBeenCalledWith({
-        url: '/conversations',
-        method: 'post',
-        data: { targetId: 2 }
-      })
+      expect(mockRequest.post).toHaveBeenCalledWith('/conversations', { userId: 2 })
     })
   })
 })

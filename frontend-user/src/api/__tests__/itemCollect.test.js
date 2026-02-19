@@ -1,11 +1,13 @@
-// frontend-user/src/api/__tests__/itemCollect.test.js
-
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { toggleItemCollect, checkItemCollected, getCollectedItems } from '../modules/itemCollect'
 
-// Mock the request instance
 const { mockRequest } = vi.hoisted(() => ({
-  mockRequest: vi.fn()
+  mockRequest: {
+    get: vi.fn(),
+    post: vi.fn(),
+    put: vi.fn(),
+    delete: vi.fn()
+  }
 }))
 
 vi.mock('../request', () => ({
@@ -19,7 +21,7 @@ describe('ItemCollect API Tests', () => {
 
   describe('toggleItemCollect()', () => {
     it('should collect an item', async () => {
-      mockRequest.mockResolvedValue({
+      mockRequest.post.mockResolvedValue({
         collected: true,
         collectCount: 1
       })
@@ -28,14 +30,11 @@ describe('ItemCollect API Tests', () => {
 
       expect(result.collected).toBe(true)
       expect(result.collectCount).toBe(1)
-      expect(mockRequest).toHaveBeenCalledWith({
-        url: '/items/1/collect',
-        method: 'post'
-      })
+      expect(mockRequest.post).toHaveBeenCalledWith('/items/1/collect')
     })
 
     it('should uncollect an item (toggle)', async () => {
-      mockRequest.mockResolvedValue({
+      mockRequest.post.mockResolvedValue({
         collected: false,
         collectCount: 0
       })
@@ -49,15 +48,12 @@ describe('ItemCollect API Tests', () => {
 
   describe('checkItemCollected()', () => {
     it('should check if item is collected', async () => {
-      mockRequest.mockResolvedValue({ collected: true })
+      mockRequest.get.mockResolvedValue({ collected: true })
 
       const result = await checkItemCollected(1)
 
       expect(result.collected).toBe(true)
-      expect(mockRequest).toHaveBeenCalledWith({
-        url: '/items/1/collect',
-        method: 'get'
-      })
+      expect(mockRequest.get).toHaveBeenCalledWith('/items/1/collect/check', { showLoading: false })
     })
   })
 
@@ -71,16 +67,12 @@ describe('ItemCollect API Tests', () => {
         total: 2
       }
 
-      mockRequest.mockResolvedValue(mockItems)
+      mockRequest.get.mockResolvedValue(mockItems)
 
       const result = await getCollectedItems({ page: 1, size: 10 })
 
       expect(result.records).toHaveLength(2)
-      expect(mockRequest).toHaveBeenCalledWith({
-        url: '/user/item-collects',
-        method: 'get',
-        params: { page: 1, size: 10 }
-      })
+      expect(mockRequest.get).toHaveBeenCalledWith('/items/collected', { params: { page: 1, size: 10 } })
     })
   })
 })

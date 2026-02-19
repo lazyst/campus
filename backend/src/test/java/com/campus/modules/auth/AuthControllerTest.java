@@ -19,6 +19,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
@@ -145,6 +146,22 @@ class AuthControllerTest {
                     .content(objectMapper.writeValueAsString(request)))
                     .andExpect(status().isBadRequest());
         }
+
+        @Test
+        @DisplayName("登录失败 - 用户名或密码错误")
+        void shouldFailLoginWhenCredentialsInvalid() throws Exception {
+            LoginRequest request = new LoginRequest();
+            request.setPhone("13800000001");
+            request.setPassword("wrongpassword");
+
+            when(authService.login(anyString(), anyString()))
+                    .thenThrow(new RuntimeException("用户名或密码错误"));
+
+            mockMvc.perform(post(BASE_URL + "/login")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(objectMapper.writeValueAsString(request)))
+                    .andExpect(status().is5xxServerError());
+        }
     }
 
     @Nested
@@ -159,6 +176,113 @@ class AuthControllerTest {
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.code").value(200))
                     .andExpect(jsonPath("$.message").value("操作成功"));
+        }
+    }
+
+    @Nested
+    @DisplayName("POST /api/auth/refresh - 刷新Token")
+    class RefreshTokenTests {
+
+        @Test
+        @DisplayName("刷新Token成功")
+        void shouldRefreshTokenSuccessfully() throws Exception {
+            when(authService.refreshToken(anyString())).thenReturn("new-jwt-token");
+
+            mockMvc.perform(post(BASE_URL + "/refresh")
+                    .header("Authorization", "Bearer valid-token")
+                    .contentType(MediaType.APPLICATION_JSON))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.code").value(200))
+                    .andExpect(jsonPath("$.data").value("new-jwt-token"))
+                    .andExpect(jsonPath("$.token").value("new-jwt-token"));
+        }
+
+        @Test
+        @DisplayName("刷新Token失败 - 无Authorization头")
+        void shouldFailRefreshWhenNoAuthHeader() throws Exception {
+            // When Authorization header is missing, Spring throws exception
+            // which is handled by GlobalExceptionHandler
+            mockMvc.perform(post(BASE_URL + "/refresh")
+                    .contentType(MediaType.APPLICATION_JSON))
+                    .andExpect(status().is5xxServerError());
+        }
+
+        @Test
+        @DisplayName("刷新Token失败 - Authorization头格式错误")
+        void shouldFailRefreshWhenInvalidAuthFormat() throws Exception {
+            // Invalid format (no "Bearer " prefix) returns error result
+            when(authService.refreshToken(anyString())).thenReturn("new-token");
+            
+            mockMvc.perform(post(BASE_URL + "/refresh")
+                    .header("Authorization", "InvalidFormat")
+                    .contentType(MediaType.APPLICATION_JSON))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.code").value(500))
+                    .andExpect(jsonPath("$.message").value("无效的令牌"));
+        }
+
+        @Test
+        @DisplayName("刷新Token失败 - Token已过期")
+        void shouldFailRefreshWhenTokenExpired() throws Exception {
+            when(authService.refreshToken(anyString())).thenReturn(null);
+
+            mockMvc.perform(post(BASE_URL + "/refresh")
+                    .header("Authorization", "Bearer expired-token")
+                    .contentType(MediaType.APPLICATION_JSON))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.code").value(500))
+                    .andExpect(jsonPath("$.message").value("令牌已过期，请重新登录"));
+        }
+    }
+
+    @Nested
+    @DisplayName("GET /api/auth/check-phone - 检查手机号")
+    class CheckPhoneTests {
+
+        @Test
+        @DisplayName("手机号已注册")
+        void shouldCheckPhoneRegistered() throws Exception {
+            when(authService.isPhoneRegistered("13800000001")).thenReturn(true);
+
+            mockMvc.perform(get(BASE_URL + "/check-phone")
+                    .param("phone", "13800000001"))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.code").value(200))
+                    .andExpect(jsonPath("$.data.registered").value(true))
+                    .andExpect(jsonPath("$.data.wasDeleted").value(false));
+        }
+
+        @Test
+        @DisplayName("手机号未注册")
+        void shouldCheckPhoneNotRegistered() throws Exception {
+            when(authService.isPhoneRegistered("13900000001")).thenReturn(false);
+            when(authService.getDeletedUserByPhone("13900000001")).thenReturn(null);
+
+            mockMvc.perform(get(BASE_URL + "/check-phone")
+                    .param("phone", "13900000001"))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.code").value(200))
+                    .andExpect(jsonPath("$.data.registered").value(false))
+                    .andExpect(jsonPath("$.data.wasDeleted").value(false));
+        }
+
+        @Test
+        @DisplayName("手机号曾注册后被删除")
+        void shouldCheckPhoneWasDeleted() throws Exception {
+            User deletedUser = new User();
+            deletedUser.setPhone("13800000002");
+            deletedUser.setNickname("之前的用户");
+
+            when(authService.isPhoneRegistered("13800000002")).thenReturn(false);
+            when(authService.getDeletedUserByPhone("13800000002")).thenReturn(deletedUser);
+
+            mockMvc.perform(get(BASE_URL + "/check-phone")
+                    .param("phone", "13800000002"))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.code").value(200))
+                    .andExpect(jsonPath("$.data.registered").value(false))
+                    .andExpect(jsonPath("$.data.wasDeleted").value(true))
+                    .andExpect(jsonPath("$.data.previousNickname").value("之前的用户"));
         }
     }
 }

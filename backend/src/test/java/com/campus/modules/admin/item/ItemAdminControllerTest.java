@@ -193,6 +193,189 @@ class ItemAdminControllerTest {
         }
     }
 
+    @Nested
+    @DisplayName("GET /api/admin/items/{id} - 获取物品详情")
+    class GetItemDetailTests {
+
+        @Test
+        @DisplayName("获取物品详情成功")
+        void shouldGetItemDetailSuccessfully() throws Exception {
+            Item item = createTestItem(1L, "二手书籍", new BigDecimal("25.00"), 1);
+
+            when(itemService.getById(1L)).thenReturn(item);
+
+            mockMvc.perform(get(BASE_URL + "/1")
+                    .header("Authorization", getAuthHeader()))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.code").value(200))
+                    .andExpect(jsonPath("$.data.id").value(1))
+                    .andExpect(jsonPath("$.data.title").value("二手书籍"));
+        }
+
+        @Test
+        @DisplayName("获取物品详情失败 - 物品不存在")
+        void shouldFailGetItemDetailWhenNotFound() throws Exception {
+            when(itemService.getById(99L)).thenReturn(null);
+
+            mockMvc.perform(get(BASE_URL + "/99")
+                    .header("Authorization", getAuthHeader()))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.code").value(500))
+                    .andExpect(jsonPath("$.message").value("物品不存在"));
+        }
+    }
+
+    @Nested
+    @DisplayName("PUT /api/admin/items/{id} - 更新物品")
+    class UpdateItemTests {
+
+        @Test
+        @DisplayName("更新物品成功")
+        void shouldUpdateItemSuccessfully() throws Exception {
+            Item item = createTestItem(1L, "二手书籍", new BigDecimal("25.00"), 1);
+
+            when(itemService.getById(1L)).thenReturn(item);
+            when(itemService.updateById(any(Item.class))).thenReturn(true);
+
+            String requestBody = "{\"title\":\"更新后的书籍\",\"price\":30.00}";
+
+            mockMvc.perform(put(BASE_URL + "/1")
+                    .header("Authorization", getAuthHeader())
+                    .contentType("application/json")
+                    .content(requestBody))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.code").value(200));
+        }
+
+        @Test
+        @DisplayName("更新物品失败 - 物品不存在")
+        void shouldFailUpdateItemWhenNotFound() throws Exception {
+            when(itemService.getById(99L)).thenReturn(null);
+
+            String requestBody = "{\"title\":\"更新后的书籍\"}";
+
+            mockMvc.perform(put(BASE_URL + "/99")
+                    .header("Authorization", getAuthHeader())
+                    .contentType("application/json")
+                    .content(requestBody))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.code").value(500))
+                    .andExpect(jsonPath("$.message").value("物品不存在"));
+        }
+    }
+
+    @Nested
+    @DisplayName("PUT /api/admin/items/{id}/online - 上架物品")
+    class OnlineItemTests {
+
+        @Test
+        @DisplayName("上架物品成功")
+        void shouldOnlineItemSuccessfully() throws Exception {
+            Item item = createTestItem(1L, "二手书籍", new BigDecimal("25.00"), 3);
+
+            when(itemService.getById(1L)).thenReturn(item);
+            when(itemService.updateById(any(Item.class))).thenReturn(true);
+
+            mockMvc.perform(put(BASE_URL + "/1/online")
+                    .header("Authorization", getAuthHeader()))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.code").value(200));
+        }
+
+        @Test
+        @DisplayName("上架物品失败 - 物品不存在")
+        void shouldFailOnlineItemWhenNotFound() throws Exception {
+            when(itemService.getById(99L)).thenReturn(null);
+
+            mockMvc.perform(put(BASE_URL + "/99/online")
+                    .header("Authorization", getAuthHeader()))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.code").value(500))
+                    .andExpect(jsonPath("$.message").value("物品不存在"));
+        }
+    }
+
+    @Nested
+    @DisplayName("GET /api/admin/items/stats - 获取物品统计")
+    class GetItemStatsTests {
+
+        @Test
+        @DisplayName("获取物品统计成功")
+        void shouldGetItemStatsSuccessfully() throws Exception {
+            when(itemService.count(any(LambdaQueryWrapper.class)))
+                    .thenReturn(100L)
+                    .thenReturn(50L)
+                    .thenReturn(30L)
+                    .thenReturn(20L);
+
+            mockMvc.perform(get(BASE_URL + "/stats")
+                    .header("Authorization", getAuthHeader()))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.code").value(200))
+                    .andExpect(jsonPath("$.data.total").value(100))
+                    .andExpect(jsonPath("$.data.selling").value(50))
+                    .andExpect(jsonPath("$.data.completed").value(30))
+                    .andExpect(jsonPath("$.data.offline").value(20));
+        }
+    }
+
+    @Nested
+    @DisplayName("GET /api/admin/items - 排序和价格筛选")
+    class GetItemListWithSortAndPriceTests {
+
+        @Test
+        @DisplayName("按价格升序排序")
+        void shouldSortByPriceAsc() throws Exception {
+            Page<Item> page = new Page<>(1, 20);
+            Item item = createTestItem(1L, "二手书籍", new BigDecimal("25.00"), 1);
+            page.setRecords(List.of(item));
+            page.setTotal(1);
+
+            when(itemService.page(any(Page.class), any(LambdaQueryWrapper.class))).thenReturn(page);
+
+            mockMvc.perform(get(BASE_URL)
+                    .header("Authorization", getAuthHeader())
+                    .param("sortBy", "price_asc"))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.code").value(200));
+        }
+
+        @Test
+        @DisplayName("按浏览量降序排序")
+        void shouldSortByViewCountDesc() throws Exception {
+            Page<Item> page = new Page<>(1, 20);
+            Item item = createTestItem(1L, "二手书籍", new BigDecimal("25.00"), 1);
+            page.setRecords(List.of(item));
+            page.setTotal(1);
+
+            when(itemService.page(any(Page.class), any(LambdaQueryWrapper.class))).thenReturn(page);
+
+            mockMvc.perform(get(BASE_URL)
+                    .header("Authorization", getAuthHeader())
+                    .param("sortBy", "viewCount_desc"))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.code").value(200));
+        }
+
+        @Test
+        @DisplayName("价格区间筛选")
+        void shouldFilterByPriceRange() throws Exception {
+            Page<Item> page = new Page<>(1, 20);
+            Item item = createTestItem(1L, "二手书籍", new BigDecimal("25.00"), 1);
+            page.setRecords(List.of(item));
+            page.setTotal(1);
+
+            when(itemService.page(any(Page.class), any(LambdaQueryWrapper.class))).thenReturn(page);
+
+            mockMvc.perform(get(BASE_URL)
+                    .header("Authorization", getAuthHeader())
+                    .param("minPrice", "10")
+                    .param("maxPrice", "100"))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.code").value(200));
+        }
+    }
+
     private Item createTestItem(Long id, String title, BigDecimal price, Integer status) {
         Item item = new Item();
         item.setId(id);

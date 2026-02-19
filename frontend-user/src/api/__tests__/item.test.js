@@ -1,5 +1,3 @@
-// frontend-user/src/api/__tests__/item.test.js
-
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import {
   getItems,
@@ -14,9 +12,13 @@ import {
   completeItem
 } from '../modules/item'
 
-// Mock the request instance
 const { mockRequest } = vi.hoisted(() => ({
-  mockRequest: vi.fn()
+  mockRequest: {
+    get: vi.fn(),
+    post: vi.fn(),
+    put: vi.fn(),
+    delete: vi.fn()
+  }
 }))
 
 vi.mock('../request', () => ({
@@ -38,16 +40,12 @@ describe('Item API Tests', () => {
         total: 2
       }
 
-      mockRequest.mockResolvedValue(mockItems)
+      mockRequest.get.mockResolvedValue(mockItems)
 
       const result = await getItems({ type: 2, page: 1, size: 10 })
 
       expect(result.records).toHaveLength(2)
-      expect(mockRequest).toHaveBeenCalledWith({
-        url: '/items',
-        method: 'get',
-        params: { type: 2, page: 1, size: 10 }
-      })
+      expect(mockRequest.get).toHaveBeenCalledWith('/items', { params: { type: 2, page: 1, size: 10 }, showLoading: false })
     })
   })
 
@@ -63,16 +61,13 @@ describe('Item API Tests', () => {
         contactCount: 5
       }
 
-      mockRequest.mockResolvedValue(mockItem)
+      mockRequest.get.mockResolvedValue(mockItem)
 
       const result = await getItemById(1)
 
       expect(result.id).toBe(1)
       expect(result.title).toBe('二手书')
-      expect(mockRequest).toHaveBeenCalledWith({
-        url: '/items/1',
-        method: 'get'
-      })
+      expect(mockRequest.get).toHaveBeenCalledWith('/items/1')
     })
   })
 
@@ -86,16 +81,12 @@ describe('Item API Tests', () => {
         total: 2
       }
 
-      mockRequest.mockResolvedValue(mockItems)
+      mockRequest.get.mockResolvedValue(mockItems)
 
       const result = await getMyItems({ page: 1, size: 10 })
 
       expect(result.records).toHaveLength(2)
-      expect(mockRequest).toHaveBeenCalledWith({
-        url: '/user/items',
-        method: 'get',
-        params: { page: 1, size: 10 }
-      })
+      expect(mockRequest.get).toHaveBeenCalledWith('/items/my', { params: { page: 1, size: 10 } })
     })
   })
 
@@ -115,17 +106,13 @@ describe('Item API Tests', () => {
         createdAt: '2026-01-27T10:00:00'
       }
 
-      mockRequest.mockResolvedValue(createdItem)
+      mockRequest.post.mockResolvedValue(createdItem)
 
       const result = await createItem(newItemData)
 
       expect(result.id).toBe(1)
       expect(result.title).toBe('出售自行车')
-      expect(mockRequest).toHaveBeenCalledWith({
-        url: '/items',
-        method: 'post',
-        data: newItemData
-      })
+      expect(mockRequest.post).toHaveBeenCalledWith('/items', newItemData, { loadingText: '发布中...' })
     })
   })
 
@@ -141,37 +128,30 @@ describe('Item API Tests', () => {
         ...updateData
       }
 
-      mockRequest.mockResolvedValue(updatedItem)
+      mockRequest.put.mockResolvedValue(updatedItem)
 
       const result = await updateItem(1, updateData)
 
       expect(result.title).toBe('更新后的标题')
       expect(result.price).toBe(150.00)
-      expect(mockRequest).toHaveBeenCalledWith({
-        url: '/items/1',
-        method: 'put',
-        data: updateData
-      })
+      expect(mockRequest.put).toHaveBeenCalledWith('/items/1', updateData, { loadingText: '更新中...' })
     })
   })
 
   describe('deleteItem()', () => {
     it('should delete item successfully', async () => {
-      mockRequest.mockResolvedValue({ message: '删除成功' })
+      mockRequest.delete.mockResolvedValue({ message: '删除成功' })
 
       const result = await deleteItem(1)
 
       expect(result.message).toBe('删除成功')
-      expect(mockRequest).toHaveBeenCalledWith({
-        url: '/items/1',
-        method: 'delete'
-      })
+      expect(mockRequest.delete).toHaveBeenCalledWith('/items/1', { loadingText: '删除中...' })
     })
   })
 
   describe('contactSeller()', () => {
     it('should contact seller successfully', async () => {
-      mockRequest.mockResolvedValue({
+      mockRequest.post.mockResolvedValue({
         message: '已联系卖家',
         contactCount: 6
       })
@@ -179,16 +159,13 @@ describe('Item API Tests', () => {
       const result = await contactSeller(1)
 
       expect(result.contactCount).toBe(6)
-      expect(mockRequest).toHaveBeenCalledWith({
-        url: '/items/1/contact',
-        method: 'post'
-      })
+      expect(mockRequest.post).toHaveBeenCalledWith('/items/1/contact')
     })
   })
 
   describe('offlineItem()', () => {
     it('should take item offline successfully', async () => {
-      mockRequest.mockResolvedValue({
+      mockRequest.put.mockResolvedValue({
         id: 1,
         status: 3
       })
@@ -196,16 +173,13 @@ describe('Item API Tests', () => {
       const result = await offlineItem(1)
 
       expect(result.status).toBe(3)
-      expect(mockRequest).toHaveBeenCalledWith({
-        url: '/items/1/offline',
-        method: 'put'
-      })
+      expect(mockRequest.put).toHaveBeenCalledWith('/items/1/offline')
     })
   })
 
   describe('onlineItem()', () => {
     it('should put item online successfully', async () => {
-      mockRequest.mockResolvedValue({
+      mockRequest.put.mockResolvedValue({
         id: 1,
         status: 1
       })
@@ -213,16 +187,13 @@ describe('Item API Tests', () => {
       const result = await onlineItem(1)
 
       expect(result.status).toBe(1)
-      expect(mockRequest).toHaveBeenCalledWith({
-        url: '/items/1/online',
-        method: 'put'
-      })
+      expect(mockRequest.put).toHaveBeenCalledWith('/items/1/online')
     })
   })
 
   describe('completeItem()', () => {
     it('should mark item as completed successfully', async () => {
-      mockRequest.mockResolvedValue({
+      mockRequest.put.mockResolvedValue({
         id: 1,
         status: 2
       })
@@ -230,10 +201,7 @@ describe('Item API Tests', () => {
       const result = await completeItem(1)
 
       expect(result.status).toBe(2)
-      expect(mockRequest).toHaveBeenCalledWith({
-        url: '/items/1/complete',
-        method: 'put'
-      })
+      expect(mockRequest.put).toHaveBeenCalledWith('/items/1/complete')
     })
   })
 })

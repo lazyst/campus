@@ -1,11 +1,13 @@
-// frontend-user/src/api/__tests__/message.test.js
-
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { getMessages, getMessagesWithUser } from '../modules/message'
 
-// Mock the request instance
 const { mockRequest } = vi.hoisted(() => ({
-  mockRequest: vi.fn()
+  mockRequest: {
+    get: vi.fn(),
+    post: vi.fn(),
+    put: vi.fn(),
+    delete: vi.fn()
+  }
 }))
 
 vi.mock('../request', () => ({
@@ -27,16 +29,12 @@ describe('Message API Tests', () => {
         total: 2
       }
 
-      mockRequest.mockResolvedValue(mockMessages)
+      mockRequest.get.mockResolvedValue(mockMessages)
 
       const result = await getMessages(1, { page: 1, size: 10 })
 
       expect(result.records).toHaveLength(2)
-      expect(mockRequest).toHaveBeenCalledWith({
-        url: '/conversations/1/messages',
-        method: 'get',
-        params: { page: 1, size: 10 }
-      })
+      expect(mockRequest.get).toHaveBeenCalledWith('/conversations/1/messages', { params: { page: 1, size: 10 }, showLoading: false })
     })
   })
 
@@ -50,16 +48,12 @@ describe('Message API Tests', () => {
         total: 2
       }
 
-      mockRequest.mockResolvedValue(mockMessages)
+      mockRequest.get.mockResolvedValue(mockMessages)
 
       const result = await getMessagesWithUser(2, { page: 1, size: 10 })
 
       expect(result.records).toHaveLength(2)
-      expect(mockRequest).toHaveBeenCalledWith({
-        url: '/messages/users/2',
-        method: 'get',
-        params: { page: 1, size: 10 }
-      })
+      expect(mockRequest.get).toHaveBeenCalledWith('/messages/2', { params: { page: 1, size: 10 }, showLoading: false })
     })
   })
 })

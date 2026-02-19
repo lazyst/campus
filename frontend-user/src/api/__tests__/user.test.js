@@ -3,9 +3,14 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { getUserInfo, updateProfile, getUserPublicInfo, uploadAvatar } from '../modules/user'
 
-// Mock the request instance
+// Mock the request instance with axios methods
 const { mockRequest } = vi.hoisted(() => ({
-  mockRequest: vi.fn()
+  mockRequest: {
+    get: vi.fn(),
+    post: vi.fn(),
+    put: vi.fn(),
+    delete: vi.fn()
+  }
 }))
 
 vi.mock('../request', () => ({
@@ -28,7 +33,7 @@ describe('User API Tests', () => {
         bio: '这是个人简介'
       }
 
-      mockRequest.mockResolvedValue({
+      mockRequest.get.mockResolvedValue({
         id: 1,
         phone: '13800138000',
         nickname: '测试用户',
@@ -40,10 +45,7 @@ describe('User API Tests', () => {
       const result = await getUserInfo()
 
       expect(result).toEqual(mockUserInfo)
-      expect(mockRequest).toHaveBeenCalledWith({
-        url: '/user/profile',
-        method: 'get'
-      })
+      expect(mockRequest.get).toHaveBeenCalledWith('/user/profile')
     })
   })
 
@@ -64,18 +66,14 @@ describe('User API Tests', () => {
         bio: '新的个人简介'
       }
 
-      mockRequest.mockResolvedValue(updatedUserInfo)
+      mockRequest.put.mockResolvedValue(updatedUserInfo)
 
       const result = await updateProfile(updateData)
 
       expect(result.nickname).toBe('新昵称')
       expect(result.bio).toBe('新的个人简介')
       expect(result.gender).toBe(2)
-      expect(mockRequest).toHaveBeenCalledWith({
-        url: '/user/profile',
-        method: 'put',
-        data: updateData
-      })
+      expect(mockRequest.put).toHaveBeenCalledWith('/user/profile', updateData)
     })
 
     it('should update partial profile fields', async () => {
@@ -83,7 +81,7 @@ describe('User API Tests', () => {
         nickname: '只修改昵称'
       }
 
-      mockRequest.mockResolvedValue({
+      mockRequest.put.mockResolvedValue({
         id: 1,
         nickname: '只修改昵称'
       })
@@ -91,11 +89,7 @@ describe('User API Tests', () => {
       const result = await updateProfile(updateData)
 
       expect(result.nickname).toBe('只修改昵称')
-      expect(mockRequest).toHaveBeenCalledWith({
-        url: '/user/profile',
-        method: 'put',
-        data: updateData
-      })
+      expect(mockRequest.put).toHaveBeenCalledWith('/user/profile', updateData)
     })
   })
 
@@ -110,16 +104,13 @@ describe('User API Tests', () => {
         bio: '这是公开信息'
       }
 
-      mockRequest.mockResolvedValue(mockPublicInfo)
+      mockRequest.get.mockResolvedValue(mockPublicInfo)
 
       const result = await getUserPublicInfo(userId)
 
       expect(result.id).toBe(2)
       expect(result.nickname).toBe('其他用户')
-      expect(mockRequest).toHaveBeenCalledWith({
-        url: `/user/public/${userId}`,
-        method: 'get'
-      })
+      expect(mockRequest.get).toHaveBeenCalledWith(`/user/public/${userId}`)
     })
   })
 
@@ -130,26 +121,27 @@ describe('User API Tests', () => {
 
       const mockAvatarUrl = 'http://example.com/new-avatar.jpg'
 
-      mockRequest.mockResolvedValue({ url: mockAvatarUrl })
+      mockRequest.post.mockResolvedValue({ url: mockAvatarUrl })
 
       const result = await uploadAvatar(mockFile)
 
       expect(result.url).toBe(mockAvatarUrl)
-      expect(mockRequest).toHaveBeenCalledWith({
-        url: '/user/avatar',
-        method: 'post',
-        data: expect.any(FormData),
-        headers: {
-          'Content-Type': 'multipart/form-data'
-        }
-      })
+      expect(mockRequest.post).toHaveBeenCalledWith(
+        '/user/avatar',
+        expect.any(FormData),
+        expect.objectContaining({
+          headers: {
+            'Content-Type': 'multipart/form-data'
+          }
+        })
+      )
     })
 
     it('should handle upload failure', async () => {
       const mockFile = new File(['avatar content'], 'avatar.jpg', { type: 'image/jpeg' })
 
       const mockError = new Error('文件格式不支持')
-      mockRequest.mockRejectedValue(mockError)
+      mockRequest.post.mockRejectedValue(mockError)
 
       await expect(uploadAvatar(mockFile)).rejects.toThrow('文件格式不支持')
     })

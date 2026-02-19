@@ -5,7 +5,12 @@ import { getBoards, getBoardById } from '../modules/board'
 
 // Use vi.hoisted to get reference to mock functions before they're hoisted
 const { mockRequest } = vi.hoisted(() => ({
-  mockRequest: vi.fn()
+  mockRequest: {
+    get: vi.fn(),
+    post: vi.fn(),
+    put: vi.fn(),
+    delete: vi.fn()
+  }
 }))
 
 vi.mock('../request', () => ({
@@ -25,16 +30,13 @@ describe('Board API Tests', () => {
         { id: 3, name: '交易', description: '二手交易区' }
       ]
 
-      mockRequest.mockResolvedValue(mockBoards)
+      mockRequest.get.mockResolvedValue(mockBoards)
 
       const result = await getBoards()
 
       expect(result).toHaveLength(3)
       expect(result[0].name).toBe('交流')
-      expect(mockRequest).toHaveBeenCalledWith({
-        url: '/boards',
-        method: 'get'
-      })
+      expect(mockRequest.get).toHaveBeenCalledWith('/boards')
     })
   })
 
@@ -47,16 +49,13 @@ describe('Board API Tests', () => {
         postCount: 100
       }
 
-      mockRequest.mockResolvedValue(mockBoard)
+      mockRequest.get.mockResolvedValue(mockBoard)
 
       const result = await getBoardById(1)
 
       expect(result.id).toBe(1)
       expect(result.name).toBe('交流')
-      expect(mockRequest).toHaveBeenCalledWith({
-        url: '/boards/1',
-        method: 'get'
-      })
+      expect(mockRequest.get).toHaveBeenCalledWith('/boards/1')
     })
   })
 })

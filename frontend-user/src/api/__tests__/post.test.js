@@ -14,9 +14,13 @@ import {
   checkPostCollected
 } from '../modules/post'
 
-// Mock the request instance
 const { mockRequest } = vi.hoisted(() => ({
-  mockRequest: vi.fn()
+  mockRequest: {
+    get: vi.fn(),
+    post: vi.fn(),
+    put: vi.fn(),
+    delete: vi.fn()
+  }
 }))
 
 vi.mock('../request', () => ({
@@ -38,21 +42,17 @@ describe('Post API Tests', () => {
         total: 10
       }
 
-      mockRequest.mockResolvedValue(mockPosts)
+      mockRequest.get.mockResolvedValue(mockPosts)
 
       const result = await getPosts({ boardId: 1, page: 1, size: 10 })
 
       expect(result.records).toHaveLength(2)
       expect(result.total).toBe(10)
-      expect(mockRequest).toHaveBeenCalledWith({
-        url: '/posts',
-        method: 'get',
-        params: { boardId: 1, page: 1, size: 10 }
-      })
+      expect(mockRequest.get).toHaveBeenCalledWith('/posts', { params: { boardId: 1, page: 1, size: 10 }, showLoading: false })
     })
 
     it('should get all posts without filters', async () => {
-      mockRequest.mockResolvedValue({
+      mockRequest.get.mockResolvedValue({
         records: [{ id: 1, title: '帖子1' }],
         total: 1
       })
@@ -60,11 +60,7 @@ describe('Post API Tests', () => {
       const result = await getPosts()
 
       expect(result.records).toHaveLength(1)
-      expect(mockRequest).toHaveBeenCalledWith({
-        url: '/posts',
-        method: 'get',
-        params: {}
-      })
+      expect(mockRequest.get).toHaveBeenCalledWith('/posts', { params: {}, showLoading: false })
     })
   })
 
@@ -79,16 +75,13 @@ describe('Post API Tests', () => {
         commentCount: 5
       }
 
-      mockRequest.mockResolvedValue(mockPost)
+      mockRequest.get.mockResolvedValue(mockPost)
 
       const result = await getPostById(1)
 
       expect(result.id).toBe(1)
       expect(result.title).toBe('测试帖子')
-      expect(mockRequest).toHaveBeenCalledWith({
-        url: '/posts/1',
-        method: 'get'
-      })
+      expect(mockRequest.get).toHaveBeenCalledWith('/posts/1')
     })
   })
 
@@ -102,16 +95,12 @@ describe('Post API Tests', () => {
         total: 2
       }
 
-      mockRequest.mockResolvedValue(mockPosts)
+      mockRequest.get.mockResolvedValue(mockPosts)
 
       const result = await getMyPosts({ page: 1, size: 10 })
 
       expect(result.records).toHaveLength(2)
-      expect(mockRequest).toHaveBeenCalledWith({
-        url: '/user/posts',
-        method: 'get',
-        params: { page: 1, size: 10 }
-      })
+      expect(mockRequest.get).toHaveBeenCalledWith('/posts/my', { params: { page: 1, size: 10 } })
     })
   })
 
@@ -129,17 +118,13 @@ describe('Post API Tests', () => {
         createdAt: '2026-01-27T10:00:00'
       }
 
-      mockRequest.mockResolvedValue(createdPost)
+      mockRequest.post.mockResolvedValue(createdPost)
 
       const result = await createPost(newPostData)
 
       expect(result.id).toBe(1)
       expect(result.title).toBe('新帖子')
-      expect(mockRequest).toHaveBeenCalledWith({
-        url: '/posts',
-        method: 'post',
-        data: newPostData
-      })
+      expect(mockRequest.post).toHaveBeenCalledWith('/posts', newPostData, { loadingText: '发布中...' })
     })
   })
 
@@ -155,36 +140,29 @@ describe('Post API Tests', () => {
         ...updateData
       }
 
-      mockRequest.mockResolvedValue(updatedPost)
+      mockRequest.put.mockResolvedValue(updatedPost)
 
       const result = await updatePost(1, updateData)
 
       expect(result.title).toBe('更新后的标题')
-      expect(mockRequest).toHaveBeenCalledWith({
-        url: '/posts/1',
-        method: 'put',
-        data: updateData
-      })
+      expect(mockRequest.put).toHaveBeenCalledWith('/posts/1', updateData, { loadingText: '更新中...' })
     })
   })
 
   describe('deletePost()', () => {
     it('should delete post successfully', async () => {
-      mockRequest.mockResolvedValue({ message: '删除成功' })
+      mockRequest.delete.mockResolvedValue({ message: '删除成功' })
 
       const result = await deletePost(1)
 
       expect(result.message).toBe('删除成功')
-      expect(mockRequest).toHaveBeenCalledWith({
-        url: '/posts/1',
-        method: 'delete'
-      })
+      expect(mockRequest.delete).toHaveBeenCalledWith('/posts/1', { loadingText: '删除中...' })
     })
   })
 
   describe('toggleLikePost()', () => {
     it('should like a post', async () => {
-      mockRequest.mockResolvedValue({
+      mockRequest.post.mockResolvedValue({
         liked: true,
         likeCount: 11
       })
@@ -193,14 +171,11 @@ describe('Post API Tests', () => {
 
       expect(result.liked).toBe(true)
       expect(result.likeCount).toBe(11)
-      expect(mockRequest).toHaveBeenCalledWith({
-        url: '/posts/1/like',
-        method: 'post'
-      })
+      expect(mockRequest.post).toHaveBeenCalledWith('/posts/1/like', null, { showSuccess: false, showError: false })
     })
 
     it('should unlike a post (toggle)', async () => {
-      mockRequest.mockResolvedValue({
+      mockRequest.post.mockResolvedValue({
         liked: false,
         likeCount: 10
       })
@@ -214,21 +189,18 @@ describe('Post API Tests', () => {
 
   describe('checkPostLiked()', () => {
     it('should check if post is liked', async () => {
-      mockRequest.mockResolvedValue({ liked: true })
+      mockRequest.get.mockResolvedValue({ liked: true })
 
       const result = await checkPostLiked(1)
 
       expect(result.liked).toBe(true)
-      expect(mockRequest).toHaveBeenCalledWith({
-        url: '/posts/1/like',
-        method: 'get'
-      })
+      expect(mockRequest.get).toHaveBeenCalledWith('/posts/1/like/check', { showLoading: false })
     })
   })
 
   describe('toggleCollectPost()', () => {
     it('should collect a post', async () => {
-      mockRequest.mockResolvedValue({
+      mockRequest.post.mockResolvedValue({
         collected: true,
         collectCount: 6
       })
@@ -240,7 +212,7 @@ describe('Post API Tests', () => {
     })
 
     it('should uncollect a post (toggle)', async () => {
-      mockRequest.mockResolvedValue({
+      mockRequest.post.mockResolvedValue({
         collected: false,
         collectCount: 5
       })
@@ -254,15 +226,12 @@ describe('Post API Tests', () => {
 
   describe('checkPostCollected()', () => {
     it('should check if post is collected', async () => {
-      mockRequest.mockResolvedValue({ collected: true })
+      mockRequest.get.mockResolvedValue({ collected: true })
 
       const result = await checkPostCollected(1)
 
       expect(result.collected).toBe(true)
-      expect(mockRequest).toHaveBeenCalledWith({
-        url: '/posts/1/collect',
-        method: 'get'
-      })
+      expect(mockRequest.get).toHaveBeenCalledWith('/posts/1/collect/check', { showLoading: false })
     })
   })
 })

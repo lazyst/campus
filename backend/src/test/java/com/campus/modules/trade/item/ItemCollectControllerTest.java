@@ -191,6 +191,27 @@ class ItemCollectControllerTest {
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.code").value(401));
         }
+
+        @Test
+        @DisplayName("收藏列表中物品用户ID为空")
+        void shouldHandleItemWithNullUserId() throws Exception {
+            ItemCollect collect = new ItemCollect();
+            collect.setId(1L);
+            collect.setUserId(1L);
+            collect.setItemId(1L);
+            collect.setCreatedAt(LocalDateTime.now());
+
+            Item item = createTestItem(1L, null, "测试物品", new BigDecimal("99.99"));
+
+            when(authService.getUserIdFromToken(anyString())).thenReturn(1L);
+            when(itemCollectService.getByUserId(1L)).thenReturn(Collections.singletonList(collect));
+            when(itemService.getById(1L)).thenReturn(item);
+
+            mockMvc.perform(get(BASE_URL + "/collected")
+                    .header("Authorization", "Bearer mock-token"))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.code").value(200));
+        }
     }
 
     private Item createTestItem(Long id, Long userId, String title, BigDecimal price) {

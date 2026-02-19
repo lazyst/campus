@@ -211,21 +211,21 @@
                             <goal>check</goal>
                         </goals>
                         <configuration>
-                            <rules>
+                        <rules>
                                 <rule>
                                     <element>BUNDLE</element>
                                     <limits>
-                                    <!-- Line coverage ≥ 50% -->
+                                    <!-- Line coverage ≥ 70% -->
                                         <limit>
                                             <counter>LINE</counter>
                                             <value>COVEREDRATIO</value>
-                                            <minimum>0.50</minimum>
+                                            <minimum>0.70</minimum>
                                         </limit>
-                                        <!-- Branch coverage ≥ 40% -->
+                                        <!-- Branch coverage ≥ 58% (realistic target based on code analysis) -->
                                         <limit>
                                             <counter>BRANCH</counter>
                                             <value>COVEREDRATIO</value>
-                                            <minimum>0.40</minimum>
+                                            <minimum>0.57</minimum>
                                         </limit>
                                     </limits>
                                 </rule>
