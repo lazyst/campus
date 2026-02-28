@@ -1,17 +1,23 @@
 package com.campus.config;
 
 import com.campus.modules.chat.websocket.WebSocketAuthInterceptor;
+import com.campus.modules.chat.websocket.WebSocketAuthInterceptor.ChatPrincipal;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.event.EventListener;
 import org.springframework.messaging.simp.config.ChannelRegistration;
 import org.springframework.messaging.simp.config.MessageBrokerRegistry;
 import org.springframework.web.socket.config.annotation.EnableWebSocketMessageBroker;
 import org.springframework.web.socket.config.annotation.StompEndpointRegistry;
 import org.springframework.web.socket.config.annotation.WebSocketMessageBrokerConfigurer;
+import org.springframework.web.socket.messaging.SessionConnectEvent;
+import org.springframework.web.socket.messaging.SessionDisconnectEvent;
+import org.springframework.web.socket.messaging.SessionSubscribeEvent;
+import org.springframework.web.socket.messaging.SessionUnsubscribeEvent;
 
-/**
- * WebSocket配置类
- * 配置STOMP消息代理和端点
- */
+import java.security.Principal;
+
+@Slf4j
 @Configuration
 @EnableWebSocketMessageBroker
 public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
@@ -24,31 +30,25 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
 
     @Override
     public void configureMessageBroker(MessageBrokerRegistry config) {
-        // 启用简单代理，广播消息到指定目标
         config.enableSimpleBroker("/topic", "/queue");
-        // 设置应用程序目的地前缀
         config.setApplicationDestinationPrefixes("/app");
-        // 设置用户目的地前缀
         config.setUserDestinationPrefix("/user");
     }
 
     @Override
     public void registerStompEndpoints(StompEndpointRegistry registry) {
-        // 原生 WebSocket 端点（不使用 SockJS）
         registry.addEndpoint("/ws")
-                .setAllowedOrigins("*");
+                .setAllowedOriginPatterns("*");
 
-        // SockJS 端点（用于不支持原生 WebSocket 的浏览器）
         registry.addEndpoint("/ws")
-                .setAllowedOrigins("*")
+                .setAllowedOriginPatterns("*")
                 .withSockJS();
 
-        // 支持 /ws/ 路径（与 nginx location 和前端 URL 一致）
         registry.addEndpoint("/ws/")
-                .setAllowedOrigins("*");
+                .setAllowedOriginPatterns("*");
 
         registry.addEndpoint("/ws/")
-                .setAllowedOrigins("*")
+                .setAllowedOriginPatterns("*")
                 .withSockJS();
     }
 
@@ -60,5 +60,50 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
     @Override
     public void configureClientOutboundChannel(ChannelRegistration registration) {
         registration.interceptors(webSocketAuthInterceptor);
+    }
+
+    @EventListener
+    public void handleSessionConnect(SessionConnectEvent event) {
+        Principal principal = event.getMessage().getHeaders().get("simpUser", Principal.class);
+        if (principal instanceof ChatPrincipal) {
+            ChatPrincipal user = (ChatPrincipal) principal;
+            log.info("WebSocket 用户连接: userId={}, sessionId={}", 
+                user.getUserId(), event.getMessage().getHeaders().get("simpSessionId"));
+        } else {
+            log.info("WebSocket 匿名连接: sessionId={}", 
+                event.getMessage().getHeaders().get("simpSessionId"));
+        }
+    }
+
+    @EventListener
+    public void handleSessionDisconnect(SessionDisconnectEvent event) {
+        Principal principal = event.getUser();
+        if (principal instanceof ChatPrincipal) {
+            ChatPrincipal user = (ChatPrincipal) principal;
+            log.info("WebSocket 用户断开: userId={}, sessionId={}", 
+                user.getUserId(), event.getSessionId());
+        } else {
+            log.info("WebSocket 匿名断开: sessionId={}", event.getSessionId());
+        }
+    }
+
+    @EventListener
+    public void handleSessionSubscribe(SessionSubscribeEvent event) {
+        Principal principal = event.getMessage().getHeaders().get("simpUser", Principal.class);
+        String destination = event.getMessage().getHeaders().get("simpDestination", String.class);
+        if (principal instanceof ChatPrincipal) {
+            ChatPrincipal user = (ChatPrincipal) principal;
+            log.debug("WebSocket 用户订阅: userId={}, destination={}", user.getUserId(), destination);
+        }
+    }
+
+    @EventListener
+    public void handleSessionUnsubscribe(SessionUnsubscribeEvent event) {
+        Principal principal = event.getMessage().getHeaders().get("simpUser", Principal.class);
+        String destination = event.getMessage().getHeaders().get("simpDestination", String.class);
+        if (principal instanceof ChatPrincipal) {
+            ChatPrincipal user = (ChatPrincipal) principal;
+            log.debug("WebSocket 用户取消订阅: userId={}, destination={}", user.getUserId(), destination);
+        }
     }
 }

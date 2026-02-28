@@ -10,6 +10,9 @@ import com.campus.modules.user.entity.User;
 import com.campus.modules.user.service.UserService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.*;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
 import java.math.BigDecimal;
@@ -43,9 +46,8 @@ public class ItemController {
     @PostMapping
     public Result<Item> create(
             @RequestHeader("Authorization") String authHeader,
-            @RequestBody ItemCreateRequest request) {
-        String token = authHeader.replace("Bearer ", "");
-        Long userId = authService.getUserIdFromToken(token);
+            @Valid @RequestBody ItemCreateRequest request) {
+        Long userId = authService.getUserIdFromAuthHeader(authHeader);
 
         Item item = new Item();
         item.setUserId(userId);
@@ -178,8 +180,7 @@ public class ItemController {
     @Operation(summary = "获取我发布的物品")
     @GetMapping("/my")
     public Result<List<Item>> myItems(@RequestHeader("Authorization") String authHeader) {
-        String token = authHeader.replace("Bearer ", "");
-        Long userId = authService.getUserIdFromToken(token);
+        Long userId = authService.getUserIdFromAuthHeader(authHeader);
 
         List<Item> items = itemService.getByUserId(userId);
 
@@ -205,9 +206,8 @@ public class ItemController {
     public Result<Item> update(
             @RequestHeader("Authorization") String authHeader,
             @PathVariable Long itemId,
-            @RequestBody ItemUpdateRequest request) {
-        String token = authHeader.replace("Bearer ", "");
-        Long userId = authService.getUserIdFromToken(token);
+            @Valid @RequestBody ItemUpdateRequest request) {
+        Long userId = authService.getUserIdFromAuthHeader(authHeader);
 
         // Verify ownership
         if (!itemService.isAuthor(userId, itemId)) {
@@ -241,8 +241,7 @@ public class ItemController {
     public Result<Void> delete(
             @RequestHeader("Authorization") String authHeader,
             @PathVariable Long itemId) {
-        String token = authHeader.replace("Bearer ", "");
-        Long userId = authService.getUserIdFromToken(token);
+        Long userId = authService.getUserIdFromAuthHeader(authHeader);
 
         // Verify ownership
         if (!itemService.isAuthor(userId, itemId)) {
@@ -267,8 +266,7 @@ public class ItemController {
     public Result<Void> online(
             @RequestHeader("Authorization") String authHeader,
             @PathVariable Long itemId) {
-        String token = authHeader.replace("Bearer ", "");
-        Long userId = authService.getUserIdFromToken(token);
+        Long userId = authService.getUserIdFromAuthHeader(authHeader);
 
         // Verify ownership
         if (!itemService.isAuthor(userId, itemId)) {
@@ -289,8 +287,7 @@ public class ItemController {
     public Result<Void> offline(
             @RequestHeader("Authorization") String authHeader,
             @PathVariable Long itemId) {
-        String token = authHeader.replace("Bearer ", "");
-        Long userId = authService.getUserIdFromToken(token);
+        Long userId = authService.getUserIdFromAuthHeader(authHeader);
 
         // Verify ownership
         if (!itemService.isAuthor(userId, itemId)) {
@@ -311,8 +308,7 @@ public class ItemController {
     public Result<Void> complete(
             @RequestHeader("Authorization") String authHeader,
             @PathVariable Long itemId) {
-        String token = authHeader.replace("Bearer ", "");
-        Long userId = authService.getUserIdFromToken(token);
+        Long userId = authService.getUserIdFromAuthHeader(authHeader);
 
         // Verify ownership
         if (!itemService.isAuthor(userId, itemId)) {
@@ -330,11 +326,11 @@ public class ItemController {
 
     @Operation(summary = "联系物品发布者")
     @PostMapping("/{itemId}/contact")
+    @Transactional
     public Result<Map<String, Object>> contact(
             @RequestHeader("Authorization") String authHeader,
             @PathVariable Long itemId) {
-        String token = authHeader.replace("Bearer ", "");
-        Long userId = authService.getUserIdFromToken(token);
+        Long userId = authService.getUserIdFromAuthHeader(authHeader);
 
         Item item = itemService.getById(itemId);
         if (item == null) {
@@ -366,12 +362,29 @@ public class ItemController {
      * 创建物品请求DTO
      */
     public static class ItemCreateRequest {
+        @NotNull(message = "物品类型不能为空")
+        @Min(value = 1, message = "物品类型不正确")
+        @Max(value = 2, message = "物品类型不正确")
         private Integer type;
+
+        @NotBlank(message = "分类不能为空")
         private String category;
+
+        @NotBlank(message = "标题不能为空")
+        @Size(max = 100, message = "标题不能超过100个字符")
         private String title;
+
+        @Size(max = 2000, message = "描述不能超过2000个字符")
         private String description;
+
+        @NotNull(message = "价格不能为空")
+        @DecimalMin(value = "0.01", message = "价格必须大于0")
+        @DecimalMax(value = "999999.99", message = "价格不能超过999999.99")
         private BigDecimal price;
+
         private String images;
+
+        @Size(max = 100, message = "位置不能超过100个字符")
         private String location;
 
         public Integer getType() {
@@ -435,9 +448,16 @@ public class ItemController {
      * 更新物品请求DTO
      */
     public static class ItemUpdateRequest {
+        @Size(max = 100, message = "标题不能超过100个字符")
         private String title;
+
+        @Size(max = 2000, message = "描述不能超过2000个字符")
         private String description;
+
+        @DecimalMin(value = "0.01", message = "价格必须大于0")
+        @DecimalMax(value = "999999.99", message = "价格不能超过999999.99")
         private BigDecimal price;
+
         private String images;
 
         public String getTitle() {

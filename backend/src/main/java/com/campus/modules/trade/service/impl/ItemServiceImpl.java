@@ -29,6 +29,7 @@ public class ItemServiceImpl extends ServiceImpl<ItemMapper, Item> implements It
 
     @Override
     @Transactional
+    @DS("master")
     public Item getDetail(Long itemId) {
         LambdaQueryWrapper<Item> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq(Item::getId, itemId)
@@ -37,9 +38,9 @@ public class ItemServiceImpl extends ServiceImpl<ItemMapper, Item> implements It
 
         Item item = this.getOne(wrapper);
         if (item != null) {
-            // 增加浏览次数
+            // 使用原子更新增加浏览次数，避免并发问题
+            this.baseMapper.incrementViewCount(itemId);
             item.setViewCount(item.getViewCount() + 1);
-            this.updateById(item);
         }
         return item;
     }
@@ -51,16 +52,19 @@ public class ItemServiceImpl extends ServiceImpl<ItemMapper, Item> implements It
     }
 
     @Override
+    @DS("master")
     public void online(Long itemId) {
         changeStatus(itemId, 3, 1);
     }
 
     @Override
+    @DS("master")
     public void offline(Long itemId) {
         changeStatus(itemId, 1, 3);
     }
 
     @Override
+    @DS("master")
     public void complete(Long itemId) {
         changeStatus(itemId, 1, 2);
     }
@@ -81,11 +85,9 @@ public class ItemServiceImpl extends ServiceImpl<ItemMapper, Item> implements It
 
     @Override
     @Transactional
+    @DS("master")
     public void incrementContactCount(Long itemId) {
-        Item item = this.getById(itemId);
-        if (item != null) {
-            item.setContactCount(item.getContactCount() + 1);
-            this.updateById(item);
-        }
+        // 使用原子更新增加联系次数
+        this.baseMapper.incrementContactCount(itemId);
     }
 }

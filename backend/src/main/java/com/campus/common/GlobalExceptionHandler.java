@@ -63,6 +63,16 @@ public class GlobalExceptionHandler {
     }
 
     /**
+     * 处理安全异常（如权限不足）
+     */
+    @ExceptionHandler(SecurityException.class)
+    @ResponseStatus(HttpStatus.FORBIDDEN)
+    public Result<Void> handleSecurityException(SecurityException ex) {
+        log.warn("权限不足: {}", ex.getMessage());
+        return Result.error(ResultCode.FORBIDDEN, ex.getMessage());
+    }
+
+    /**
      * 处理所有其他异常
      */
     @ExceptionHandler(Exception.class)

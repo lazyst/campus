@@ -2,33 +2,18 @@ import { createRouter, createWebHistory } from 'vue-router'
 import MainLayout from '@/layouts/MainLayout.vue'
 import { showLoginConfirm } from '@/stores/loginConfirm'
 
-// 需要登录的路由
 const authRoutes = ['ForumCreate', 'TradeCreate']
 
-// 检查是否已登录（通过 localStorage）
-// 注意：这里不使用 Pinia store，因为在路由守卫中 store 可能未初始化
 function isAuthenticated() {
   const token = localStorage.getItem('token')
   if (!token) return false
 
-  // 简单检查 token 格式（JWT 格式：header.payload.signature）
   const parts = token.split('.')
-  if (parts.length !== 3) return false
-
-  return true
-}
-
-// 校验 redirect 参数，防止开放重定向
-function validateRedirect(path) {
-  // 只有以 / 开头的相对路径才允许跳转
-  if (path && path.startsWith('/') && !path.startsWith('//')) {
-    return path
-  }
-  return '/'
+  return parts.length === 3
 }
 
 const routes = [
-  // 主布局页面（显示底部导航）
+  // 主布局页面（显示底部导航和侧边栏）
   {
     path: '/',
     component: MainLayout,
@@ -46,6 +31,11 @@ const routes = [
       {
         path: 'messages',
         name: 'Messages',
+        component: () => import('@/views/messages/index.vue')
+      },
+      {
+        path: 'messages/:id',
+        name: 'ChatDetail',
         component: () => import('@/views/messages/index.vue')
       },
       {
@@ -88,11 +78,6 @@ const routes = [
     path: '/trade/create',
     name: 'TradeCreate',
     component: () => import('@/views/trade/create/index.vue')
-  },
-  {
-    path: '/messages/:id',
-    name: 'ChatDetail',
-    component: () => import('@/views/messages/chat/index.vue')
   },
 
   // Profile子页面（不显示底部导航）
@@ -137,17 +122,12 @@ const router = createRouter({
 
 // 路由守卫：检查需要登录的路由
 router.beforeEach((to, from, next) => {
-  if (authRoutes.includes(to.name)) {
-    if (!isAuthenticated()) {
-      // 未登录，弹窗提示，让用户选择是否登录
-      showLoginConfirm(() => {
-        // 用户选择登录后，使用 next({}) 方式导航到登录页
-        window.location.href = `/login?redirect=${encodeURIComponent(to.fullPath)}`
-      })
-      // 取消当前导航
-      next(false)
-      return
-    }
+  if (authRoutes.includes(to.name) && !isAuthenticated()) {
+    showLoginConfirm(() => {
+      window.location.href = `/login?redirect=${encodeURIComponent(to.fullPath)}`
+    })
+    next(false)
+    return
   }
   next()
 })

@@ -7,7 +7,7 @@
         <p class="subtitle">管理后台</p>
       </div>
 
-      <el-form ref="formRef" :model="form" :rules="rules" label-width="0">
+      <el-form ref="formRef" :model="form" :rules="rules" label-width="0" @keydown.enter="handleLogin">
         <el-form-item prop="username" class="input-item">
           <el-input v-model="form.username" placeholder="用户名" size="large" />
         </el-form-item>
@@ -34,8 +34,10 @@ import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import type { FormInstance, FormRules } from 'element-plus'
 import { login } from '@/api/admin/auth'
+import { useAdminStore } from '@/stores/admin'
 
 const router = useRouter()
+const adminStore = useAdminStore()
 const formRef = ref<FormInstance>()
 const loading = ref(false)
 
@@ -58,8 +60,7 @@ const handleLogin = async () => {
     loading.value = true
     try {
       const res = await login(form)
-      localStorage.setItem('admin_token', res.data.token)
-      localStorage.setItem('admin_info', JSON.stringify(res.data))
+      adminStore.login(res.data.token, res.data)
       ElMessage.success('登录成功')
       router.push('/')
     } catch (error: any) {

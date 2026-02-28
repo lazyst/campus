@@ -4,12 +4,14 @@ import com.campus.config.JwtConfig;
 import com.campus.modules.auth.service.AuthService;
 import com.campus.modules.user.entity.User;
 import com.campus.modules.user.service.UserService;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
 /**
  * 认证服务实现类
  */
+@Slf4j
 @Service
 public class AuthServiceImpl implements AuthService {
 
@@ -62,6 +64,7 @@ public class AuthServiceImpl implements AuthService {
             User user = userService.getByPhone(phone);
             return user != null && user.getStatus() == 1;
         } catch (Exception e) {
+            log.warn("Token验证失败: {}", e.getMessage());
             return false;
         }
     }
@@ -78,8 +81,18 @@ public class AuthServiceImpl implements AuthService {
 
             return user.getId();
         } catch (Exception e) {
+            log.warn("从Token获取用户ID失败: {}", e.getMessage());
             return null;
         }
+    }
+
+    @Override
+    public Long getUserIdFromAuthHeader(String authHeader) {
+        String token = jwtConfig.extractToken(authHeader);
+        if (token == null) {
+            return null;
+        }
+        return getUserIdFromToken(token);
     }
 
     @Override
@@ -92,6 +105,7 @@ public class AuthServiceImpl implements AuthService {
             // 刷新 token
             return jwtConfig.refreshToken(token);
         } catch (Exception e) {
+            log.warn("Token刷新失败: {}", e.getMessage());
             return null;
         }
     }

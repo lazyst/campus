@@ -216,7 +216,6 @@ const dateDirs = ref([])
 const total = ref(0)
 const currentPage = ref(1)
 const pageSize = ref(12)
-const pageSizes = [12, 24, 48, 96]
 const searchKeyword = ref('')
 const selectedDateDir = ref('')
 const activeTab = ref('all')
@@ -277,11 +276,6 @@ const fetchFileList = async () => {
 const handleSearch = () => {
   currentPage.value = 1
   selectedImages.value = []
-  fetchFileList()
-}
-
-const handleSizeChange = (size) => {
-  pageSize.value = size
   fetchFileList()
 }
 

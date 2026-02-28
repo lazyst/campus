@@ -28,16 +28,7 @@ export function updateProfile(data) {
  * @returns {Promise<Object>} 用户公开信息
  */
 export function getUserPublicInfo(userId) {
-  return request.get(`/user/public/${userId}`)
-}
-
-/**
- * 获取用户详细信息（包含个人简介）
- * @param {number} userId - 用户ID
- * @returns {Promise<Object>} 用户详细信息
- */
-export function getUserDetailInfo(userId) {
-  return request.get(`/user/profile/${userId}`)
+  return request.get(`/user/${userId}`)
 }
 
 /**

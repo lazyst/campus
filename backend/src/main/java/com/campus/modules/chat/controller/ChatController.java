@@ -6,7 +6,6 @@ import com.campus.modules.chat.websocket.WebSocketAuthInterceptor.ChatPrincipal;
 import com.campus.modules.chat.service.ChatService;
 import org.springframework.messaging.handler.annotation.DestinationVariable;
 import org.springframework.messaging.handler.annotation.MessageMapping;
-import org.springframework.messaging.handler.annotation.SendTo;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.messaging.simp.annotation.SendToUser;
 import org.springframework.web.bind.annotation.*;
@@ -31,10 +30,6 @@ public class ChatController {
         this.authService = authService;
     }
 
-    /**
-     * 发送聊天消息
-     * 客户端发送消息到: /app/chat.send/{receiverId}
-     */
     @MessageMapping("/chat.send/{receiverId}")
     public void sendMessage(
             @DestinationVariable Long receiverId,
@@ -45,17 +40,8 @@ public class ChatController {
             ChatPrincipal chatPrincipal = (ChatPrincipal) principal;
             Long senderId = chatPrincipal.getUserId();
             
-            // 保存消息到数据库（离线消息存储）
-            com.campus.modules.chat.entity.Message savedMessage = 
-                chatService.saveMessage(senderId, receiverId, 
-                    (String) message.get("content"));
-            
-            // 发送到接收者的个人队列（点对点）
-            messagingTemplate.convertAndSendToUser(
-                receiverId.toString(), 
-                "/queue/messages", 
-                savedMessage
-            );
+            chatService.saveMessage(senderId, receiverId, 
+                (String) message.get("content"));
         }
     }
 
@@ -63,10 +49,12 @@ public class ChatController {
      * 获取会话列表
      */
     @GetMapping("/api/conversations")
-    public Result<?> getConversations(@RequestHeader("Authorization") String authHeader) {
-        String token = authHeader.replace("Bearer ", "");
-        Long userId = authService.getUserIdFromToken(token);
-        
+    public Result<?> getConversations(@RequestHeader(value = "Authorization", required = false) String authHeader) {
+        if (authHeader == null || authHeader.isEmpty()) {
+            return Result.error("未登录");
+        }
+        Long userId = authService.getUserIdFromAuthHeader(authHeader);
+
         return Result.success(chatService.getConversations(userId));
     }
 
@@ -80,8 +68,7 @@ public class ChatController {
             @RequestParam(defaultValue = "1") Integer page,
             @RequestParam(defaultValue = "20") Integer size) {
         
-        String token = authHeader.replace("Bearer ", "");
-        Long userId = authService.getUserIdFromToken(token);
+        Long userId = authService.getUserIdFromAuthHeader(authHeader);
         
         return Result.success(chatService.getMessages(conversationId, page, size));
     }
@@ -96,8 +83,7 @@ public class ChatController {
             @RequestParam(defaultValue = "1") Integer page,
             @RequestParam(defaultValue = "20") Integer size) {
 
-        String token = authHeader.replace("Bearer ", "");
-        Long currentUserId = authService.getUserIdFromToken(token);
+        Long currentUserId = authService.getUserIdFromAuthHeader(authHeader);
 
         return Result.success(chatService.getMessagesWithUser(currentUserId, userId, page, size));
     }
@@ -111,8 +97,7 @@ public class ChatController {
             @PathVariable Long userId,
             @RequestBody Map<String, String> request) {
 
-        String token = authHeader.replace("Bearer ", "");
-        Long currentUserId = authService.getUserIdFromToken(token);
+        Long currentUserId = authService.getUserIdFromAuthHeader(authHeader);
         String content = request.get("content");
 
         if (content == null || content.trim().isEmpty()) {
@@ -130,8 +115,7 @@ public class ChatController {
             @RequestHeader("Authorization") String authHeader,
             @RequestBody Map<String, Long> request) {
 
-        String token = authHeader.replace("Bearer ", "");
-        Long userId = authService.getUserIdFromToken(token);
+        Long userId = authService.getUserIdFromAuthHeader(authHeader);
         Long otherUserId = request.get("userId");
 
         return Result.success(chatService.getOrCreateConversation(userId, otherUserId));
@@ -145,8 +129,7 @@ public class ChatController {
             @RequestHeader("Authorization") String authHeader,
             @PathVariable Long userId) {
 
-        String token = authHeader.replace("Bearer ", "");
-        Long currentUserId = authService.getUserIdFromToken(token);
+        Long currentUserId = authService.getUserIdFromAuthHeader(authHeader);
 
         chatService.clearUnreadCountByUserIds(currentUserId, userId);
 
@@ -158,8 +141,7 @@ public class ChatController {
      */
     @GetMapping("/api/conversations/unread/count")
     public Result<?> getTotalUnreadCount(@RequestHeader("Authorization") String authHeader) {
-        String token = authHeader.replace("Bearer ", "");
-        Long userId = authService.getUserIdFromToken(token);
+        Long userId = authService.getUserIdFromAuthHeader(authHeader);
 
         Integer totalUnread = chatService.getTotalUnreadCount(userId);
 

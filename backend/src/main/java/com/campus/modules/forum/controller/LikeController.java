@@ -7,11 +7,13 @@ import com.campus.modules.forum.service.LikeService;
 import com.campus.modules.forum.service.PostService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
 
 /**
  * 点赞控制器
  */
+@Slf4j
 @Tag(name = "点赞管理")
 @RestController
 @RequestMapping("/api/posts")
@@ -38,8 +40,7 @@ public class LikeController {
         }
         
         try {
-            String token = authHeader.replace("Bearer ", "");
-            Long userId = authService.getUserIdFromToken(token);
+            Long userId = authService.getUserIdFromAuthHeader(authHeader);
             
             if (userId == null) {
                 // Token无效或用户不存在
@@ -54,7 +55,7 @@ public class LikeController {
             boolean isLiked = likeService.toggleLike(userId, postId);
             return Result.success(isLiked);
         } catch (Exception e) {
-            // Token无效时返回未授权错误
+            log.error("点赞操作失败: {}", e.getMessage());
             return Result.error(ResultCode.UNAUTHORIZED, "登录已过期，请重新登录");
         }
     }
@@ -70,12 +71,11 @@ public class LikeController {
         }
 
         try {
-            String token = authHeader.replace("Bearer ", "");
-            Long userId = authService.getUserIdFromToken(token);
+            Long userId = authService.getUserIdFromAuthHeader(authHeader);
             boolean hasLiked = likeService.hasLiked(userId, postId);
             return Result.success(hasLiked);
         } catch (Exception e) {
-            // Token无效时返回未点赞状态
+            log.error("检查点赞状态失败: {}", e.getMessage());
             return Result.success(false);
         }
     }

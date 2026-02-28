@@ -40,6 +40,7 @@ function handleSearch(query) {
 
 .trade-search {
   padding: var(--space-3) var(--page-padding);
+  padding-top: var(--nav-height);
   background-color: var(--bg-card);
   border-bottom: 1px solid var(--border-light);
 }

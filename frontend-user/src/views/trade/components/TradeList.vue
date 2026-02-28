@@ -138,9 +138,10 @@
           <!-- 商品标题 -->
           <h3 class="item-title">{{ item.title }}</h3>
 
-          <!-- 价格 -->
+          <!-- 价格和时间 -->
           <div class="item-footer">
             <span class="item-price">¥{{ item.price }}</span>
+            <span class="item-time">{{ formatTime(item.createdAt) }}</span>
           </div>
         </div>
       </div>
@@ -173,6 +174,7 @@ interface TradeItem {
   images: string | null
   status: number
   viewCount: number
+  createdAt: string
   userNickname?: string
   userAvatar?: string
 }
@@ -207,6 +209,24 @@ function getStatusClass(status: number): string {
   if (status === 2) return 'status-sold'
   if (status === 3) return 'status-reserved'
   return ''
+}
+
+function formatTime(dateString: string): string {
+  if (!dateString) return ''
+  const date = new Date(dateString)
+  const now = new Date()
+  const diff = now.getTime() - date.getTime()
+
+  const minutes = Math.floor(diff / 60000)
+  const hours = Math.floor(diff / 3600000)
+  const days = Math.floor(diff / 86400000)
+
+  if (minutes < 1) return '刚刚'
+  if (minutes < 60) return `${minutes}分钟前`
+  if (hours < 24) return `${hours}小时前`
+  if (days < 7) return `${days}天前`
+
+  return date.toLocaleDateString('zh-CN', { month: 'short', day: 'numeric' })
 }
 
 function transformItem(item: any): TradeItem {
@@ -764,6 +784,9 @@ onUnmounted(() => {
 
 /* 商品底部 */
 .item-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
   padding-top: var(--space-2);
   border-top: 1px solid var(--border-light);
   margin-top: var(--space-2);
@@ -773,6 +796,11 @@ onUnmounted(() => {
   font-size: var(--text-lg);
   font-weight: var(--font-weight-bold);
   color: var(--color-error-600);
+}
+
+.item-time {
+  font-size: var(--text-xs);
+  color: var(--text-tertiary);
 }
 
 /* 加载更多 */

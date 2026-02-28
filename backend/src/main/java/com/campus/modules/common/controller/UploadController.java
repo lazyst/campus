@@ -7,7 +7,7 @@ import com.campus.modules.user.entity.User;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.Data;
-import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.web.bind.annotation.*;
@@ -26,10 +26,10 @@ import java.util.stream.Collectors;
 /**
  * 文件上传控制器
  */
+@Slf4j
 @Tag(name = "文件上传", description = "图片上传相关接口")
 @RestController
 @RequestMapping("/api/upload")
-@RequiredArgsConstructor
 public class UploadController {
 
     /**
@@ -51,6 +51,43 @@ public class UploadController {
 
     @Autowired
     private com.campus.modules.user.service.UserService userService;
+
+    /**
+     * 获取所有被引用的图片URL集合（用户头像、帖子图片、闲置物品图片）
+     */
+    private Set<String> getUsedImageUrls() {
+        Set<String> usedUrls = new HashSet<>();
+
+        // 从用户表获取头像
+        for (User user : userService.list()) {
+            String avatar = user.getAvatar();
+            if (avatar != null && !avatar.isEmpty()) {
+                usedUrls.add(normalizeUrl(avatar));
+            }
+        }
+
+        // 从帖子表获取
+        for (Post post : postMapper.selectList(null)) {
+            if (post.getImages() != null) {
+                usedUrls.addAll(parseImageUrls(post.getImages()));
+            }
+            if (post.getThumbnail() != null) {
+                usedUrls.add(normalizeUrl(post.getThumbnail()));
+            }
+        }
+
+        // 从闲置物品表获取
+        for (Item item : itemMapper.selectList(null)) {
+            if (item.getImages() != null) {
+                usedUrls.addAll(parseImageUrls(item.getImages()));
+            }
+            if (item.getThumbnail() != null) {
+                usedUrls.add(normalizeUrl(item.getThumbnail()));
+            }
+        }
+
+        return usedUrls;
+    }
 
     @Operation(summary = "上传图片")
     @PostMapping("/image")
@@ -263,7 +300,7 @@ public class UploadController {
                             allFiles.add(info);
                         }
                     } catch (IOException e) {
-                        // 忽略目录读取错误
+                        log.warn("读取目录失败: {}", e.getMessage());
                     }
                 }
             }
@@ -331,40 +368,7 @@ public class UploadController {
             @RequestParam(defaultValue = "20") Integer pageSize) {
         try {
             // 获取所有被引用的图片URL
-            Set<String> usedUrls = new HashSet<>();
-
-            // 从用户表获取头像 - 使用MyBatis-Plus查询
-            List<User> users = userService.list();
-            for (User user : users) {
-                String avatar = user.getAvatar();
-                if (avatar != null && !avatar.isEmpty()) {
-                    // 规范化URL：去除协议和域名，只保留路径部分
-                    String normalizedUrl = normalizeUrl(avatar);
-                    usedUrls.add(normalizedUrl);
-                }
-            }
-
-            // 从帖子表获取
-            List<Post> posts = postMapper.selectList(null);
-            for (Post post : posts) {
-                if (post.getImages() != null) {
-                    usedUrls.addAll(parseImageUrls(post.getImages()));
-                }
-                if (post.getThumbnail() != null) {
-                    usedUrls.add(normalizeUrl(post.getThumbnail()));
-                }
-            }
-
-            // 从闲置物品表获取
-            List<Item> items = itemMapper.selectList(null);
-            for (Item item : items) {
-                if (item.getImages() != null) {
-                    usedUrls.addAll(parseImageUrls(item.getImages()));
-                }
-                if (item.getThumbnail() != null) {
-                    usedUrls.add(normalizeUrl(item.getThumbnail()));
-                }
-            }
+            Set<String> usedUrls = getUsedImageUrls();
 
             // 获取所有文件（包含日期目录和avatars目录）
             Path uploadDir = Paths.get(uploadPath);
@@ -430,36 +434,7 @@ public class UploadController {
     public Result<Map<String, Object>> cleanUnusedImages() {
         try {
             // 获取所有被引用的图片URL
-            Set<String> usedUrls = new HashSet<>();
-
-            // 从用户表获取头像 - 使用MyBatis-Plus查询
-            List<User> users = userService.list();
-            for (User user : users) {
-                String avatar = user.getAvatar();
-                if (avatar != null && !avatar.isEmpty()) {
-                    usedUrls.add(normalizeUrl(avatar));
-                }
-            }
-
-            List<Post> posts = postMapper.selectList(null);
-            for (Post post : posts) {
-                if (post.getImages() != null) {
-                    usedUrls.addAll(parseImageUrls(post.getImages()));
-                }
-                if (post.getThumbnail() != null) {
-                    usedUrls.add(normalizeUrl(post.getThumbnail()));
-                }
-            }
-
-            List<Item> items = itemMapper.selectList(null);
-            for (Item item : items) {
-                if (item.getImages() != null) {
-                    usedUrls.addAll(parseImageUrls(item.getImages()));
-                }
-                if (item.getThumbnail() != null) {
-                    usedUrls.add(normalizeUrl(item.getThumbnail()));
-                }
-            }
+            Set<String> usedUrls = getUsedImageUrls();
 
             Path uploadDir = Paths.get(uploadPath);
             if (!Files.exists(uploadDir)) {
@@ -528,36 +503,7 @@ public class UploadController {
             }
 
             // 获取所有被引用的图片URL
-            Set<String> usedUrls = new HashSet<>();
-
-            // 从用户表获取头像 - 使用MyBatis-Plus查询
-            List<User> users = userService.list();
-            for (User user : users) {
-                String avatar = user.getAvatar();
-                if (avatar != null && !avatar.isEmpty()) {
-                    usedUrls.add(normalizeUrl(avatar));
-                }
-            }
-
-            List<Post> posts = postMapper.selectList(null);
-            for (Post post : posts) {
-                if (post.getImages() != null) {
-                    usedUrls.addAll(parseImageUrls(post.getImages()));
-                }
-                if (post.getThumbnail() != null) {
-                    usedUrls.add(normalizeUrl(post.getThumbnail()));
-                }
-            }
-
-            List<Item> items = itemMapper.selectList(null);
-            for (Item item : items) {
-                if (item.getImages() != null) {
-                    usedUrls.addAll(parseImageUrls(item.getImages()));
-                }
-                if (item.getThumbnail() != null) {
-                    usedUrls.add(normalizeUrl(item.getThumbnail()));
-                }
-            }
+            Set<String> usedUrls = getUsedImageUrls();
 
             // 统计文件
             int totalFiles = 0;

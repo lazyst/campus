@@ -251,12 +251,7 @@ public class PostManagementController {
      * 验证管理员权限
      */
     private void verifyAdmin(String authHeader) {
-        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
-            throw new SecurityException("未授权访问");
-        }
-
-        String token = authHeader.replace("Bearer ", "");
-        Long adminId = adminService.getAdminIdFromToken(token);
+        Long adminId = adminService.getAdminIdFromAuthHeader(authHeader);
 
         if (adminId == null || !adminService.isSuperAdmin(adminId)) {
             throw new SecurityException("权限不足");

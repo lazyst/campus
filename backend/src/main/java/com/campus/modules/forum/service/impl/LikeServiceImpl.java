@@ -13,12 +13,14 @@ import com.campus.modules.forum.service.LikeService;
 import com.campus.modules.forum.service.NotificationService;
 import com.campus.modules.forum.service.PostService;
 import com.campus.modules.user.service.UserService;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
  * 点赞服务实现类
  */
+@Slf4j
 @Service
 @DS("slave")
 public class LikeServiceImpl extends ServiceImpl<LikeMapper, Like> implements LikeService {
@@ -113,7 +115,7 @@ public class LikeServiceImpl extends ServiceImpl<LikeMapper, Like> implements Li
                     notificationPublisher.publish(post.getUserId(), dto);
 
                 } catch (Exception e) {
-                    // 通知创建失败不影响点赞功能
+                    log.error("创建点赞通知失败: userId={}, postId={}", userId, postId, e);
                 }
             }
 

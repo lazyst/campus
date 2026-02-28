@@ -12,12 +12,15 @@
         @click="select(item.name)"
       >
         <span class="sidebar__label">{{ item.label }}</span>
+        <span
+          v-if="item.name === 'Messages' && unreadCount > 0"
+          class="sidebar__unread"
+        >
+          {{ unreadCount > 99 ? '99+' : unreadCount }}
+        </span>
       </button>
     </div>
     <div class="sidebar__footer">
-      <div v-if="unreadCount > 0" class="sidebar__badge">
-        {{ unreadCount > 99 ? '99+' : unreadCount }} 条未读
-      </div>
     </div>
   </nav>
 </template>
@@ -100,6 +103,7 @@ function select(name: string) {
   width: 100%;
   display: flex;
   align-items: center;
+  justify-content: space-between;
   padding: var(--space-3) var(--space-4);
   background: none;
   border: none;
@@ -148,6 +152,20 @@ function select(name: string) {
   padding-left: var(--space-3);
   position: relative;
   z-index: 1;
+}
+
+.sidebar__unread {
+  min-width: 20px;
+  height: 20px;
+  padding: 0 6px;
+  background: #EF4444;
+  color: #fff;
+  border-radius: 10px;
+  font-size: 12px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .sidebar__footer {

@@ -185,12 +185,6 @@ const userPhone = computed(() => {
   return '未登录';
 });
 
-function togglePhone() {
-  if (userStore.userInfo?.phone) {
-    showFullPhone.value = !showFullPhone.value;
-  }
-}
-
 const dialogVisible = ref(false);
 const deactivateDialogVisible = ref(false);
 
@@ -252,6 +246,7 @@ async function confirmDeactivate() {
 .profile-page {
   min-height: 100vh;
   background-color: var(--bg-secondary);
+  padding-bottom: var(--tabbar-height);
 }
 
 /* 移动端样式 - 默认 */
@@ -270,7 +265,7 @@ async function confirmDeactivate() {
 /* PC端样式增强 - 分栏布局 */
 @media (min-width: 1024px) {
     .profile-page {
-      background: #F1F5F9;
+      background: linear-gradient(180deg, #F8FAFC 0%, #E2E8F0 100%);
       min-height: 100vh;
     }
 
@@ -302,9 +297,9 @@ async function confirmDeactivate() {
     }
 
     .profile-sidebar .profile-user-info {
-      background: #FFFFFF;
+      background: linear-gradient(135deg, #FFFFFF 0%, #F8FAFC 100%);
       border-radius: var(--radius-2xl);
-      box-shadow: 0 4px 24px rgba(0, 0, 0, 0.06);
+      box-shadow: 0 8px 32px rgba(30, 58, 138, 0.1), 0 2px 8px rgba(0, 0, 0, 0.04);
       padding: var(--space-12);
       text-align: center;
       min-height: 320px;
@@ -312,6 +307,7 @@ async function confirmDeactivate() {
       flex-direction: column;
       justify-content: center;
       align-items: center;
+      border: 1px solid rgba(30, 58, 138, 0.06);
     }
 
     .profile-avatar {

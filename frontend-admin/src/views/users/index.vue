@@ -57,15 +57,14 @@
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
-import { ElMessage, ElMessageBox } from 'element-plus'
 import { getUserList, banUser, unbanUser, deleteUser, type User } from '@/api/admin/user'
+import { usePagination } from '@/composables/usePagination'
+import { useCrud } from '@/composables/useCrud'
 
-const loading = ref(false)
+const { loading, currentPage, pageSize, pageSizes, total, handleCurrentChange, handleSizeChange } = usePagination()
+const { handleToggleStatus, handleDelete: doDelete } = useCrud()
+
 const userList = ref<User[]>([])
-const currentPage = ref(1)
-const pageSize = ref(10)
-const pageSizes = [10, 20, 50, 100]
-const total = ref(0)
 const searchKeyword = ref('')
 const searchStatus = ref<number | null>(null)
 
@@ -81,7 +80,7 @@ const fetchData = async () => {
     userList.value = res.data.records
     total.value = res.data.total
   } catch (error) {
-    ElMessage.error('获取用户列表失败')
+    console.error('获取用户列表失败:', error)
   } finally {
     loading.value = false
   }
@@ -92,47 +91,16 @@ const handleSearch = () => {
   fetchData()
 }
 
-const handleSizeChange = (size: number) => {
-  pageSize.value = size
-  fetchData()
-}
-
-const handleCurrentChange = (page: number) => {
-  currentPage.value = page
-  fetchData()
-}
-
 const handleBan = async (user: User) => {
-  try {
-    await ElMessageBox.confirm('确定要封禁该用户吗？', '提示', { type: 'warning' })
-    await banUser(user.id)
-    ElMessage.success('封禁成功')
-    fetchData()
-  } catch (error: any) {
-    if (error !== 'cancel') ElMessage.error('封禁失败')
-  }
+  await handleToggleStatus('用户', 'ban', banUser, { id: user.id }, fetchData)
 }
 
 const handleUnban = async (user: User) => {
-  try {
-    await ElMessageBox.confirm('确定要解封该用户吗？', '提示', { type: 'warning' })
-    await unbanUser(user.id)
-    ElMessage.success('解封成功')
-    fetchData()
-  } catch (error: any) {
-    if (error !== 'cancel') ElMessage.error('解封失败')
-  }
+  await handleToggleStatus('用户', 'unban', unbanUser, { id: user.id }, fetchData)
 }
 
 const handleDelete = async (user: User) => {
-  try {
-    await ElMessageBox.confirm('确定要删除该用户吗？此操作不可恢复！', '警告', { type: 'error' })
-    await deleteUser(user.id)
-    ElMessage.success('删除成功')
-    fetchData()
-  } catch (error: any) {
-    if (error !== 'cancel') ElMessage.error('删除失败')
-  }
+  await doDelete('用户', deleteUser, { id: user.id }, fetchData)
 }
 
 onMounted(() => {
@@ -141,6 +109,8 @@ onMounted(() => {
 </script>
 
 <style scoped lang="scss">
+@import "@/styles/index.scss";
+
 .user-management {
   // 搜索区域
   .card-header {
@@ -213,118 +183,7 @@ onMounted(() => {
   }
 
   // 表格容器
-  :deep(.el-card) {
-    background: #FFFFFF;
-    border: 1px solid #E5E7EB;
-    border-radius: 12px;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
-  }
-
-  :deep(.el-card__header) {
-    padding: 16px 20px;
-    border-bottom: 1px solid #F3F4F6;
-    background: #FAFAFA;
-    color: #374151;
-    font-size: 15px;
-    font-weight: 500;
-  }
-
-  :deep(.el-card__body) {
-    padding: 20px;
-  }
-
-  // 表格样式
-  :deep(.el-table) {
-    background: transparent;
-
-    &::before {
-      display: none;
-    }
-
-    tr {
-      background: transparent;
-    }
-
-    th.el-table__cell {
-      background: #F9FAFB;
-      color: #374151;
-      font-weight: 600;
-      border-bottom: 1px solid #E5E7EB;
-    }
-
-    td.el-table__cell {
-      border-bottom: 1px solid #F3F4F6;
-      color: #374151;
-    }
-
-    .el-table__row:hover > td.el-table__cell {
-      background: #F3F4F6 !important;
-    }
-
-    .el-table__row:nth-child(even) > td.el-table__cell {
-      background: #FAFAFA;
-    }
-  }
-
-  // 输入框覆盖
-  :deep(.el-input__wrapper),
-  :deep(.el-select .el-input__wrapper) {
-    background: #FFFFFF !important;
-    border: 1px solid #D1D5DB !important;
-    box-shadow: none !important;
-    border-radius: 8px;
-
-    &:hover {
-      border-color: #9CA3AF !important;
-    }
-
-    &.is-focus {
-      border-color: #1E3A8A !important;
-      box-shadow: 0 0 0 3px rgba(30, 58, 138, 0.1) !important;
-    }
-  }
-
-  :deep(.el-input__inner) {
-    color: #111827 !important;
-
-    &::placeholder {
-      color: #9CA3AF !important;
-    }
-  }
-
-  // 按钮覆盖
-  :deep(.el-button--primary) {
-    background: #1E3A8A;
-    border: none;
-    border-radius: 8px;
-    font-weight: 500;
-
-    &:hover {
-      background: #1E40AF;
-    }
-  }
-
-  :deep(.el-button--warning) {
-    background: #FEF3C7;
-    border: 1px solid #FCD34D;
-    color: #92400E;
-    border-radius: 6px;
-
-    &:hover {
-      background: #FDE68A;
-    }
-  }
-
-  :deep(.el-button--danger) {
-    background: #FEE2E2;
-    border: 1px solid #FECACA;
-    color: #991B1B;
-    border-radius: 6px;
-
-    &:hover {
-      background: #FECACA;
-    }
-  }
+  @include page-styles;
 
   :deep(.el-button--success) {
     background: #DCFCE7;

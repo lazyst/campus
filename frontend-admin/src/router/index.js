@@ -1,15 +1,5 @@
 import { createRouter, createWebHistory } from 'vue-router'
-
-// 检查 token 是否过期
-function isTokenExpired(token) {
-  if (!token) return true
-  try {
-    const payload = JSON.parse(atob(token.split('.')[1]))
-    return payload.exp * 1000 < Date.now()
-  } catch {
-    return true
-  }
-}
+import { useAdminStore } from '@/stores/admin'
 
 const routes = [
   {
@@ -62,28 +52,18 @@ const router = createRouter({
   routes
 })
 
-// 路由守卫：检查登录状态
 router.beforeEach((to, from, next) => {
-  const token = localStorage.getItem('admin_token')
-  const expired = isTokenExpired(token)
+  const adminStore = useAdminStore()
+  const isAuthenticated = adminStore.token && !adminStore.isTokenExpired()
 
-  // 如果 token 过期或无效，清除并跳转登录页
-  if (expired && to.meta.requiresAuth) {
-    localStorage.removeItem('admin_token')
-    localStorage.removeItem('admin_info')
-    next({ name: 'Login', replace: true })
-    return
-  }
-
-  // 如果路由需要登录但没有token，跳转到登录页
-  if (to.meta.requiresAuth && !token) {
-    next({ name: 'Login', replace: true })
-    return
-  }
-
-  // 如果已登录但访问登录页，跳转到首页
-  if (to.name === 'Login' && token && !expired) {
+  if (to.name === 'Login' && isAuthenticated) {
     next({ name: 'Dashboard', replace: true })
+    return
+  }
+
+  if (to.meta.requiresAuth && !isAuthenticated) {
+    adminStore.logout()
+    next({ name: 'Login', replace: true })
     return
   }
 

@@ -1,9 +1,16 @@
 package com.campus.modules.user.controller;
 
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.campus.common.Result;
 import com.campus.modules.auth.service.AuthService;
+import com.campus.modules.forum.entity.Post;
+import com.campus.modules.forum.mapper.PostMapper;
+import com.campus.modules.trade.entity.Item;
+import com.campus.modules.trade.mapper.ItemMapper;
 import com.campus.modules.user.dto.UpdateProfileRequest;
 import com.campus.modules.user.entity.User;
+import com.campus.modules.user.mapper.UserMapper;
 import com.campus.modules.user.service.UserService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -11,13 +18,14 @@ import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.UUID;
 
 /**
@@ -30,10 +38,17 @@ public class UserController {
 
     private final UserService userService;
     private final AuthService authService;
+    private final UserMapper userMapper;
+    private final PostMapper postMapper;
+    private final ItemMapper itemMapper;
 
-    public UserController(UserService userService, AuthService authService) {
+    public UserController(UserService userService, AuthService authService,
+                         UserMapper userMapper, PostMapper postMapper, ItemMapper itemMapper) {
         this.userService = userService;
         this.authService = authService;
+        this.userMapper = userMapper;
+        this.postMapper = postMapper;
+        this.itemMapper = itemMapper;
     }
 
     @Operation(summary = "获取当前用户信息")
@@ -45,8 +60,7 @@ public class UserController {
         }
         
         try {
-            String token = authHeader.replace("Bearer ", "");
-            Long userId = authService.getUserIdFromToken(token);
+            Long userId = authService.getUserIdFromAuthHeader(authHeader);
             
             // userId为null说明token无效
             if (userId == null) {
@@ -69,8 +83,7 @@ public class UserController {
     public Result<Void> updateProfile(
             @RequestHeader("Authorization") String authHeader,
             @Valid @RequestBody UpdateProfileRequest request) {
-        String token = authHeader.replace("Bearer ", "");
-        Long userId = authService.getUserIdFromToken(token);
+        Long userId = authService.getUserIdFromAuthHeader(authHeader);
         if (userId == null) {
             return Result.error("无效的认证令牌");
         }
@@ -120,8 +133,7 @@ public class UserController {
     public Result<String> uploadAvatar(
             @RequestHeader("Authorization") String authHeader,
             @RequestParam("file") MultipartFile file) {
-        String token = authHeader.replace("Bearer ", "");
-        Long userId = authService.getUserIdFromToken(token);
+        Long userId = authService.getUserIdFromAuthHeader(authHeader);
 
         if (userId == null) {
             return Result.error("无效的认证令牌");
@@ -179,8 +191,7 @@ public class UserController {
     @DeleteMapping("/account")
     public Result<Void> deactivateAccount(
             @RequestHeader("Authorization") String authHeader) {
-        String token = authHeader.replace("Bearer ", "");
-        Long userId = authService.getUserIdFromToken(token);
+        Long userId = authService.getUserIdFromAuthHeader(authHeader);
 
         if (userId == null) {
             return Result.error("无效的认证令牌");
@@ -188,5 +199,74 @@ public class UserController {
 
         userService.deactivateAccount(userId);
         return Result.success();
+    }
+
+    // ========== 公开用户信息接口（原 UsersController 功能）==========
+
+    @Operation(summary = "获取用户公开信息（兼容旧路径）")
+    @GetMapping("/{id}")
+    public Result<Map<String, Object>> getUserById(@PathVariable Long id) {
+        User user = userMapper.selectById(id);
+        if (user == null) {
+            return Result.error("用户不存在");
+        }
+
+        Map<String, Object> profile = new HashMap<>();
+        profile.put("id", user.getId());
+        profile.put("nickname", user.getNickname());
+        profile.put("avatar", user.getAvatar());
+        profile.put("bio", user.getBio());
+        profile.put("gender", user.getGender());
+        profile.put("createdAt", user.getCreatedAt());
+
+        return Result.success(profile);
+    }
+
+    @Operation(summary = "获取用户的帖子列表")
+    @GetMapping("/{id}/posts")
+    public Result<Page<Post>> getUserPosts(
+            @PathVariable Long id,
+            @RequestParam(defaultValue = "1") Integer page,
+            @RequestParam(defaultValue = "10") Integer size) {
+
+        User user = userMapper.selectById(id);
+        if (user == null) {
+            return Result.error("用户不存在");
+        }
+
+        Page<Post> postPage = new Page<>(page, size);
+        LambdaQueryWrapper<Post> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(Post::getUserId, id)
+               .eq(Post::getStatus, 1)
+               .orderByDesc(Post::getCreatedAt);
+
+        postMapper.selectPage(postPage, wrapper);
+
+        return Result.success(postPage);
+    }
+
+    @Operation(summary = "获取用户的物品列表")
+    @GetMapping("/{id}/items")
+    public Result<Page<Item>> getUserItems(
+            @PathVariable Long id,
+            @RequestParam(defaultValue = "1") Integer page,
+            @RequestParam(defaultValue = "10") Integer size) {
+
+        User user = userMapper.selectById(id);
+        if (user == null) {
+            return Result.error("用户不存在");
+        }
+
+        Page<Item> itemPage = new Page<>(page, size);
+        LambdaQueryWrapper<Item> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(Item::getUserId, id)
+               .eq(Item::getDeleted, false)
+               .ne(Item::getStatus, 2)
+               .ne(Item::getStatus, 3)
+               .orderByDesc(Item::getCreatedAt);
+
+        itemMapper.selectPage(itemPage, wrapper);
+
+        return Result.success(itemPage);
     }
 }

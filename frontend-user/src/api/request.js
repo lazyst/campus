@@ -1,7 +1,7 @@
 // frontend-user/src/api/request.js
 
 import axios from 'axios'
-import { showToast, showLoading, hideLoading } from './toast'
+import { showToast } from '@/services/toastService'
 
 /**
  * 创建axios实例
@@ -13,9 +13,6 @@ const request = axios.create({
     'Content-Type': 'application/json'
   }
 })
-
-// 请求队列管理（用于Loading状态）
-let requestCount = 0
 
 // Token 刷新相关
 let isRefreshing = false
@@ -31,12 +28,6 @@ request.interceptors.request.use(
 
     if (token) {
       config.headers.Authorization = `Bearer ${token}`
-    }
-
-    // 2. Loading状态管理
-    if (config.showLoading !== false) {
-      requestCount++
-      showLoading(config.loadingText || '加载中...')
     }
 
     return config
@@ -122,10 +113,7 @@ function handleTokenRefresh(error) {
  */
 request.interceptors.response.use(
   (response) => {
-    // 1. 关闭Loading
-    finishLoading()
-
-    // 2. 统一处理响应数据
+    // 1. 统一处理响应数据
     const { code, message, data, token } = response.data
 
     // 成功响应
@@ -144,10 +132,7 @@ request.interceptors.response.use(
     return Promise.reject(new Error(message))
   },
   (error) => {
-    // 1. 关闭Loading
-    finishLoading()
-
-    // 2. 处理 401 错误 - 尝试刷新 token
+    // 1. 处理 401 错误 - 尝试刷新 token
     if (error.response?.status === 401) {
       return handleTokenRefresh(error)
     }
@@ -163,17 +148,6 @@ request.interceptors.response.use(
     return Promise.reject(error)
   }
 )
-
-/**
- * 关闭Loading
- */
-function finishLoading() {
-  requestCount--
-  if (requestCount <= 0) {
-    requestCount = 0
-    hideLoading()
-  }
-}
 
 /**
  * 业务错误处理

@@ -2,7 +2,8 @@
   <div class="chat-detail-page">
     <!-- 状态栏 -->
     <div class="status-bar">
-      <span class="back-btn" @click="goBack">‹</span>
+      <span v-if="!isPC" class="back-btn" @click="goBack">‹</span>
+      <span v-else class="back-btn-placeholder"></span>
       <span class="chat-title">{{ chatName }}</span>
       <span class="more-btn">⋯</span>
     </div>
@@ -80,7 +81,9 @@
         placeholder="发送消息..."
         @keyup.enter="handleSendMessage"
       />
-      <button class="send-btn" @click="handleSendMessage">发送</button>
+      <button class="send-btn" :disabled="isSending" @click="handleSendMessage">
+        {{ isSending ? '发送中' : '发送' }}
+      </button>
     </div>
 
     <!-- 图片预览组件 -->
@@ -126,6 +129,7 @@ const myAvatar = ref('')
 // 图片相关
 const imageInput = ref(null)
 const isUploading = ref(false)
+const isSending = ref(false)
 
 // 图片预览
 const showImagePreview = ref(false)
@@ -135,6 +139,14 @@ const previewImageIndex = ref(0)
 const messagesContainer = ref(null)
 const messages = ref([])
 let unsubscribeMessage = null
+
+// PC端检测
+const isPC = ref(typeof window !== 'undefined' ? window.innerWidth >= 1024 : false)
+
+// 更新PC端状态
+function updateIsPC() {
+  isPC.value = window.innerWidth >= 1024
+}
 
 // 图片预览相关
 function previewMessageImage(imageUrl) {
@@ -296,7 +308,9 @@ function goBack() {
 }
 
 async function handleSendMessage() {
-  if (!inputMessage.value.trim()) return
+  if (!inputMessage.value.trim() || isSending.value) return
+
+  isSending.value = true
 
   const content = inputMessage.value.trim()
   const receiverId = otherUserId.value
@@ -306,8 +320,8 @@ async function handleSendMessage() {
     try {
       await connectWs(userStore.token)
     } catch (error) {
-      // 忽略错误
-      showToast('消息发送失败，请稍后重试')
+      isSending.value = false
+      showToast('连接失败，请检查网络')
       return
     }
   }
@@ -329,8 +343,10 @@ async function handleSendMessage() {
     inputMessage.value = ''
     scrollToBottom()
   } catch (error) {
-    // 忽略错误
-    showToast('消息发送失败，请稍后重试')
+    console.error('发送消息失败:', error)
+    showToast('消息发送失败，请重试')
+  } finally {
+    isSending.value = false
   }
 }
 
@@ -371,6 +387,9 @@ async function sendQuickReply(reply) {
 
 onMounted(async () => {
   await loadMessages()
+
+  // 监听窗口大小变化
+  window.addEventListener('resize', updateIsPC)
 
   // 再次滚动到底部，确保所有内容加载完成后定位
   nextTick(() => {
@@ -418,6 +437,9 @@ onUnmounted(() => {
     unsubscribeMessage()
     unsubscribeMessage = null
   }
+
+  // 移除窗口大小监听
+  window.removeEventListener('resize', updateIsPC)
 
   // 通知 App.vue 离开了聊天页面
   if (typeof setCurrentChatUserId === 'function') {
@@ -557,6 +579,10 @@ onUnmounted(() => {
   cursor: pointer;
 }
 
+.back-btn-placeholder {
+  width: 28px;
+}
+
 .chat-title {
   font-size: 17px;
   font-weight: 600;
@@ -678,6 +704,11 @@ onUnmounted(() => {
 
 .send-btn:active {
   opacity: 0.8;
+}
+
+.send-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 
 /* 图片按钮 */

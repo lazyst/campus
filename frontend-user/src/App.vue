@@ -22,7 +22,7 @@ import { useRouter } from 'vue-router'
 import { useUserStore } from '@/stores/user'
 import Dialog from '@/components/interactive/Dialog.vue'
 import { getLoginDialogVisible, hideLoginConfirm } from '@/stores/loginConfirm'
-import { connect, disconnect, onMessage, onNotification } from '@/services/websocket'
+import { connect, disconnect, onMessage, onNotification, onUnreadCount } from '@/services/websocket'
 import { getTotalUnreadCount } from '@/api/modules/conversation'
 import { getUnreadCount } from '@/api/modules/notification'
 
@@ -35,10 +35,14 @@ const loginDialogVisible = ref(false)
 const totalUnreadCount = ref(0)
 // 全局未读通知数
 const totalNotificationUnreadCount = ref(0)
-// 已处理的消息 ID 集合，用于去重
-const processedMessageIds = new Set<number>()
-// 已处理的通知 ID 集合，用于去重
-const processedNotificationIds = new Set<number>()
+// 已处理的消息 ID 集合，用于去重（从 localStorage 恢复）
+const processedMessageIds = new Set<number>(
+  JSON.parse(localStorage.getItem('processed_message_ids') || '[]')
+)
+// 已处理的通知 ID 集合，用于去重（从 localStorage 恢复）
+const processedNotificationIds = new Set<number>(
+  JSON.parse(localStorage.getItem('processed_notification_ids') || '[]')
+)
 // 消息更新事件总线
 const messageUpdateEvent = ref(0)
 // 通知更新事件总线
@@ -48,6 +52,8 @@ const currentChatUserId = ref<number | null>(null)
 
 let unsubscribeMessage: (() => void) | null = null
 let unsubscribeNotification: (() => void) | null = null
+let unsubscribeUnreadCount: (() => void) | null = null
+let unreadSyncInterval: ReturnType<typeof setInterval> | null = null
 
 // 提供全局未读数给子组件
 provide('totalUnreadCount', totalUnreadCount)
@@ -112,12 +118,21 @@ onMounted(async () => {
 
   // 监听聊天页面触发的未读清除事件
   window.addEventListener('unread-cleared', handleUnreadCleared)
+
+  // 监听页面可见性变化，用户切换回来时立即刷新未读数
+  document.addEventListener('visibilitychange', () => {
+    if (!document.hidden && userStore.token) {
+      fetchTotalUnreadCount()
+      fetchNotificationUnreadCount()
+    }
+  })
 })
 
 // 应用卸载时清理
 onUnmounted(() => {
   teardownWebSocket()
   window.removeEventListener('unread-cleared', handleUnreadCleared)
+  document.removeEventListener('visibilitychange', () => {})
 })
 
 function handleLogin() {
@@ -131,9 +146,14 @@ function handleCancel() {
 
 // 处理未读清除事件
 function handleUnreadCleared(e: CustomEvent) {
-  console.log('App.vue 收到 unread-cleared 事件，触发消息列表刷新')
+  const { userId } = e.detail
+  console.log('App.vue 收到 unread-cleared 事件，用户ID:', userId)
+
   // 触发消息更新事件，让消息列表刷新
   messageUpdateEvent.value++
+
+  // 从服务器重新获取准确的未读数
+  fetchTotalUnreadCount()
 }
 
 // 获取总未读消息数
@@ -223,6 +243,13 @@ async function setupWebSocket() {
         const first = processedMessageIds.values().next().value
         processedMessageIds.delete(first)
       }
+
+      // 持久化到 localStorage
+      try {
+        localStorage.setItem('processed_message_ids', JSON.stringify([...processedMessageIds]))
+      } catch (e) {
+        // 忽略 localStorage 错误
+      }
     })
 
     // 订阅新通知，实时更新通知未读数
@@ -252,16 +279,56 @@ async function setupWebSocket() {
         const first = processedNotificationIds.values().next().value
         processedNotificationIds.delete(first)
       }
+
+      // 持久化到 localStorage
+      try {
+        localStorage.setItem('processed_notification_ids', JSON.stringify([...processedNotificationIds]))
+      } catch (e) {
+        // 忽略 localStorage 错误
+      }
     })
 
     console.log('App.vue WebSocket 连接成功')
+
+    // 订阅未读数推送（实时更新）
+    unsubscribeUnreadCount = onUnreadCount((data) => {
+      console.log('App.vue 收到未读数推送:', data)
+      if (data.type === 'unread' && typeof data.count === 'number') {
+        totalUnreadCount.value = data.count
+        console.log('通过推送更新未读数:', data.count)
+      }
+    })
+
+    // 启动定时同步未读数（每30秒从服务器获取一次，保持数据一致）
+    startUnreadSync()
   } catch (error) {
     console.error('App.vue WebSocket 连接失败:', error)
   }
 }
 
+// 启动未读数定时同步
+function startUnreadSync() {
+  if (unreadSyncInterval) {
+    clearInterval(unreadSyncInterval)
+  }
+  // 缩短同步间隔到5秒，提高实时性
+  unreadSyncInterval = setInterval(() => {
+    fetchTotalUnreadCount()
+    fetchNotificationUnreadCount()
+  }, 5000)
+}
+
+// 停止未读数定时同步
+function stopUnreadSync() {
+  if (unreadSyncInterval) {
+    clearInterval(unreadSyncInterval)
+    unreadSyncInterval = null
+  }
+}
+
 // 清理 WebSocket
 function teardownWebSocket() {
+  stopUnreadSync()
   if (unsubscribeMessage) {
     unsubscribeMessage()
     unsubscribeMessage = null
@@ -269,6 +336,10 @@ function teardownWebSocket() {
   if (unsubscribeNotification) {
     unsubscribeNotification()
     unsubscribeNotification = null
+  }
+  if (unsubscribeUnreadCount) {
+    unsubscribeUnreadCount()
+    unsubscribeUnreadCount = null
   }
   disconnect()
 }
@@ -291,6 +362,9 @@ watch(() => userStore.token, async (newToken) => {
     totalNotificationUnreadCount.value = 0
     processedMessageIds.clear()
     processedNotificationIds.clear()
+    // 清理 localStorage
+    localStorage.removeItem('processed_message_ids')
+    localStorage.removeItem('processed_notification_ids')
     teardownWebSocket()
   }
 }, { immediate: true })

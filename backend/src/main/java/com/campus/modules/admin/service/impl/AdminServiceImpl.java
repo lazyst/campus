@@ -94,6 +94,15 @@ public class AdminServiceImpl extends ServiceImpl<AdminMapper, Admin> implements
         }
     }
 
+    @Override
+    public Long getAdminIdFromAuthHeader(String authHeader) {
+        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+            return null;
+        }
+        String token = authHeader.substring(7);
+        return getAdminIdFromToken(token);
+    }
+
     /**
      * 生成JWT Token
      */

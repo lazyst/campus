@@ -34,12 +34,6 @@
 
       <!-- 空状态 -->
       <div v-else-if="products.length === 0" class="empty-state">
-        <div class="empty-icon">
-          <svg width="80" height="80" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M20 4H4C2.9 4 2 4.9 2 6V18C2 19.1 2.9 20 4 20H20C21.1 20 22 19.1 22 18V6C22 4.9 21.1 4 20 4Z" stroke="currentColor" stroke-width="1.5"/>
-            <path d="M12 11L8 7M12 11L16 7M12 11L12 15" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
-          </svg>
-        </div>
         <p class="empty-text">暂无闲置物品</p>
         <p class="empty-hint">快去发布一个吧~</p>
       </div>

@@ -82,8 +82,7 @@ public class PostController {
     public Result<Post> createPost(
             @RequestHeader("Authorization") String authHeader,
             @Valid @RequestBody PostCreateRequest request) {
-        String token = authHeader.replace("Bearer ", "");
-        Long userId = authService.getUserIdFromToken(token);
+        Long userId = authService.getUserIdFromAuthHeader(authHeader);
 
         // Verify board exists
         if (boardService.getById(request.getBoardId()) == null) {
@@ -116,8 +115,7 @@ public class PostController {
             @RequestHeader("Authorization") String authHeader,
             @PathVariable Long id,
             @Valid @RequestBody PostUpdateRequest request) {
-        String token = authHeader.replace("Bearer ", "");
-        Long userId = authService.getUserIdFromToken(token);
+        Long userId = authService.getUserIdFromAuthHeader(authHeader);
 
         Post post = postService.getById(id);
         if (post == null) {
@@ -151,8 +149,7 @@ public class PostController {
     public Result<Void> deletePost(
             @RequestHeader("Authorization") String authHeader,
             @PathVariable Long id) {
-        String token = authHeader.replace("Bearer ", "");
-        Long userId = authService.getUserIdFromToken(token);
+        Long userId = authService.getUserIdFromAuthHeader(authHeader);
 
         Post post = postService.getById(id);
         if (post == null) {
@@ -176,8 +173,7 @@ public class PostController {
             @RequestHeader("Authorization") String authHeader,
             @RequestParam(defaultValue = "1") Integer page,
             @RequestParam(defaultValue = "10") Integer size) {
-        String token = authHeader.replace("Bearer ", "");
-        Long userId = authService.getUserIdFromToken(token);
+        Long userId = authService.getUserIdFromAuthHeader(authHeader);
 
         Page<Post> postPage = new Page<>(page, size);
         LambdaQueryWrapper<Post> wrapper = new LambdaQueryWrapper<>();

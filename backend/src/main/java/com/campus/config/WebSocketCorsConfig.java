@@ -37,10 +37,16 @@ public class WebSocketCorsConfig {
 
                 // 只对 /ws/** 路径应用 CORS
                 if (requestURI.contains("/ws/")) {
-                    httpResponse.setHeader("Access-Control-Allow-Origin", "*");
+                    String origin = httpRequest.getHeader("Origin");
+                    if (origin != null && (origin.equals("http://localhost:3000") || 
+                        origin.equals("http://localhost:3001") ||
+                        origin.equals("http://127.0.0.1:3000") || 
+                        origin.equals("http://127.0.0.1:3001"))) {
+                        httpResponse.setHeader("Access-Control-Allow-Origin", origin);
+                        httpResponse.setHeader("Access-Control-Allow-Credentials", "true");
+                    }
                     httpResponse.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
                     httpResponse.setHeader("Access-Control-Allow-Headers", "*");
-                    httpResponse.setHeader("Access-Control-Allow-Credentials", "true");
 
                     // 处理 OPTIONS 预检请求
                     if ("OPTIONS".equalsIgnoreCase(httpRequest.getMethod())) {

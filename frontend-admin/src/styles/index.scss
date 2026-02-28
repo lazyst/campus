@@ -283,3 +283,177 @@ $breakpoint-mobile: 480px;
     font-size: 13px;
   }
 }
+
+// ============================================
+// 页面通用样式 Mixins
+// ============================================
+
+// 筛选栏
+@mixin filter-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 20px;
+
+  @include mobile {
+    flex-direction: column;
+  }
+}
+
+// 操作按钮组
+@mixin action-buttons {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+
+  @media (max-width: 480px) {
+    flex-direction: column;
+
+    .el-button {
+      width: 100%;
+      margin-left: 0 !important;
+      margin-bottom: 4px;
+    }
+  }
+}
+
+// 卡片覆盖样式
+@mixin card-style {
+  :deep(.el-card) {
+    background: #FFFFFF;
+    border: 1px solid #E5E7EB;
+    border-radius: 12px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  }
+
+  :deep(.el-card__header) {
+    padding: 16px 20px;
+    border-bottom: 1px solid #F3F4F6;
+    background: #FAFAFA;
+    color: #374151;
+    font-size: 15px;
+    font-weight: 500;
+  }
+
+  :deep(.el-card__body) {
+    padding: 20px;
+  }
+}
+
+// 表格覆盖样式
+@mixin table-style {
+  :deep(.el-table) {
+    background: transparent;
+
+    &::before {
+      display: none;
+    }
+
+    tr {
+      background: transparent;
+    }
+
+    th.el-table__cell {
+      background: #F9FAFB;
+      color: #374151;
+      font-weight: 600;
+      border-bottom: 1px solid #E5E7EB;
+    }
+
+    td.el-table__cell {
+      border-bottom: 1px solid #F3F4F6;
+      color: #374151;
+    }
+
+    .el-table__row:hover > td.el-table__cell {
+      background: #F3F4F6 !important;
+    }
+
+    .el-table__row:nth-child(even) > td.el-table__cell {
+      background: #FAFAFA;
+    }
+  }
+}
+
+// 输入框覆盖样式
+@mixin input-style {
+  :deep(.el-input__wrapper),
+  :deep(.el-select .el-input__wrapper) {
+    background: #FFFFFF !important;
+    border: 1px solid #D1D5DB !important;
+    box-shadow: none !important;
+    border-radius: 8px;
+
+    &:hover {
+      border-color: #9CA3AF !important;
+    }
+
+    &.is-focus {
+      border-color: #1E3A8A !important;
+      box-shadow: 0 0 0 3px rgba(30, 58, 138, 0.1) !important;
+    }
+  }
+
+  :deep(.el-input__inner) {
+    color: #111827 !important;
+
+    &::placeholder {
+      color: #9CA3AF !important;
+    }
+  }
+}
+
+// 主按钮样式
+@mixin primary-button-style {
+  :deep(.el-button--primary) {
+    background: #1E3A8A;
+    border: none;
+    border-radius: 8px;
+    font-weight: 500;
+
+    &:hover {
+      background: #1E40AF;
+      box-shadow: 0 4px 12px rgba(30, 58, 138, 0.2);
+    }
+  }
+}
+
+// 危险按钮样式
+@mixin danger-button-style {
+  :deep(.el-button--danger) {
+    background: #EF4444;
+    border: none;
+    border-radius: 8px;
+    font-weight: 500;
+
+    &:hover {
+      background: #DC2626;
+      box-shadow: 0 4px 12px rgba(239, 68, 68, 0.2);
+    }
+  }
+}
+
+// 警告按钮样式
+@mixin warning-button-style {
+  :deep(.el-button--warning) {
+    background: #F59E0B;
+    border: none;
+    border-radius: 8px;
+    font-weight: 500;
+
+    &:hover {
+      background: #D97706;
+      box-shadow: 0 4px 12px rgba(245, 158, 11, 0.2);
+    }
+  }
+}
+
+// 完整页面样式（包含以上所有）
+@mixin page-styles {
+  @include card-style;
+  @include table-style;
+  @include input-style;
+  @include primary-button-style;
+  @include danger-button-style;
+  @include warning-button-style;
+}

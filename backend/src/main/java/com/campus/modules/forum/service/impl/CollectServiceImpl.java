@@ -11,7 +11,9 @@ import com.campus.modules.forum.mapper.CollectSimpleMapper;
 import com.campus.modules.forum.service.CollectService;
 import com.campus.modules.forum.service.NotificationService;
 import com.campus.modules.forum.service.PostService;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Collections;
 import java.util.List;
@@ -22,6 +24,7 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 /**
  * 收藏服务实现类
  */
+@Slf4j
 @Service
 @DS("slave")
 public class CollectServiceImpl extends ServiceImpl<CollectMapper, Collect> implements CollectService {
@@ -46,7 +49,7 @@ public class CollectServiceImpl extends ServiceImpl<CollectMapper, Collect> impl
     }
 
     @Override
-    // @Transactional  // 暂时移除事务注解测试
+    @Transactional(rollbackFor = Exception.class)
     public boolean toggleCollect(Long userId, Long postId) {
         // 使用 CollectSimpleMapper 查询，绕过 @TableLogic 逻辑删除
         LambdaQueryWrapper<CollectSimple> wrapper = new LambdaQueryWrapper<>();
@@ -93,7 +96,7 @@ public class CollectServiceImpl extends ServiceImpl<CollectMapper, Collect> impl
                         notification.setContent("收藏了你的帖子");
                         notificationService.save(notification);
                     } catch (Exception e) {
-                        // 通知创建失败不影响收藏功能
+                        log.error("创建收藏通知失败: userId={}, postId={}", userId, postId, e);
                     }
                 }
             }

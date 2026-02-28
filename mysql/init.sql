@@ -91,7 +91,7 @@ CREATE TABLE IF NOT EXISTS `board` (
     PRIMARY KEY (`id`),
     KEY `idx_status` (`status`),
     KEY `idx_deleted` (`deleted`)
-) ENGINE=InnoDB AUTO_INCREMENT=10 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='论坛板块表';
+) ENGINE=InnoDB AUTO_INCREMENT=15 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='论坛板块表';
 
 -- =====================================================
 -- 帖子表
@@ -119,7 +119,7 @@ CREATE TABLE IF NOT EXISTS `post` (
     KEY `idx_status` (`status`),
     KEY `idx_created_at` (`created_at`),
     KEY `idx_deleted` (`deleted`)
-) ENGINE=InnoDB AUTO_INCREMENT=30 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='帖子表';
+) ENGINE=InnoDB AUTO_INCREMENT=35 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='帖子表';
 
 -- =====================================================
 -- 评论表
@@ -319,7 +319,8 @@ INSERT INTO `board` (`id`, `name`, `description`, `icon`, `sort`, `status`, `cre
 (1, '交流', '日常交流分享', '', 1, 1, '2026-01-27 18:45:40', '2026-01-27 18:45:40', NULL, NULL, 0),
 (2, '学习交流', '学习资料和经验分享', NULL, 2, 1, '2026-01-27 18:45:40', '2026-01-27 18:45:40', NULL, NULL, 0),
 (3, '兴趣交友', '寻找志同道合的伙伴', NULL, 3, 1, '2026-01-27 18:45:40', '2026-01-27 18:45:40', NULL, NULL, 0),
-(4, '校园活动', '校园活动信息发布', '', 4, 1, '2026-01-27 18:45:40', '2026-01-27 18:45:40', NULL, NULL, 0);
+(4, '校园活动', '校园活动信息发布', '', 4, 1, '2026-01-27 18:45:40', '2026-01-27 18:45:40', NULL, NULL, 0),
+(5, '技能互助', '技能交换与互相帮助', NULL, 5, 1, '2026-01-27 18:45:40', '2026-01-27 18:45:40', NULL, NULL, 0);
 
 -- 插入帖子数据
 INSERT INTO `post` (`id`, `user_id`, `board_id`, `title`, `content`, `images`, `view_count`, `like_count`, `comment_count`, `collect_count`, `status`, `created_at`, `updated_at`, `created_by`, `updated_by`, `deleted`) VALUES
@@ -347,7 +348,11 @@ INSERT INTO `post` (`id`, `user_id`, `board_id`, `title`, `content`, `images`, `
 (22, 6, 1, '校园春日赏花指南', '春天到了，校园里的樱花和桃花都开了，给大家分享一下最佳赏花地点和拍照技巧。', NULL, 256, 21, 32, 7, 1, '2026-02-07 12:00:00', '2026-02-07 12:00:00', NULL, NULL, 0),
 (23, 2, 2, '线性代数复习笔记', '整理了线性代数期末复习笔记，包括行列式、矩阵、特征值等重点内容，需要的dd我。', NULL, 189, 17, 14, 5, 1, '2026-02-08 09:00:00', '2026-02-08 09:00:00', NULL, NULL, 0),
 (24, 3, 4, '二手市场摆摊组队', '毕业季快到了，想在学校二手市场摆摊卖闲置，有没有人一起组队？互相照应。', NULL, 134, 9, 8, 2, 1, '2026-02-08 14:00:00', '2026-02-08 14:00:00', NULL, NULL, 0),
-(25, 4, 1, '宿舍收纳好物分享', '分享几个宿舍收纳神器：1. 床底收纳箱 2. 门后挂袋 3. 桌面收纳盒 4. 衣柜分层架。真的能省很多空间！', NULL, 278, 23, 26, 6, 1, '2026-02-09 10:00:00', '2026-02-09 10:00:00', NULL, NULL, 0);
+(25, 4, 1, '宿舍收纳好物分享', '分享几个宿舍收纳神器：1. 床底收纳箱 2. 门后挂袋 3. 桌面收纳盒 4. 衣柜分层架。真的能省很多空间！', NULL, 278, 23, 26, 6, 1, '2026-02-09 10:00:00', '2026-02-09 10:00:00', NULL, NULL, 0),
+(26, 2, 5, 'PS技能换摄影教程', '本人会PS修图，想学摄影技术，有摄影大神愿意交换技能吗？可以线上教学。', NULL, 67, 8, 12, 3, 1, '2026-02-10 09:00:00', '2026-02-10 09:00:00', NULL, NULL, 0),
+(27, 3, 5, '编程辅导换取英语陪练', '计算机专业大三，可以教编程入门（Python、C语言），想找英语好的同学帮忙练口语。', NULL, 89, 11, 15, 4, 1, '2026-02-10 14:00:00', '2026-02-10 14:00:00', NULL, NULL, 0),
+(28, 4, 5, '吉他教学换健身指导', '吉他弹唱三年，想找人指导健身增肌，互相督促学习，有健身基础的朋友来看看。', NULL, 112, 14, 18, 5, 1, '2026-02-11 10:00:00', '2026-02-11 10:00:00', NULL, NULL, 0),
+(29, 5, 5, 'PPT制作技能分享', '擅长PPT制作和美化，平时经常帮导师做汇报PPT。有想学PPT的朋友吗？可以开小班教学。', NULL, 145, 19, 22, 6, 1, '2026-02-11 15:00:00', '2026-02-11 15:00:00', NULL, NULL, 0);
 
 -- 插入闲置物品数据
 INSERT INTO `item` (`id`, `user_id`, `type`, `title`, `description`, `price`, `images`, `view_count`, `contact_count`, `status`, `created_at`, `updated_at`, `created_by`, `updated_by`, `deleted`, `location`, `category`) VALUES

@@ -40,7 +40,8 @@ api.interceptors.response.use(
   (error) => {
     if (error.response?.status === 401) {
       localStorage.removeItem('admin_token')
-      window.location.href = '/login'
+      localStorage.removeItem('admin_info')
+      window.location.href = '/admin/login'
     }
     return Promise.reject(error)
   }
@@ -48,9 +49,7 @@ api.interceptors.response.use(
 
 export default api
 
-// 封装的请求方法
 export function get(url, params) {
-  // 响应拦截器已处理数据解析，直接返回
   return api.get(url, { params })
 }
 

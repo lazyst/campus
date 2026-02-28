@@ -1,9 +1,7 @@
 package com.campus.modules.chat.service.impl;
-import com.baomidou.dynamic.datasource.annotation.DS;
 
 import com.baomidou.dynamic.datasource.annotation.DS;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
-import com.baomidou.dynamic.datasource.annotation.DS;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.campus.modules.chat.dto.ChatMessageDTO;
@@ -15,13 +13,18 @@ import com.campus.modules.chat.publisher.ChatMessagePublisher;
 import com.campus.modules.chat.service.ChatService;
 import com.campus.modules.user.entity.User;
 import com.campus.modules.user.service.UserService;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
 
+@Slf4j
 @Service
 @DS("slave")
 public class ChatServiceImpl extends ServiceImpl<MessageMapper, Message>
@@ -41,6 +44,7 @@ public class ChatServiceImpl extends ServiceImpl<MessageMapper, Message>
 
     @Override
     @Transactional(rollbackFor = Exception.class)
+    @DS("master")
     public Message saveMessage(Long senderId, Long receiverId, String content) {
         Conversation conversation = getOrCreateConversation(senderId, receiverId);
 
@@ -87,6 +91,7 @@ public class ChatServiceImpl extends ServiceImpl<MessageMapper, Message>
     }
 
     @Override
+    @DS("master")
     public void clearUnreadCount(Long userId, Long conversationId) {
         Conversation conversation = conversationMapper.selectById(conversationId);
         if (conversation == null) {
@@ -114,20 +119,8 @@ public class ChatServiceImpl extends ServiceImpl<MessageMapper, Message>
 
     @Override
     public Integer getTotalUnreadCount(Long userId) {
-        LambdaQueryWrapper<Conversation> wrapper = new LambdaQueryWrapper<>();
-        wrapper.eq(Conversation::getDeleted, false)
-               .and(w -> w.eq(Conversation::getUserId1, userId)
-                          .or()
-                          .eq(Conversation::getUserId2, userId));
-
-        List<Conversation> conversations = conversationMapper.selectList(wrapper);
-
-        int totalUnread = 0;
-        for (Conversation conversation : conversations) {
-            totalUnread += conversation.getUnreadCount(userId);
-        }
-
-        return totalUnread;
+        // 使用SQL的SUM函数直接计算未读总数，避免Java循环
+        return conversationMapper.sumUnreadCount(userId);
     }
 
     @Override
@@ -141,6 +134,27 @@ public class ChatServiceImpl extends ServiceImpl<MessageMapper, Message>
 
         List<Conversation> conversations = conversationMapper.selectList(wrapper);
 
+        if (conversations.isEmpty()) {
+            return conversations;
+        }
+
+        // 收集所有需要的userId和conversationId，使用批量查询避免N+1问题
+        Set<Long> otherUserIds = conversations.stream()
+                .map(c -> c.getUserId1().equals(userId) ? c.getUserId2() : c.getUserId1())
+                .collect(Collectors.toSet());
+
+        Set<Long> conversationIds = conversations.stream()
+                .map(Conversation::getId)
+                .collect(Collectors.toSet());
+
+        // 批量查询用户信息
+        Map<Long, User> userMap = userService.listByIds(otherUserIds).stream()
+                .collect(Collectors.toMap(User::getId, user -> user));
+
+        // 批量查询最后消息
+        Map<Long, Message> lastMessageMap = getLastMessages(conversationIds);
+
+        // 填充会话信息
         for (Conversation conversation : conversations) {
             Long otherUserId = conversation.getUserId1().equals(userId)
                     ? conversation.getUserId2()
@@ -148,13 +162,13 @@ public class ChatServiceImpl extends ServiceImpl<MessageMapper, Message>
 
             conversation.setOtherUserId(otherUserId);
 
-            User otherUser = userService.getById(otherUserId);
+            User otherUser = userMap.get(otherUserId);
             if (otherUser != null) {
                 conversation.setOtherUserNickname(otherUser.getNickname());
                 conversation.setOtherUserAvatar(otherUser.getAvatar());
             }
 
-            Message lastMessage = getLastMessage(conversation.getId());
+            Message lastMessage = lastMessageMap.get(conversation.getId());
             if (lastMessage != null) {
                 conversation.setLastMessageContent(lastMessage.getContent());
                 conversation.setLastMessageTime(lastMessage.getCreatedAt());
@@ -176,27 +190,56 @@ public class ChatServiceImpl extends ServiceImpl<MessageMapper, Message>
         return this.baseMapper.selectOne(wrapper);
     }
 
+    /**
+     * 批量查询每个会话的最后一条消息
+     */
+    private Map<Long, Message> getLastMessages(Set<Long> conversationIds) {
+        if (conversationIds == null || conversationIds.isEmpty()) {
+            return Map.of();
+        }
+
+        // 将Set转换为List，MyBatis需要List或数组
+        List<Long> conversationIdList = new ArrayList<>(conversationIds);
+
+        // 查询每个会话的最新消息
+        List<Message> messages = this.baseMapper.selectLastMessagesByConversationIds(conversationIdList);
+
+        return messages.stream()
+                .collect(Collectors.toMap(Message::getConversationId, msg -> msg));
+    }
+
     @Override
     public List<Message> getMessages(Long conversationId, Integer page, Integer size) {
         Page<Message> pageParam = new Page<>(page, size);
-        
+
         LambdaQueryWrapper<Message> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq(Message::getConversationId, conversationId)
                .eq(Message::getDeleted, false)
                .orderByAsc(Message::getCreatedAt);
-        
+
         Page<Message> result = this.page(pageParam, wrapper);
-        
-        for (Message message : result.getRecords()) {
-            User sender = userService.getById(message.getSenderId());
-            if (sender != null) {
-                message.setSenderNickname(sender.getNickname());
-                message.setSenderAvatar(sender.getAvatar());
+
+        List<Message> messages = result.getRecords();
+        if (!messages.isEmpty()) {
+            // 批量查询发送者信息，避免N+1问题
+            Set<Long> senderIds = messages.stream()
+                    .map(Message::getSenderId)
+                    .collect(Collectors.toSet());
+
+            Map<Long, User> userMap = userService.listByIds(senderIds).stream()
+                    .collect(Collectors.toMap(User::getId, user -> user));
+
+            for (Message message : messages) {
+                User sender = userMap.get(message.getSenderId());
+                if (sender != null) {
+                    message.setSenderNickname(sender.getNickname());
+                    message.setSenderAvatar(sender.getAvatar());
+                }
+                message.setSendTime(message.getCreatedAt());
             }
-            message.setSendTime(message.getCreatedAt());
         }
-        
-        return result.getRecords();
+
+        return messages;
     }
 
     @Override
@@ -212,6 +255,7 @@ public class ChatServiceImpl extends ServiceImpl<MessageMapper, Message>
 
     @Override
     @Transactional(rollbackFor = Exception.class)
+    @DS("master")
     public Conversation getOrCreateConversation(Long userId1, Long userId2) {
         Conversation existing = findConversation(userId1, userId2);
         if (existing != null) {

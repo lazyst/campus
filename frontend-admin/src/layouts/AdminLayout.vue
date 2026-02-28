@@ -136,9 +136,11 @@
 import { ref, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { logout } from '@/api/admin/auth'
+import { useAdminStore } from '@/stores/admin'
 
 const route = useRoute()
 const router = useRouter()
+const adminStore = useAdminStore()
 const activeMenu = computed(() => route.path)
 const drawerVisible = ref(false)
 
@@ -164,8 +166,7 @@ const handleLogout = async () => {
   } catch (e) {
     // 忽略API调用错误
   }
-  localStorage.removeItem('admin_token')
-  localStorage.removeItem('admin_info')
+  adminStore.logout()
   router.push('/login')
 }
 </script>

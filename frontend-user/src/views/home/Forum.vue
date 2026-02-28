@@ -80,6 +80,7 @@ function handleSearch(query) {
 
 .forum-search {
   padding: var(--space-3) var(--page-padding);
+  padding-top: var(--nav-height);
   background-color: var(--bg-card);
 }
 

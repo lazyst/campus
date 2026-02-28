@@ -156,10 +156,16 @@ async function loadPosts(isRefresh = false) {
     const response = await getPosts({ page: page.value, size: 10 });
     const records = response?.records || [];
 
+    // 映射 createdAt 到 time 字段
+    const mappedRecords = records.map((post: any) => ({
+      ...post,
+      time: post.createdAt
+    }))
+
     if (isRefresh) {
-      posts.value = records;
+      posts.value = mappedRecords;
     } else {
-      posts.value.push(...records);
+      posts.value.push(...mappedRecords);
     }
 
     page.value++;
@@ -192,7 +198,11 @@ async function handleSearch(query: string) {
   try {
     const response = await searchPosts(query, { page: page.value, size: 10 });
     const records = response?.records || [];
-    posts.value = records;
+    // 映射 createdAt 到 time 字段
+    posts.value = records.map((post: any) => ({
+      ...post,
+      time: post.createdAt
+    }));
     page.value++;
 
     if (records.length < 10) {
@@ -326,9 +336,11 @@ onUnmounted(() => {
   .search-section {
     max-width: 900px;
     margin: 0 auto;
-    padding: 16px 24px;
-    border-radius: 0 0 16px 16px;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    padding: 20px 28px;
+    border-radius: 0 0 20px 20px;
+    box-shadow: 0 4px 20px rgba(30, 58, 138, 0.08), 0 1px 3px rgba(0, 0, 0, 0.04);
+    background: linear-gradient(135deg, #FFFFFF 0%, #F8FAFC 100%);
+    border: 1px solid rgba(30, 58, 138, 0.06);
   }
 }
 
@@ -339,7 +351,7 @@ onUnmounted(() => {
 .message-btn {
   width: 36px;
   height: 36px;
-  background: #6366F1;
+  background: var(--color-primary);
   border-radius: 8px;
   display: flex;
   align-items: center;
@@ -350,9 +362,17 @@ onUnmounted(() => {
 
 @media (min-width: 1024px) {
   .message-btn {
-    width: 44px;
-    height: 44px;
-    font-size: 20px;
+    width: 48px;
+    height: 48px;
+    font-size: 22px;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(37, 99, 235, 0.25);
+    transition: all 0.2s ease;
+  }
+
+  .message-btn:hover {
+    transform: scale(1.05);
+    box-shadow: 0 4px 16px rgba(37, 99, 235, 0.35);
   }
 }
 
@@ -379,8 +399,12 @@ onUnmounted(() => {
   .categories-section {
     max-width: 900px;
     margin: 0 auto;
-    padding: 20px 24px;
-    gap: 16px;
+    padding: 24px 28px;
+    gap: 20px;
+    border-radius: 16px;
+    margin-top: 16px;
+    box-shadow: 0 2px 12px rgba(30, 58, 138, 0.06);
+    background: white;
   }
 }
 
@@ -393,6 +417,7 @@ onUnmounted(() => {
     max-width: 900px;
     margin: 0 auto;
     padding: 24px;
+    margin-top: 16px;
   }
 }
 
@@ -447,7 +472,7 @@ onUnmounted(() => {
   width: 36px;
   height: 36px;
   border: 3px solid #E2E8F0;
-  border-top-color: #6366F1;
+  border-top-color: var(--color-primary);
   border-radius: 50%;
   animation: spin 0.8s linear infinite;
 }
@@ -469,7 +494,7 @@ onUnmounted(() => {
 
 .clear-search-btn {
   font-size: 14px;
-  color: #6366F1;
+  color: var(--color-primary);
   cursor: pointer;
 }
 

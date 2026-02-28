@@ -5,183 +5,176 @@
 
 import { ref } from 'vue'
 
+// 配置常量
+const MAX_RECONNECT_ATTEMPTS = 10
+const BASE_RECONNECT_DELAY = 1000
+const MAX_RECONNECT_DELAY = 30000
+const CONNECT_TIMEOUT = 10000
+const HEARTBEAT_INCOMING = 15000
+const HEARTBEAT_OUTGOING = 15000
+const HEALTH_CHECK_INTERVAL = 30000
+
+// 状态变量
 let stompClient = null
 let isConnected = ref(false)
 let connectionPromise = null
 let currentToken = null
 let reconnectAttempts = 0
-const maxReconnectAttempts = 10
-const baseReconnectDelay = 1000
+let healthCheckTimer = null
+let lastHeartbeatTime = Date.now()
 
 // 订阅管理
 const subscriptions = new Map()
 const messageHandlers = new Set()
 const notificationHandlers = new Set()
+const unreadCountHandlers = new Set()
 
-// 根据当前环境动态生成WebSocket地址
-// 注意：VITE_WS_URL_DEV 在生产构建时会被替换为空字符串，由 vite.config.js 的 define 配置控制
-const getWebSocketUrl = () => {
-  // 优先使用环境变量配置
-  const envWsUrl = import.meta.env.VITE_WS_URL
-  if (envWsUrl) {
-    return envWsUrl
-  }
+// WebSocket 地址
+const protocol = typeof window !== 'undefined' && window.location.protocol === 'https:' ? 'wss:' : 'ws:'
+const host = typeof window !== 'undefined' ? window.location.host : ''
+const envWsUrl = typeof import.meta !== 'undefined' ? (import.meta.env.VITE_WS_URL || import.meta.env.VITE_WS_URL_DEV) : ''
+const WS_URL = envWsUrl || `${protocol}//${host}/ws/`
 
-  // 开发环境使用 VITE_WS_URL_DEV 或动态生成
-  if (import.meta.env.VITE_WS_URL_DEV) {
-    return import.meta.env.VITE_WS_URL_DEV
-  }
+// 执行 WebSocket 连接
+async function doConnect() {
+  // 动态导入 STOMP
+  const StompModule = await import('stompjs')
+  const Stomp = StompModule.default || StompModule
 
-  // 生产环境动态生成（使用 /ws/ 与 nginx location 匹配）
-  const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
-  return `${protocol}//${window.location.host}/ws/`
-}
+  const socket = new WebSocket(WS_URL)
 
-const WS_URL = getWebSocketUrl()
-
-/**
- * 获取重连延迟时间（指数退避）
- */
-const getReconnectDelay = () => {
-  const delay = Math.min(baseReconnectDelay * Math.pow(2, reconnectAttempts), 30000)
-  return delay + Math.random() * 1000 // 添加随机抖动
-}
-
-/**
- * 订阅消息队列
- */
-const subscribeQueues = (client) => {
-  // 订阅个人消息
-  const msgSub = client.subscribe(
-    '/user/queue/messages',
-    (message) => {
-      try {
-        const data = JSON.parse(message.body)
-        messageHandlers.forEach(handler => handler(data))
-      } catch {
-        // 忽略消息解析错误
+  return new Promise((resolve, reject) => {
+    const timeout = setTimeout(() => {
+      if (!isConnected.value) {
+        reject(new Error('WebSocket 连接超时'))
       }
-    }
-  )
-  subscriptions.set('messages', msgSub)
+    }, CONNECT_TIMEOUT)
 
-  // 订阅通知队列
-  const notifSub = client.subscribe(
-    '/user/queue/notifications',
-    (message) => {
-      try {
-        const data = JSON.parse(message.body)
-        notificationHandlers.forEach(handler => handler(data))
-      } catch {
-        // 忽略消息解析错误
-      }
-    }
-  )
-  subscriptions.set('notifications', notifSub)
-}
+    socket.onclose = (event) => {
+      isConnected.value = false
+      console.warn(`[WebSocket] 连接关闭 code=${event.code}, reason=${event.reason || '无'}`)
 
-/**
- * 执行WebSocket连接
- */
-const doConnect = () => {
-  return new Promise(async (resolve, reject) => {
-    try {
-      // 动态导入 STOMP
-      const StompModule = await import('stompjs')
-      const Stomp = StompModule.default || StompModule
-
-      const socket = new WebSocket(WS_URL)
-
-      socket.onclose = (event) => {
-        isConnected.value = false
-        console.warn(`[WebSocket] 连接关闭 code=${event.code}, reason=${event.reason || '无'}`)
-
-        // 清除订阅
-        subscriptions.forEach((sub) => {
-          try { sub.unsubscribe() } catch {}
-        })
-        subscriptions.clear()
-
-        // 不是主动断开，尝试重连
-        if (currentToken) {
-          attemptReconnect()
-        }
-      }
-
-      socket.onerror = (error) => {
-        console.error('[WebSocket] 连接错误:', error)
-      }
-
-      // 创建 STOMP 客户端
-      stompClient = Stomp.over(socket, {
-        heartbeat: false,
-        reconnectDelay: 0 // 我们自己控制重连
+      subscriptions.forEach((sub) => {
+        try { sub.unsubscribe() } catch (e) { console.error('[WebSocket] 取消订阅失败:', e) }
       })
+      subscriptions.clear()
 
-      // 连接 STOMP
-      stompClient.connect(
-        { Authorization: `Bearer ${currentToken}` },
-        () => {
-          isConnected.value = true
-          reconnectAttempts = 0
-          console.log('[WebSocket] 连接成功')
-
-          // 订阅队列
-          subscribeQueues(stompClient)
-
-          resolve()
-        },
-        (error) => {
-          isConnected.value = false
-          stompClient = null
-          console.error('[WebSocket] 连接失败:', error)
-          reject(error)
-        }
-      )
-
-      // 超时处理
-      setTimeout(() => {
-        if (!isConnected.value) {
-          reject(new Error('WebSocket 连接超时'))
-        }
-      }, 10000)
-
-    } catch (error) {
-      reject(error)
+      if (currentToken) {
+        attemptReconnect()
+      }
     }
+
+    socket.onerror = (error) => {
+      console.error('[WebSocket] 连接错误:', error)
+    }
+
+    stompClient = Stomp.over(socket, {
+      heartbeat: { incoming: HEARTBEAT_INCOMING, outgoing: HEARTBEAT_OUTGOING },
+      reconnectDelay: 0
+    })
+
+    stompClient.connect(
+      { Authorization: `Bearer ${currentToken}` },
+      () => {
+        clearTimeout(timeout)
+        isConnected.value = true
+        reconnectAttempts = 0
+        lastHeartbeatTime = Date.now()
+        console.log('[WebSocket] 连接成功')
+        subscribeQueues(stompClient)
+        startHealthCheck()
+        resolve()
+      },
+      (error) => {
+        clearTimeout(timeout)
+        isConnected.value = false
+        stompClient = null
+        console.error('[WebSocket] 连接失败:', error)
+        reject(error)
+      }
+    )
   })
 }
 
-/**
- * 尝试重连
- */
-const attemptReconnect = () => {
+// 订阅消息队列
+function subscribeQueues(client) {
+  const createHandler = (handlers) => (message) => {
+    try {
+      const data = JSON.parse(message.body)
+      updateHeartbeat()
+      handlers.forEach(handler => handler(data))
+    } catch (e) {
+      console.error('[WebSocket] 消息解析失败:', e)
+    }
+  }
+
+  subscriptions.set('messages', client.subscribe('/user/queue/messages', createHandler(messageHandlers)))
+  subscriptions.set('notifications', client.subscribe('/user/queue/notifications', createHandler(notificationHandlers)))
+  subscriptions.set('unread-count', client.subscribe('/user/queue/unread-count', createHandler(unreadCountHandlers)))
+}
+
+// 启动健康检查
+function startHealthCheck() {
+  stopHealthCheck()
+  healthCheckTimer = setInterval(() => {
+    if (!isConnected.value || !currentToken) return
+
+    const now = Date.now()
+    const timeSinceLastHeartbeat = now - lastHeartbeatTime
+
+    // 如果超过健康检查间隔没有收到心跳，强制重连
+    if (timeSinceLastHeartbeat > HEALTH_CHECK_INTERVAL * 1.5) {
+      console.warn('[WebSocket] 心跳超时，强制重连')
+      // 触发 onclose 逻辑
+      if (stompClient) {
+        stompClient.disconnect()
+      }
+      isConnected.value = false
+      attemptReconnect()
+    }
+  }, HEALTH_CHECK_INTERVAL)
+}
+
+// 停止健康检查
+function stopHealthCheck() {
+  if (healthCheckTimer) {
+    clearInterval(healthCheckTimer)
+    healthCheckTimer = null
+  }
+}
+
+// 更新心跳时间（在收到消息时调用）
+function updateHeartbeat() {
+  lastHeartbeatTime = Date.now()
+}
+
+// 尝试重连
+function attemptReconnect() {
   if (!currentToken) {
     console.log('[WebSocket] 无token，跳过重连')
     return
   }
 
   reconnectAttempts++
-  if (reconnectAttempts > maxReconnectAttempts) {
+  if (reconnectAttempts > MAX_RECONNECT_ATTEMPTS) {
     console.error('[WebSocket] 超过最大重连次数，停止重连')
     return
   }
 
-  const delay = getReconnectDelay()
-  console.log(`[WebSocket] ${reconnectAttempts}/${maxReconnectAttempts} 次重连，${delay.toFixed(0)}ms 后尝试...`)
+  // 指数退避 + 随机抖动
+  const delay = Math.min(BASE_RECONNECT_DELAY * Math.pow(2, reconnectAttempts), MAX_RECONNECT_DELAY) + Math.random() * 1000
+  console.log(`[WebSocket] ${reconnectAttempts}/${MAX_RECONNECT_ATTEMPTS} 次重连，${delay.toFixed(0)}ms 后尝试...`)
 
-  setTimeout(async () => {
+  setTimeout(() => {
     connectionPromise = null
     stompClient = null
-    try {
-      await connect(currentToken)
-      console.log('[WebSocket] 重连成功')
-    } catch (error) {
-      console.warn('[WebSocket] 重连失败:', error.message)
-    }
+    connect(currentToken)
+      .then(() => console.log('[WebSocket] 重连成功'))
+      .catch((error) => console.warn('[WebSocket] 重连失败:', error.message))
   }, delay)
 }
 
+// 公开 API
 export function getStompClient() {
   return stompClient
 }
@@ -190,11 +183,6 @@ export function getIsConnected() {
   return isConnected.value
 }
 
-/**
- * 连接 WebSocket
- * @param {string} token - JWT token
- * @returns {Promise<void>}
- */
 export async function connect(token) {
   if (connectionPromise) {
     return connectionPromise
@@ -202,7 +190,6 @@ export async function connect(token) {
 
   currentToken = token
 
-  // 如果已连接，直接返回
   if (stompClient && isConnected.value) {
     return Promise.resolve()
   }
@@ -219,12 +206,10 @@ export async function connect(token) {
   return connectionPromise
 }
 
-/**
- * 断开 WebSocket 连接
- */
 export function disconnect() {
   currentToken = null
   reconnectAttempts = 0
+  stopHealthCheck()
 
   if (stompClient) {
     try {
@@ -239,12 +224,6 @@ export function disconnect() {
   connectionPromise = null
 }
 
-/**
- * 发送消息
- * @param {number} receiverId - 接收者ID
- * @param {string} content - 消息内容
- * @param {number} type - 消息类型 (1=文本, 2=图片)
- */
 export function sendMessage(receiverId, content, type = 1) {
   if (!stompClient || !isConnected.value) {
     throw new Error('WebSocket 未连接，请先调用 connect()')
@@ -257,34 +236,26 @@ export function sendMessage(receiverId, content, type = 1) {
   )
 }
 
-/**
- * 订阅消息
- * @param {Function} handler - 消息处理函数
- * @returns {Function} 取消订阅函数
- */
 export function onMessage(handler) {
   messageHandlers.add(handler)
   return () => messageHandlers.delete(handler)
 }
 
-/**
- * 订阅通知
- * @param {Function} handler - 通知处理函数
- * @returns {Function} 取消订阅函数
- */
 export function onNotification(handler) {
   notificationHandlers.add(handler)
   return () => notificationHandlers.delete(handler)
 }
 
-/**
- * 获取重连状态（用于UI显示）
- */
+export function onUnreadCount(handler) {
+  unreadCountHandlers.add(handler)
+  return () => unreadCountHandlers.delete(handler)
+}
+
 export function getReconnectStatus() {
   return {
     isConnected: isConnected.value,
     reconnectAttempts,
-    maxReconnectAttempts
+    maxReconnectAttempts: MAX_RECONNECT_ATTEMPTS
   }
 }
 
@@ -294,6 +265,7 @@ export default {
   sendMessage,
   onMessage,
   onNotification,
+  onUnreadCount,
   getStompClient,
   getIsConnected,
   getReconnectStatus

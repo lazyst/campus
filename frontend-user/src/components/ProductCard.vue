@@ -182,7 +182,7 @@ function handleCollect() {
 
 .collect-btn--collected {
   background: #EEF2FF;
-  color: #6366F1;
+  color: var(--color-primary);
 }
 
 .product-info {

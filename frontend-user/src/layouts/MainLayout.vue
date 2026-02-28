@@ -51,7 +51,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, inject, ref, onMounted, onUnmounted } from 'vue'
+import { computed, inject, ref, onMounted, onUnmounted, type Ref } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useUserStore } from '@/stores/user'
 import { showLoginConfirm } from '@/stores/loginConfirm'
@@ -77,7 +77,7 @@ const breakpoint = 1024
 const showSidebar = computed(() => windowWidth.value >= breakpoint)
 
 // 从 App.vue 注入全局未读数
-const totalUnreadCount = inject<ref<number>>('totalUnreadCount', ref(0))
+const totalUnreadCount = inject<Ref<number>>('totalUnreadCount', ref(0))
 
 // Tab bar items configuration
 const tabItems: TabItem[] = [
@@ -256,7 +256,7 @@ onUnmounted(() => {
 }
 
 .main-layout--with-top-padding {
-  padding-top: var(--nav-height);
+  padding-top: 0;
 }
 
 .main-layout__content {

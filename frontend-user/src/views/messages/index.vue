@@ -13,12 +13,6 @@
         <div class="messages-sidebar">
           <!-- 未登录状态 -->
           <div v-if="!isLoggedIn" class="empty-state">
-            <div class="empty-icon">
-              <svg width="64" height="64" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M20 4H4C2.9 4 2 4.9 2 6V18C2 19.1 2.9 20 4 20H20C21.1 20 22 19.1 22 18V6C22 4.9 21.1 4 20 4ZM20 6L12 11L4 6V6L12 11L20 6V6Z" fill="currentColor"/>
-                <path d="M12 13C13.66 13 15 12.34 15 11V5C15 3.34 13.66 3 12 3C10.34 3 9 3.34 9 5V11C9 12.34 10.34 13 12 13Z" fill="currentColor"/>
-              </svg>
-            </div>
             <p class="empty-text">登录后查看消息</p>
             <button class="empty-btn" @click="goToLogin">去登录</button>
           </div>
@@ -37,11 +31,6 @@
 
           <!-- 空状态 -->
           <div v-else-if="conversations.length === 0" class="empty-state">
-            <div class="empty-icon">
-              <svg width="64" height="64" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M20 4H4C2.9 4 2 4.9 2 6V18C2 19.1 2.9 20 4 20H20C21.1 20 22 19.1 22 18V6C22 4.9 21.1 4 20 4ZM20 6L12 11L4 6V6L12 11L20 6V6Z" fill="currentColor"/>
-              </svg>
-            </div>
             <p class="empty-text">暂无消息</p>
             <p class="empty-hint">快去和别人聊天吧~</p>
           </div>
@@ -56,7 +45,13 @@
             >
               <div class="message-avatar-container">
                 <div class="message-avatar">
-                  <span>{{ conversation.otherUserNickname?.charAt(0) || '匿' }}</span>
+                  <img
+                    v-if="conversation.otherUserAvatar"
+                    :src="getImageUrl(conversation.otherUserAvatar)"
+                    alt="头像"
+                    class="avatar-img"
+                  />
+                  <span v-else>{{ conversation.otherUserNickname?.charAt(0) || '匿' }}</span>
                 </div>
                 <span v-if="conversation.unreadCount > 0" class="message-unread-badge">
                   {{ conversation.unreadCount > 99 ? '99+' : conversation.unreadCount }}
@@ -78,27 +73,24 @@
         <div class="messages-detail">
           <!-- 未登录 -->
           <div v-if="!isLoggedIn" class="messages-detail-empty">
-            <svg width="80" height="80" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M18 8H19C20.1 8 21 8.9 21 10V20C21 21.1 20.1 22 19 22H5C3.9 22 3 21.1 3 20V10C3 8.9 3.9 8 5 8H6V6C6 3.9 7.9 2 10 2C12.1 2 14 3.9 14 6V8H18ZM10 4C8.9 4 8 4.9 8 6V8H16V6C16 4.9 15.1 4 14 4C12.1 4 10 4 10 4Z" fill="currentColor"/>
-              <path d="M12 12C13.66 12 15 12.67 15 14V17H9V14C9 12.67 10.34 12 12 12Z" fill="currentColor"/>
-            </svg>
             <p>登录后与好友聊天</p>
           </div>
           <!-- 已登录但无会话 -->
           <div v-else-if="conversations.length === 0 && !loading" class="messages-detail-empty">
-            <svg width="80" height="80" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M20 2H4C2.9 2 2 2.9 2 4V22L6 18H20C21.1 18 22 17.1 22 16V4C22 2.9 21.1 2 20 2ZM20 16H5.17L4 17.17V4H20V16Z" fill="currentColor"/>
-              <path d="M7 9H17V11H7V9ZM7 6H17V8H7V6ZM7 12H14V14H7V12Z" fill="currentColor"/>
-            </svg>
             <p>暂无会话，快去找好友聊天吧</p>
           </div>
           <!-- 有会话但未选择 -->
-          <div v-else class="messages-detail-empty">
-            <svg width="80" height="80" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M20 2H4C2.9 2 2 2.9 2 4V22L6 18H20C21.1 18 22 17.1 22 16V4C22 2.9 21.1 2 20 2ZM20 16H5.17L4 17.17V4H20V16Z" fill="currentColor"/>
-              <path d="M7 9H17V11H7V9ZM7 6H17V8H7V6ZM7 12H14V14H7V12Z" fill="currentColor"/>
-            </svg>
+          <div v-else-if="!selectedConversation" class="messages-detail-empty">
             <p>选择会话开始聊天</p>
+          </div>
+          <!-- 已选择会话：显示PC端聊天面板 -->
+          <div v-else class="pc-chat-panel">
+            <ChatPanel
+              :user-id="selectedConversation.otherUserId"
+              :user-nickname="selectedConversation.otherUserNickname"
+              :user-avatar="selectedConversation.otherUserAvatar"
+              @close="selectedConversation = null"
+            />
           </div>
         </div>
       </div>
@@ -107,7 +99,17 @@
 
   <!-- 移动端布局 -->
   <template v-else>
-    <div class="messages-page">
+    <!-- 有聊天用户ID时显示聊天面板 -->
+    <div v-if="chatUserId" class="mobile-chat">
+      <ChatPanel
+        :user-id="chatUserId"
+        :user-nickname="selectedConversation?.otherUserNickname || '用户' + chatUserId"
+        :user-avatar="selectedConversation?.otherUserAvatar"
+        @close="router.push('/messages')"
+      />
+    </div>
+    <!-- 没有聊天用户ID时显示消息列表 -->
+    <div v-else class="messages-page">
       <!-- 页面标题 -->
       <div class="page-header">
         <h1 class="page-title">消息</h1>
@@ -116,12 +118,6 @@
       <ResponsiveContainer>
       <!-- 未登录状态 -->
       <div v-if="!isLoggedIn" class="empty-state">
-        <div class="empty-icon">
-          <svg width="64" height="64" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M20 4H4C2.9 4 2 4.9 2 6V18C2 19.1 2.9 20 4 20H20C21.1 20 22 19.1 22 18V6C22 4.9 21.1 4 20 4ZM20 6L12 11L4 6V6L12 11L20 6V6Z" fill="currentColor"/>
-            <path d="M12 13C13.66 13 15 12.34 15 11V5C15 3.34 13.66 3 12 3C10.34 3 9 3.34 9 5V11C9 12.34 10.34 13 12 13Z" fill="currentColor"/>
-          </svg>
-        </div>
         <p class="empty-text">登录后查看消息</p>
         <button class="empty-btn" @click="goToLogin">去登录</button>
       </div>
@@ -140,11 +136,6 @@
 
       <!-- 空状态 -->
       <div v-else-if="conversations.length === 0" class="empty-state">
-        <div class="empty-icon">
-          <svg width="64" height="64" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M20 4H4C2.9 4 2 4.9 2 6V18C2 19.1 2.9 20 4 20H20C21.1 20 22 19.1 22 18V6C22 4.9 21.1 4 20 4ZM20 6L12 11L4 6V6L12 11L20 6V6Z" fill="currentColor"/>
-          </svg>
-        </div>
         <p class="empty-text">暂无消息</p>
         <p class="empty-hint">快去和别人聊天吧~</p>
       </div>
@@ -182,38 +173,53 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted, watch, inject, Ref } from 'vue';
-import { useRouter } from 'vue-router';
+import { useRouter, useRoute } from 'vue-router';
 import { useUserStore } from '@/stores/user';
-import { getConversations } from '@/api/modules/conversation';
+import { getConversations, clearUnreadCount } from '@/api/modules/conversation';
 import { showToast } from '@/services/toastService';
+import { getImageUrl } from '@/utils/imageUrl';
 import dayjs from 'dayjs';
 import 'dayjs/locale/zh-cn';
 import ResponsiveContainer from '@/components/layout/ResponsiveContainer.vue';
+import ChatPanel from './components/ChatPanel.vue';
 
 dayjs.locale('zh-cn');
 
 const router = useRouter();
+const route = useRoute();
 const userStore = useUserStore();
 
 // 注入来自 App.vue 的消息更新事件
 const messageUpdateEvent = inject<Ref<number>>('messageUpdateEvent', ref(0))
+// 注入设置当前聊天用户 ID 的方法
+const setCurrentChatUserId = inject<(userId: number | null) => void>('setCurrentChatUserId')
 
 // 计算属性：是否已登录
 const isLoggedIn = computed(() => !!userStore.token);
 
+// 从路由参数获取当前聊天的用户ID
+const chatUserId = computed(() => {
+  const id = route.params.id;
+  return id ? Number(id) : null;
+});
+
 // PC端检测
 const isPC = ref(typeof window !== 'undefined' ? window.innerWidth >= 1024 : false);
 
+// 处理窗口大小变化
+function handleResize() {
+  isPC.value = window.innerWidth >= 1024;
+}
+
 if (typeof window !== 'undefined') {
-  window.addEventListener('resize', () => {
-    isPC.value = window.innerWidth >= 1024;
-  });
+  window.addEventListener('resize', handleResize);
 }
 
 // 响应式数据
 const conversations = ref<any[]>([]);
 const loading = ref(false);
 const error = ref<string | null>(null);
+const selectedConversation = ref<any>(null);
 
 // 格式化时间
 function formatTime(time: string) {
@@ -266,17 +272,6 @@ async function loadConversations() {
     conversations.value = (data || []).map((conv: any) => {
       // 确保 unreadCount 是数字
       conv.unreadCount = conv.unreadCount || 0;
-      // 检查 localStorage 中是否有该会话的未读数更新
-      try {
-        const storageKey = `chat_unread_${conv.otherUserId}`
-        const storedValue = localStorage.getItem(storageKey)
-        if (storedValue !== null) {
-          conv.unreadCount = parseInt(storedValue, 10)
-          console.log('从 localStorage 恢复未读数:', conv.otherUserId, conv.unreadCount)
-        }
-      } catch (e) {
-        // 忽略 localStorage 错误
-      }
       return conv;
     });
   } catch (err: any) {
@@ -305,7 +300,27 @@ function goToLogin() {
 // 跳转聊天 - 使用正确的路由路径 /messages/:id
 function goToChat(conversation: any) {
   if (conversation.otherUserId) {
+    // 清除该会话的未读数
+    clearUnreadCount(conversation.otherUserId).then(() => {
+      // 触发消息列表刷新
+      messageUpdateEvent.value++
+      // 通知 App.vue 更新全局未读数
+      window.dispatchEvent(new CustomEvent('unread-cleared', {
+        detail: { userId: conversation.otherUserId }
+      }))
+    }).catch((err) => {
+      console.error('清除未读数失败:', err)
+    })
+
+    // 更新URL
     router.push(`/messages/${conversation.otherUserId}`);
+
+    // 设置当前会话
+    selectedConversation.value = conversation;
+    // 通知 App.vue 当前正在与该用户聊天（不增加未读数）
+    if (setCurrentChatUserId) {
+      setCurrentChatUserId(conversation.otherUserId)
+    }
   } else {
     console.error('会话缺少 otherUserId:', conversation);
   }
@@ -329,6 +344,11 @@ onMounted(async () => {
   if (isLoggedIn.value) {
     // 先加载一次数据
     await loadConversations();
+
+    // 如果有路由参数，自动选中对应会话
+    if (chatUserId.value) {
+      selectConversationByUserId(chatUserId.value);
+    }
 
     // 监听 storage 事件（跨标签页通信）
     window.addEventListener('storage', handleStorageChange);
@@ -360,6 +380,34 @@ onMounted(async () => {
     error.value = null
   }
 })
+
+// 监听路由参数变化
+watch(chatUserId, (newId) => {
+  if (newId && isLoggedIn.value) {
+    selectConversationByUserId(newId);
+  }
+});
+
+// 根据用户ID选择会话
+function selectConversationByUserId(userId: number) {
+  const conversation = conversations.value.find(c => c.otherUserId === userId);
+  if (conversation) {
+    selectedConversation.value = conversation;
+    // 清除未读数
+    clearUnreadCount(userId).then(() => {
+      messageUpdateEvent.value++;
+    }).catch((err) => {
+      console.error('清除未读数失败:', err)
+    });
+  } else {
+    // 如果没有会话记录，创建一个临时会话对象用于显示聊天面板
+    selectedConversation.value = {
+      otherUserId: userId,
+      otherUserNickname: '用户' + userId,
+      otherUserAvatar: null
+    };
+  }
+}
 
 // 清理函数数组
 const cleanupFunctions: (() => void)[] = []
@@ -434,6 +482,7 @@ function handleChatUnreadUpdate(e: CustomEvent) {
 
 // 页面卸载时移除事件监听
 onUnmounted(() => {
+  window.removeEventListener('resize', handleResize)
   window.removeEventListener('storage', handleStorageChange)
   document.removeEventListener('visibilitychange', handleVisibilityChange)
   window.removeEventListener('unread-cleared', handleUnreadCleared)
@@ -452,6 +501,17 @@ onUnmounted(() => {
   padding-bottom: var(--tabbar-height);
 }
 
+/* 移动端聊天面板全屏显示 */
+.mobile-chat {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: var(--bg-page);
+  z-index: 1000;
+}
+
 .messages-page--pc {
   display: flex;
   flex-direction: column;
@@ -462,15 +522,19 @@ onUnmounted(() => {
 .messages-page--pc .page-header {
   flex-shrink: 0;
   display: block;
-  background: #FFFFFF;
-  padding: var(--space-4) var(--space-8);
-  border-bottom: 1px solid var(--color-gray-200);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background: linear-gradient(135deg, #FFFFFF 0%, #F8FAFC 100%);
+  padding: 20px 28px;
+  border-bottom: 1px solid rgba(30, 58, 138, 0.06);
+  box-shadow: 0 4px 20px rgba(30, 58, 138, 0.08), 0 1px 3px rgba(0, 0, 0, 0.04);
 }
 
 .messages-page--pc .page-title {
-  font-size: var(--text-xl);
-  font-weight: var(--font-weight-semibold);
-  color: var(--text-primary);
+  font-size: 20px;
+  font-weight: 600;
+  color: #1E293B;
   margin: 0;
 }
 
@@ -482,14 +546,13 @@ onUnmounted(() => {
 }
 
 .messages-page--pc .messages-sidebar {
-  width: 500px;
+  width: 380px;
   flex-shrink: 0;
   background: #FFFFFF;
   border-right: 1px solid var(--color-gray-200);
   overflow-y: auto;
   display: flex;
-  align-items: center;
-  justify-content: center;
+  flex-direction: column;
 }
 
 .messages-page--pc .messages-sidebar .empty-state {
@@ -500,9 +563,12 @@ onUnmounted(() => {
 .messages-page--pc .messages-detail {
   flex: 1;
   display: flex;
-  align-items: center;
-  justify-content: center;
   background: #F8FAFC;
+}
+
+.pc-chat-panel {
+  width: 100%;
+  height: 100%;
 }
 
 .messages-page--pc .messages-detail-empty {
@@ -525,7 +591,7 @@ onUnmounted(() => {
 /* 移动端样式增强 */
 @media (min-width: 1024px) {
   .messages-page {
-    background: #F1F5F9;
+    background: linear-gradient(180deg, #F8FAFC 0%, #F1F5F9 100%);
     padding-bottom: 0;
     display: flex;
     flex-direction: column;
@@ -545,19 +611,24 @@ onUnmounted(() => {
     flex: 1;
     display: flex;
     width: 100%;
-    height: calc(100vh - 64px);
+    margin: 0;
+    height: calc(100vh - 80px);
     overflow: hidden;
+    padding: 0;
+    box-sizing: border-box;
   }
 
   /* 左侧列表 - 增加宽度 */
   .messages-sidebar {
-    width: 480px;
+    width: 420px;
     flex-shrink: 0;
     background: #FFFFFF;
-    border-right: 1px solid var(--color-gray-200);
+    border-radius: 16px;
+    box-shadow: 0 4px 20px rgba(30, 58, 138, 0.08);
     overflow-y: auto;
     display: flex;
     flex-direction: column;
+    border: 1px solid rgba(30, 58, 138, 0.06);
   }
 
   .messages-sidebar .responsive-container {
@@ -605,6 +676,10 @@ onUnmounted(() => {
     align-items: center;
     justify-content: center;
     background: #FFFFFF;
+    border-radius: 16px;
+    box-shadow: 0 4px 20px rgba(30, 58, 138, 0.08);
+    margin-left: 20px;
+    border: 1px solid rgba(30, 58, 138, 0.06);
   }
 
   .messages-detail-empty {
@@ -808,6 +883,13 @@ onUnmounted(() => {
   font-size: var(--text-xl);
   font-weight: var(--font-weight-semibold);
   color: var(--color-primary-700);
+  overflow: hidden;
+}
+
+.avatar-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 }
 
 .message-unread-badge {

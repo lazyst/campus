@@ -29,10 +29,12 @@ import com.campus.modules.user.service.UserService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * 评论控制器
  */
+@Slf4j
 @Tag(name = "评论管理")
 @RestController
 @RequestMapping("/api/comments")
@@ -86,8 +88,7 @@ public class CommentController {
         }
 
         try {
-            String token = authHeader.replace("Bearer ", "");
-            Long userId = authService.getUserIdFromToken(token);
+            Long userId = authService.getUserIdFromAuthHeader(authHeader);
 
             if (userId == null) {
                 // Token无效或用户不存在
@@ -154,13 +155,13 @@ public class CommentController {
                     notificationPublisher.publish(notifyUserId, dto);
 
                 } catch (Exception e) {
-                    // 通知创建失败不影响评论功能
+                    log.error("发送通知失败: {}", e.getMessage());
                 }
             }
 
             return Result.success(comment);
         } catch (Exception e) {
-            // Token无效时返回未授权错误
+            log.error("创建评论失败: {}", e.getMessage());
             return Result.error(ResultCode.UNAUTHORIZED, "登录已过期，请重新登录");
         }
     }
@@ -170,8 +171,7 @@ public class CommentController {
     public Result<Void> deleteComment(
             @RequestHeader("Authorization") String authHeader,
             @PathVariable Long id) {
-        String token = authHeader.replace("Bearer ", "");
-        Long userId = authService.getUserIdFromToken(token);
+        Long userId = authService.getUserIdFromAuthHeader(authHeader);
 
         Comment comment = commentService.getById(id);
         if (comment == null) {

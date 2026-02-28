@@ -27,4 +27,11 @@ public interface AdminService extends IService<Admin> {
      * 从token中获取管理员ID
      */
     Long getAdminIdFromToken(String token);
+
+    /**
+     * 从请求头获取管理员ID
+     * @param authHeader Authorization请求头的值
+     * @return 管理员ID；如果无效返回null
+     */
+    Long getAdminIdFromAuthHeader(String authHeader);
 }

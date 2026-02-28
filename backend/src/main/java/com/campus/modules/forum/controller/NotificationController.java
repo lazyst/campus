@@ -36,8 +36,7 @@ public class NotificationController {
     @GetMapping
     public Result<List<Notification>> getNotifications(
             @RequestHeader("Authorization") String authHeader) {
-        String token = authHeader.replace("Bearer ", "");
-        Long userId = authService.getUserIdFromToken(token);
+        Long userId = authService.getUserIdFromAuthHeader(authHeader);
 
         List<Notification> notifications = notificationService.getByUserId(userId);
 
@@ -59,8 +58,7 @@ public class NotificationController {
     @GetMapping("/unread/count")
     public Result<Map<String, Object>> getUnreadCount(
             @RequestHeader("Authorization") String authHeader) {
-        String token = authHeader.replace("Bearer ", "");
-        Long userId = authService.getUserIdFromToken(token);
+        Long userId = authService.getUserIdFromAuthHeader(authHeader);
 
         int count = notificationService.getUnreadCount(userId);
         Map<String, Object> result = new HashMap<>();
@@ -73,8 +71,7 @@ public class NotificationController {
     public Result<Void> markAsRead(
             @RequestHeader("Authorization") String authHeader,
             @PathVariable Long notificationId) {
-        String token = authHeader.replace("Bearer ", "");
-        Long userId = authService.getUserIdFromToken(token);
+        Long userId = authService.getUserIdFromAuthHeader(authHeader);
 
         // Verify ownership
         com.campus.modules.forum.entity.Notification notification = notificationService.getById(notificationId);
@@ -90,8 +87,7 @@ public class NotificationController {
     @PutMapping("/read/all")
     public Result<Void> markAllAsRead(
             @RequestHeader("Authorization") String authHeader) {
-        String token = authHeader.replace("Bearer ", "");
-        Long userId = authService.getUserIdFromToken(token);
+        Long userId = authService.getUserIdFromAuthHeader(authHeader);
 
         notificationService.markAllAsRead(userId);
         return Result.success();

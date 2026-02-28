@@ -176,9 +176,9 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue';
+import { ref, onMounted, computed, inject } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
-import { getUserDetailInfo } from '@/api/modules/user';
+import { getUserPublicInfo } from '@/api/modules/user';
 import { getPostsByUserId } from '@/api/modules/post';
 import { getItemsByUserId } from '@/api/modules/item';
 import NavBar from '@/components/navigation/NavBar.vue';
@@ -195,6 +195,18 @@ dayjs.locale('zh-cn');
 const router = useRouter();
 const route = useRoute();
 const userStore = useUserStore();
+
+// PC端检测
+const isPC = ref(typeof window !== 'undefined' ? window.innerWidth >= 1024 : false);
+
+// 注入设置当前聊天用户的方法
+const setCurrentChatUserId = inject<(userId: number | null) => void>('setCurrentChatUserId')
+
+if (typeof window !== 'undefined') {
+  window.addEventListener('resize', () => {
+    isPC.value = window.innerWidth >= 1024;
+  });
+}
 
 const userId = computed(() => Number(route.params.id));
 
@@ -217,6 +229,8 @@ function goToChat() {
     showToast('不能给自己发私信');
     return;
   }
+
+  // 统一跳转到 /messages/{userId}，消息页面会根据屏幕尺寸自动适配PC/移动端布局
   router.push(`/messages/${userId.value}`);
 }
 
@@ -275,7 +289,7 @@ function goToItemDetail(itemId: number) {
 async function loadUserProfile() {
   loading.value = true;
   try {
-    const data = await getUserDetailInfo(userId.value);
+    const data = await getUserPublicInfo(userId.value);
     user.value = data;
   } catch (error) {
     user.value = null;

@@ -82,6 +82,13 @@ public class AdminAuthController {
         return Result.success(result);
     }
 
+    @Operation(summary = "管理员登出")
+    @PostMapping("/logout")
+    public Result<Void> logout() {
+        // JWT是无状态的，登出只需要客户端删除令牌
+        return Result.success();
+    }
+
     @Operation(summary = "重置超级管理员密码（开发环境）")
     @PostMapping("/reset-admin-password")
     public Result<Void> resetAdminPassword(@RequestBody InitRequest request) {

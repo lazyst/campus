@@ -68,7 +68,7 @@
           <span class="detail-seller-name">{{ product.userNickname || '匿名用户' }}</span>
           <span class="detail-seller-meta">发帖 {{ product.sellerPostCount || 0 }} · 好评率 {{ product.sellerGoodRate || 100 }}%</span>
         </div>
-        <button class="detail-contact-btn" @click="contactSeller" @click.stop>联系TA</button>
+        <button class="detail-contact-btn" @click="goToChat" @click.stop>联系TA</button>
       </div>
     </template>
 
@@ -103,7 +103,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue';
+import { ref, onMounted, computed, inject } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import { getItemById, contactSeller as contactSellerApi } from '@/api/modules/item';
 import { toggleItemCollect, checkItemCollected } from '@/api/modules/itemCollect';
@@ -112,6 +112,18 @@ import NavBar from '@/components/navigation/NavBar.vue';
 import Dialog from '@/components/interactive/Dialog.vue';
 import { showToast } from '@/services/toastService';
 import { getImageUrl } from '@/utils/imageUrl';
+
+// PC端检测
+const isPC = ref(typeof window !== 'undefined' ? window.innerWidth >= 1024 : false);
+
+// 注入设置当前聊天用户的方法
+const setCurrentChatUserId = inject<(userId: number | null) => void>('setCurrentChatUserId')
+
+if (typeof window !== 'undefined') {
+  window.addEventListener('resize', () => {
+    isPC.value = window.innerWidth >= 1024;
+  });
+}
 
 interface Item {
   id: number;
@@ -240,14 +252,14 @@ async function contactSeller() {
     // 后端返回 { sellerId, sellerName }，sellerId 在 data 中
     const sellerId = response?.data?.sellerId || product.value?.userId;
     if (sellerId) {
-      window.location.href = `/messages/${sellerId}`;
+      navigateToChat(sellerId);
     } else {
       showToast('获取卖家信息失败', 'error');
     }
   } catch (error) {
     // 忽略错误
     if (product.value?.userId) {
-      window.location.href = `/messages/${product.value.userId}`;
+      navigateToChat(product.value.userId);
     } else {
       showToast('联系卖家失败，请稍后重试', 'error');
     }
@@ -259,7 +271,15 @@ function goToChat() {
     dialogVisible.value = true;
     return;
   }
-  window.location.href = `/messages/${product.value?.userId}`;
+  navigateToChat(product.value?.userId);
+}
+
+// 统一的跳转聊天方法
+function navigateToChat(targetUserId: number | undefined) {
+  if (!targetUserId) return;
+
+  // 统一跳转到 /messages/{userId}，消息页面会根据屏幕尺寸自动适配PC/移动端布局
+  router.push(`/messages/${targetUserId}`);
 }
 
 function goToLogin() {

@@ -36,6 +36,13 @@ public interface AuthService {
     Long getUserIdFromToken(String token);
 
     /**
+     * 从请求头获取用户ID
+     * @param authHeader Authorization请求头的值
+     * @return 用户ID；如果无效返回null
+     */
+    Long getUserIdFromAuthHeader(String authHeader);
+
+    /**
      * 刷新令牌
      */
     String refreshToken(String token);

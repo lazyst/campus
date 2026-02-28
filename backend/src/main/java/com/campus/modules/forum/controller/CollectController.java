@@ -10,6 +10,7 @@ import com.campus.modules.user.entity.User;
 import com.campus.modules.user.service.UserService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Collections;
@@ -21,6 +22,7 @@ import java.util.stream.Collectors;
 /**
  * 收藏控制器
  */
+@Slf4j
 @Tag(name = "收藏管理")
 @RestController
 @RequestMapping("/api/posts")
@@ -49,8 +51,7 @@ public class CollectController {
         }
 
         try {
-            String token = authHeader.replace("Bearer ", "");
-            Long userId = authService.getUserIdFromToken(token);
+            Long userId = authService.getUserIdFromAuthHeader(authHeader);
 
             // userId为null说明token无效
             if (userId == null) {
@@ -65,7 +66,7 @@ public class CollectController {
             boolean isCollected = collectService.toggleCollect(userId, postId);
             return Result.success(isCollected);
         } catch (Exception e) {
-            // Token无效时返回未授权错误
+            log.error("收藏操作失败: {}", e.getMessage());
             return Result.error(ResultCode.UNAUTHORIZED, "登录已过期，请重新登录");
         }
     }
@@ -81,12 +82,11 @@ public class CollectController {
         }
 
         try {
-            String token = authHeader.replace("Bearer ", "");
-            Long userId = authService.getUserIdFromToken(token);
+            Long userId = authService.getUserIdFromAuthHeader(authHeader);
             boolean hasCollected = collectService.hasCollected(userId, postId);
             return Result.success(hasCollected);
         } catch (Exception e) {
-            // Token无效时返回未收藏状态
+            log.error("检查收藏状态失败: {}", e.getMessage());
             return Result.success(false);
         }
     }
@@ -101,8 +101,7 @@ public class CollectController {
         }
 
         try {
-            String token = authHeader.replace("Bearer ", "");
-            Long userId = authService.getUserIdFromToken(token);
+            Long userId = authService.getUserIdFromAuthHeader(authHeader);
 
             if (userId == null) {
                 return Result.error(ResultCode.UNAUTHORIZED, "登录已过期，请重新登录");
@@ -113,7 +112,7 @@ public class CollectController {
             enrichPostsWithUserInfo(collectedPosts);
             return Result.success(collectedPosts);
         } catch (Exception e) {
-            e.printStackTrace();
+            log.error("获取收藏列表失败: {}", e.getMessage());
             return Result.error("获取收藏列表失败: " + e.getMessage());
         }
     }

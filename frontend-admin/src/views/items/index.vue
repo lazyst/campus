@@ -151,7 +151,6 @@ const loading = ref(false)
 const itemList = ref<Item[]>([])
 const currentPage = ref(1)
 const pageSize = ref(20)
-const pageSizes = [10, 20, 50, 100]
 const total = ref(0)
 const searchKeyword = ref('')
 const searchType = ref<number | null>(null)
@@ -203,11 +202,6 @@ const fetchData = async () => {
 
 const handleSearch = () => {
   currentPage.value = 1
-  fetchData()
-}
-
-const handleSizeChange = (size: number) => {
-  pageSize.value = size
   fetchData()
 }
 
@@ -317,6 +311,8 @@ onMounted(() => {
 </script>
 
 <style scoped lang="scss">
+@import "@/styles/index.scss";
+
 .item-management {
   .card-header {
     display: flex;
@@ -369,115 +365,7 @@ onMounted(() => {
     -webkit-overflow-scrolling: touch;
   }
 
-  :deep(.el-card) {
-    background: #FFFFFF;
-    border: 1px solid #E5E7EB;
-    border-radius: 12px;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
-  }
-
-  :deep(.el-card__header) {
-    padding: 16px 20px;
-    border-bottom: 1px solid #F3F4F6;
-    background: #FAFAFA;
-    color: #374151;
-    font-size: 15px;
-    font-weight: 500;
-  }
-
-  :deep(.el-card__body) {
-    padding: 20px;
-  }
-
-  :deep(.el-table) {
-    background: transparent;
-
-    &::before {
-      display: none;
-    }
-
-    tr {
-      background: transparent;
-    }
-
-    th.el-table__cell {
-      background: #F9FAFB;
-      color: #374151;
-      font-weight: 600;
-      border-bottom: 1px solid #E5E7EB;
-    }
-
-    td.el-table__cell {
-      border-bottom: 1px solid #F3F4F6;
-      color: #374151;
-    }
-
-    .el-table__row:hover > td.el-table__cell {
-      background: #F3F4F6 !important;
-    }
-
-    .el-table__row:nth-child(even) > td.el-table__cell {
-      background: #FAFAFA;
-    }
-  }
-
-  :deep(.el-input__wrapper),
-  :deep(.el-select .el-input__wrapper) {
-    background: #FFFFFF !important;
-    border: 1px solid #D1D5DB !important;
-    box-shadow: none !important;
-    border-radius: 8px;
-
-    &:hover {
-      border-color: #9CA3AF !important;
-    }
-
-    &.is-focus {
-      border-color: #1E3A8A !important;
-      box-shadow: 0 0 0 3px rgba(30, 58, 138, 0.1) !important;
-    }
-  }
-
-  :deep(.el-input__inner) {
-    color: #111827 !important;
-
-    &::placeholder {
-      color: #9CA3AF !important;
-    }
-  }
-
-  :deep(.el-button--primary) {
-    background: #1E3A8A;
-    border: none;
-    border-radius: 8px;
-    font-weight: 500;
-
-    &:hover {
-      background: #1E40AF;
-    }
-  }
-
-  :deep(.el-button--warning) {
-    background: #FEF3C7;
-    border: 1px solid #FCD34D;
-    color: #92400E;
-    border-radius: 6px;
-
-    &:hover {
-      background: #FDE68A;
-    }
-  }
-
-  :deep(.el-button--danger) {
-    background: #FEE2E2;
-    border: 1px solid #FECACA;
-    color: #991B1B;
-    border-radius: 6px;
-
-    &:hover {
-      background: #FECACA;
-    }
-  }
+  @include page-styles;
 
   :deep(.el-tag) {
     border-radius: 6px;

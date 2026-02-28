@@ -11,6 +11,7 @@ import com.campus.modules.user.entity.User;
 import com.campus.modules.user.service.UserService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -21,6 +22,7 @@ import java.util.stream.Collectors;
 /**
  * 物品收藏控制器
  */
+@Slf4j
 @Tag(name = "物品收藏管理")
 @RestController
 @RequestMapping("/api/items")
@@ -49,8 +51,7 @@ public class ItemCollectController {
         }
 
         try {
-            String token = authHeader.replace("Bearer ", "");
-            Long userId = authService.getUserIdFromToken(token);
+            Long userId = authService.getUserIdFromAuthHeader(authHeader);
 
             if (userId == null) {
                 return Result.error(ResultCode.UNAUTHORIZED, "登录已过期，请重新登录");
@@ -64,6 +65,7 @@ public class ItemCollectController {
             boolean isCollected = itemCollectService.toggleCollect(userId, itemId);
             return Result.success(isCollected);
         } catch (Exception e) {
+            log.error("物品收藏操作失败: {}", e.getMessage());
             return Result.error(ResultCode.UNAUTHORIZED, "登录已过期，请重新登录");
         }
     }
@@ -79,11 +81,11 @@ public class ItemCollectController {
         }
 
         try {
-            String token = authHeader.replace("Bearer ", "");
-            Long userId = authService.getUserIdFromToken(token);
+            Long userId = authService.getUserIdFromAuthHeader(authHeader);
             boolean hasCollected = itemCollectService.hasCollected(userId, itemId);
             return Result.success(hasCollected);
         } catch (Exception e) {
+            log.error("检查物品收藏状态失败: {}", e.getMessage());
             return Result.success(false);
         }
     }
@@ -98,24 +100,31 @@ public class ItemCollectController {
         }
 
         try {
-            String token = authHeader.replace("Bearer ", "");
-            Long userId = authService.getUserIdFromToken(token);
+            Long userId = authService.getUserIdFromAuthHeader(authHeader);
 
             if (userId == null) {
                 return Result.error(ResultCode.UNAUTHORIZED, "登录已过期，请重新登录");
             }
 
             List<ItemCollect> collects = itemCollectService.getByUserId(userId);
-            List<Item> items = collects.stream()
-                    .map(collect -> itemService.getById(collect.getItemId()))
+            
+            if (collects.isEmpty()) {
+                return Result.success(List.of());
+            }
+
+            List<Long> itemIds = collects.stream()
+                    .map(ItemCollect::getItemId)
+                    .collect(Collectors.toList());
+
+            List<Item> items = itemService.listByIds(itemIds).stream()
                     .filter(item -> item != null && item.getDeleted() == 0)
                     .collect(Collectors.toList());
 
-            // 填充用户信息
             enrichItemsWithUserInfo(items);
 
             return Result.success(items);
         } catch (Exception e) {
+            log.error("获取收藏物品列表失败: {}", e.getMessage());
             return Result.error(ResultCode.UNAUTHORIZED, "登录已过期，请重新登录");
         }
     }

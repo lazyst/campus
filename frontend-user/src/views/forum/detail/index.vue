@@ -481,8 +481,7 @@ async function handleLike() {
 
       try {
         await toggleCollectPost(postId);
-        // 重新获取帖子数据以同步收藏数
-        await fetchPost();
+        // API 成功，乐观更新已生效，无需重新获取帖子数据
       } catch (error: any) {
         // 忽略错误
         // 回滚
@@ -575,6 +574,17 @@ const toggleCollect = handleCollect;
   min-height: 100vh;
   background-color: var(--bg-page);
   padding-bottom: 70px;
+}
+
+/* 平板端样式增强 */
+@media (min-width: 768px) and (max-width: 1023px) {
+  .detail-comment-input-area {
+    left: 50%;
+    transform: translateX(-50%);
+    width: 100%;
+    max-width: 480px;
+    border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+  }
 }
 
 /* PC端样式增强 */
@@ -1027,7 +1037,6 @@ const toggleCollect = handleCollect;
 .detail-comment-input-area {
   position: fixed;
   bottom: 0;
-  left: 0;
   right: 0;
   display: flex;
   align-items: center;

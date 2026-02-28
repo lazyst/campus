@@ -15,7 +15,9 @@ function loadState() {
       }
     }
   } catch (e) {
-    console.warn('恢复用户状态失败:', e)
+    if (import.meta.env.DEV) {
+      console.warn('恢复用户状态失败:', e)
+    }
   }
   return {
     token: localStorage.getItem('token'),
@@ -39,7 +41,9 @@ export const useUserStore = defineStore('user', () => {
       }
       localStorage.setItem('user', JSON.stringify(state))
     } catch (e) {
-      console.warn('保存用户状态失败:', e)
+      if (import.meta.env.DEV) {
+        console.warn('保存用户状态失败:', e)
+      }
     }
   }, { deep: true })
 
@@ -90,22 +94,14 @@ export const useUserStore = defineStore('user', () => {
     return result
   }
 
-  async function logout() {
-    try {
-      await logoutApi()
-    } catch (e) {
-      console.warn('登出API调用失败:', e)
-    }
-    removeToken()
-    // 留在当前页面，不跳转
-  }
-
   async function fetchUserInfo() {
     try {
       const data = await getUserInfo()
       userInfo.value = data
     } catch (e) {
-      console.warn('获取用户信息失败:', e)
+      if (import.meta.env.DEV) {
+        console.warn('获取用户信息失败:', e)
+      }
     }
   }
 
@@ -129,7 +125,10 @@ export const useUserStore = defineStore('user', () => {
     isLoggedIn,
     login,
     register,
-    logout,
+    logout: async () => {
+      removeToken()
+      await logoutApi()
+    },
     fetchUserInfo,
     initialize
   }

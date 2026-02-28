@@ -3,6 +3,7 @@ package com.campus.config;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
+import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
@@ -19,6 +20,8 @@ import java.util.function.Function;
  */
 @Component
 public class JwtConfig {
+
+    public static final String HEADER_PREFIX = "Bearer ";
 
     @Value("${jwt.secret}")
     private String secret;
@@ -148,5 +151,27 @@ public class JwtConfig {
      */
     public String getPrefix() {
         return prefix;
+    }
+
+    /**
+     * 从请求头中提取Token
+     * @param authHeader Authorization请求头的值
+     * @return 提取出的token，不包含Bearer前缀；如果无效返回null
+     */
+    public String extractToken(String authHeader) {
+        if (authHeader == null || !authHeader.startsWith(HEADER_PREFIX)) {
+            return null;
+        }
+        return authHeader.substring(HEADER_PREFIX.length());
+    }
+
+    /**
+     * 从HttpServletRequest中提取Token
+     * @param request HTTP请求对象
+     * @return 提取出的token，不包含Bearer前缀；如果无效返回null
+     */
+    public String extractToken(HttpServletRequest request) {
+        String authHeader = request.getHeader(header);
+        return extractToken(authHeader);
     }
 }

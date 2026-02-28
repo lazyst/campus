@@ -152,11 +152,10 @@ public class BoardManagementController {
      * 验证管理员权限
      */
     private void verifyAdmin(String authHeader) {
-        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+        String token = jwtConfig.extractToken(authHeader);
+        if (token == null) {
             throw new SecurityException("未授权访问");
         }
-
-        String token = authHeader.replace("Bearer ", "");
 
         // 从token中提取admin ID和role
         String subject = jwtConfig.getUsernameFromToken(token);
