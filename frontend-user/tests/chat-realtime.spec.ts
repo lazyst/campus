@@ -9,11 +9,42 @@ test.describe('聊天功能实时性测试', () => {
     const pageA = await contextA.newPage()
     const pageB = await contextB.newPage()
 
-    // 测试账号 - 使用同一个账号但不同的会话
-    // 注意：同一个账号只能测试给自己发消息，无法测试实时聊天
-    // 这里主要测试 WebSocket 连接和消息推送是否正常工作
+    // 测试账号 - 使用两个不同的用户账号
     const userA = { username: '13800000001', password: '123456' }
-    const userB = { username: '13800000001', password: '123456' }
+    const userB = { username: '13800000002', password: '123456' }
+
+    // 通过API登录获取token并创建会话
+    console.log('准备创建会话...')
+    const loginA = await fetch('http://localhost:8080/api/auth/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ phone: userA.username, password: userA.password })
+    }).then(r => r.json())
+
+    if (!loginA.token) {
+      throw new Error('用户A登录失败')
+    }
+
+    const loginB = await fetch('http://localhost:8080/api/auth/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ phone: userB.username, password: userB.password })
+    }).then(r => r.json())
+
+    if (!loginB.token) {
+      throw new Error('用户B登录失败')
+    }
+
+    // 用户A创建与用户B的会话
+    await fetch('http://localhost:8080/api/conversations', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${loginA.token}`
+      },
+      body: JSON.stringify({ userId: 21 })  // 用户B的ID是21
+    })
+    console.log('会话创建完成')
 
     try {
       // ===== 用户A登录 =====
