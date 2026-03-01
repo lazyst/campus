@@ -152,3 +152,9 @@ backend.log
 
 # OMC (Claude Code CLI)
 .omc/
+
+# Local configuration (private to each developer)
+CLAUDE.local.md
+
+# Deployment files
+docker-deploy/
