@@ -53,7 +53,7 @@ class LikeControllerTest {
         void shouldToggleLikeSuccessfully_FirstLike() throws Exception {
             Post post = createTestPost(1L, 2L, "测试帖子");
 
-            when(authService.getUserIdFromToken(anyString())).thenReturn(1L);
+            when(authService.getUserIdFromAuthHeader(anyString())).thenReturn(1L);
             when(postService.getById(1L)).thenReturn(post);
             when(likeService.toggleLike(1L, 1L)).thenReturn(true);
 
@@ -69,7 +69,7 @@ class LikeControllerTest {
         void shouldToggleLikeSuccessfully_UnLike() throws Exception {
             Post post = createTestPost(1L, 2L, "测试帖子");
 
-            when(authService.getUserIdFromToken(anyString())).thenReturn(1L);
+            when(authService.getUserIdFromAuthHeader(anyString())).thenReturn(1L);
             when(postService.getById(1L)).thenReturn(post);
             when(likeService.toggleLike(1L, 1L)).thenReturn(false);
 
@@ -92,7 +92,7 @@ class LikeControllerTest {
         @Test
         @DisplayName("点赞失败 - 帖子不存在")
         void shouldFailToggleLikeWhenPostNotFound() throws Exception {
-            when(authService.getUserIdFromToken(anyString())).thenReturn(1L);
+            when(authService.getUserIdFromAuthHeader(anyString())).thenReturn(1L);
             when(postService.getById(999L)).thenReturn(null);
 
             mockMvc.perform(post(BASE_URL + "/999/like")
@@ -105,7 +105,7 @@ class LikeControllerTest {
         @Test
         @DisplayName("点赞失败 - Token无效")
         void shouldFailToggleLikeWhenTokenInvalid() throws Exception {
-            when(authService.getUserIdFromToken(anyString())).thenReturn(null);
+            when(authService.getUserIdFromAuthHeader(anyString())).thenReturn(null);
 
             mockMvc.perform(post(BASE_URL + "/1/like")
                     .header("Authorization", "Bearer invalid-token"))
@@ -121,7 +121,7 @@ class LikeControllerTest {
         @Test
         @DisplayName("检查点赞状态成功 - 已点赞")
         void shouldCheckLikedSuccessfully_True() throws Exception {
-            when(authService.getUserIdFromToken(anyString())).thenReturn(1L);
+            when(authService.getUserIdFromAuthHeader(anyString())).thenReturn(1L);
             when(likeService.hasLiked(1L, 1L)).thenReturn(true);
 
             mockMvc.perform(get(BASE_URL + "/1/like/check")
@@ -134,7 +134,7 @@ class LikeControllerTest {
         @Test
         @DisplayName("检查点赞状态成功 - 未点赞")
         void shouldCheckLikedSuccessfully_False() throws Exception {
-            when(authService.getUserIdFromToken(anyString())).thenReturn(1L);
+            when(authService.getUserIdFromAuthHeader(anyString())).thenReturn(1L);
             when(likeService.hasLiked(1L, 1L)).thenReturn(false);
 
             mockMvc.perform(get(BASE_URL + "/1/like/check")

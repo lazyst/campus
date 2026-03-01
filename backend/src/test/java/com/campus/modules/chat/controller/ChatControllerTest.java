@@ -58,7 +58,7 @@ class ChatControllerTest {
         void shouldGetConversationsSuccessfully() throws Exception {
             Conversation conversation = createTestConversation(1L, 2L);
             
-            when(authService.getUserIdFromToken(anyString())).thenReturn(1L);
+            when(authService.getUserIdFromAuthHeader(anyString())).thenReturn(1L);
             when(chatService.getConversations(1L)).thenReturn(Collections.singletonList(conversation));
 
             mockMvc.perform(get(BASE_URL + "/conversations")
@@ -71,7 +71,7 @@ class ChatControllerTest {
         @Test
         @DisplayName("获取空会话列表")
         void shouldGetEmptyConversationsList() throws Exception {
-            when(authService.getUserIdFromToken(anyString())).thenReturn(1L);
+            when(authService.getUserIdFromAuthHeader(anyString())).thenReturn(1L);
             when(chatService.getConversations(1L)).thenReturn(Collections.emptyList());
 
             mockMvc.perform(get(BASE_URL + "/conversations")
@@ -92,7 +92,7 @@ class ChatControllerTest {
         void shouldGetMessagesSuccessfully() throws Exception {
             Message message = createTestMessage(1L, 1L, 2L, "你好");
             
-            when(authService.getUserIdFromToken(anyString())).thenReturn(1L);
+            when(authService.getUserIdFromAuthHeader(anyString())).thenReturn(1L);
             when(chatService.getMessages(anyLong(), anyInt(), anyInt()))
                     .thenReturn(Collections.singletonList(message));
 
@@ -115,7 +115,7 @@ class ChatControllerTest {
         void shouldGetMessagesWithUserSuccessfully() throws Exception {
             Message message = createTestMessage(1L, 1L, 2L, "测试消息");
             
-            when(authService.getUserIdFromToken(anyString())).thenReturn(1L);
+            when(authService.getUserIdFromAuthHeader(anyString())).thenReturn(1L);
             when(chatService.getMessagesWithUser(anyLong(), anyLong(), anyInt(), anyInt()))
                     .thenReturn(Collections.singletonList(message));
 
@@ -131,7 +131,7 @@ class ChatControllerTest {
         @Test
         @DisplayName("获取与用户的聊天消息返回空列表")
         void shouldGetEmptyMessagesWithUser() throws Exception {
-            when(authService.getUserIdFromToken(anyString())).thenReturn(1L);
+            when(authService.getUserIdFromAuthHeader(anyString())).thenReturn(1L);
             when(chatService.getMessagesWithUser(anyLong(), anyLong(), anyInt(), anyInt()))
                     .thenReturn(Collections.emptyList());
 
@@ -156,7 +156,7 @@ class ChatControllerTest {
             Message savedMessage = createTestMessage(1L, 1L, 2L, "你好，这是一条测试消息");
             savedMessage.setId(1L);
 
-            when(authService.getUserIdFromToken(anyString())).thenReturn(1L);
+            when(authService.getUserIdFromAuthHeader(anyString())).thenReturn(1L);
             when(chatService.saveMessage(anyLong(), anyLong(), anyString())).thenReturn(savedMessage);
 
             mockMvc.perform(post(BASE_URL + "/messages/2")
@@ -174,7 +174,7 @@ class ChatControllerTest {
             Map<String, String> request = new HashMap<>();
             request.put("content", "");
 
-            when(authService.getUserIdFromToken(anyString())).thenReturn(1L);
+            when(authService.getUserIdFromAuthHeader(anyString())).thenReturn(1L);
 
             mockMvc.perform(post(BASE_URL + "/messages/2")
                     .header("Authorization", "Bearer mock-token")
@@ -191,7 +191,7 @@ class ChatControllerTest {
             Map<String, String> request = new HashMap<>();
             request.put("content", "   ");
 
-            when(authService.getUserIdFromToken(anyString())).thenReturn(1L);
+            when(authService.getUserIdFromAuthHeader(anyString())).thenReturn(1L);
 
             mockMvc.perform(post(BASE_URL + "/messages/2")
                     .header("Authorization", "Bearer mock-token")
@@ -215,7 +215,7 @@ class ChatControllerTest {
 
             Conversation conversation = createTestConversation(1L, 2L);
 
-            when(authService.getUserIdFromToken(anyString())).thenReturn(1L);
+            when(authService.getUserIdFromAuthHeader(anyString())).thenReturn(1L);
             when(chatService.getOrCreateConversation(anyLong(), anyLong())).thenReturn(conversation);
 
             mockMvc.perform(post(BASE_URL + "/conversations")
@@ -234,7 +234,7 @@ class ChatControllerTest {
         @Test
         @DisplayName("清除未读消息数成功")
         void shouldClearUnreadCountSuccessfully() throws Exception {
-            when(authService.getUserIdFromToken(anyString())).thenReturn(1L);
+            when(authService.getUserIdFromAuthHeader(anyString())).thenReturn(1L);
             doNothing().when(chatService).clearUnreadCountByUserIds(anyLong(), anyLong());
 
             mockMvc.perform(post(BASE_URL + "/conversations/2/read")
@@ -251,7 +251,7 @@ class ChatControllerTest {
         @Test
         @DisplayName("获取总未读消息数成功")
         void shouldGetTotalUnreadCountSuccessfully() throws Exception {
-            when(authService.getUserIdFromToken(anyString())).thenReturn(1L);
+            when(authService.getUserIdFromAuthHeader(anyString())).thenReturn(1L);
             when(chatService.getTotalUnreadCount(1L)).thenReturn(5);
 
             mockMvc.perform(get(BASE_URL + "/conversations/unread/count")
@@ -264,7 +264,7 @@ class ChatControllerTest {
         @Test
         @DisplayName("获取总未读消息数为零")
         void shouldGetZeroTotalUnreadCount() throws Exception {
-            when(authService.getUserIdFromToken(anyString())).thenReturn(1L);
+            when(authService.getUserIdFromAuthHeader(anyString())).thenReturn(1L);
             when(chatService.getTotalUnreadCount(1L)).thenReturn(0);
 
             mockMvc.perform(get(BASE_URL + "/conversations/unread/count")

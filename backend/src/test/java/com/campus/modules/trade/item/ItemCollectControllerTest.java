@@ -56,7 +56,7 @@ class ItemCollectControllerTest {
         @Test
         @DisplayName("收藏物品成功")
         void shouldToggleCollectSuccessfully() throws Exception {
-            when(authService.getUserIdFromToken(anyString())).thenReturn(1L);
+            when(authService.getUserIdFromAuthHeader(anyString())).thenReturn(1L);
             when(itemService.getById(1L)).thenReturn(createTestItem(1L, 2L, "测试物品", new BigDecimal("99.99")));
             when(itemCollectService.toggleCollect(1L, 1L)).thenReturn(true);
 
@@ -70,7 +70,7 @@ class ItemCollectControllerTest {
         @Test
         @DisplayName("取消收藏成功")
         void shouldUncollectSuccessfully() throws Exception {
-            when(authService.getUserIdFromToken(anyString())).thenReturn(1L);
+            when(authService.getUserIdFromAuthHeader(anyString())).thenReturn(1L);
             when(itemService.getById(1L)).thenReturn(createTestItem(1L, 2L, "测试物品", new BigDecimal("99.99")));
             when(itemCollectService.toggleCollect(1L, 1L)).thenReturn(false);
 
@@ -92,7 +92,7 @@ class ItemCollectControllerTest {
         @Test
         @DisplayName("收藏失败 - 物品不存在")
         void shouldFailCollectWhenItemNotFound() throws Exception {
-            when(authService.getUserIdFromToken(anyString())).thenReturn(1L);
+            when(authService.getUserIdFromAuthHeader(anyString())).thenReturn(1L);
             when(itemService.getById(999L)).thenReturn(null);
 
             mockMvc.perform(post(BASE_URL + "/999/collect")
@@ -110,7 +110,7 @@ class ItemCollectControllerTest {
         @Test
         @DisplayName("已收藏返回true")
         void shouldReturnTrueWhenCollected() throws Exception {
-            when(authService.getUserIdFromToken(anyString())).thenReturn(1L);
+            when(authService.getUserIdFromAuthHeader(anyString())).thenReturn(1L);
             when(itemCollectService.hasCollected(1L, 1L)).thenReturn(true);
 
             mockMvc.perform(get(BASE_URL + "/1/collect/check")
@@ -123,7 +123,7 @@ class ItemCollectControllerTest {
         @Test
         @DisplayName("未收藏返回false")
         void shouldReturnFalseWhenNotCollected() throws Exception {
-            when(authService.getUserIdFromToken(anyString())).thenReturn(1L);
+            when(authService.getUserIdFromAuthHeader(anyString())).thenReturn(1L);
             when(itemCollectService.hasCollected(1L, 1L)).thenReturn(false);
 
             mockMvc.perform(get(BASE_URL + "/1/collect/check")
@@ -158,7 +158,7 @@ class ItemCollectControllerTest {
 
             Item item = createTestItem(1L, 2L, "测试物品", new BigDecimal("99.99"));
 
-            when(authService.getUserIdFromToken(anyString())).thenReturn(1L);
+            when(authService.getUserIdFromAuthHeader(anyString())).thenReturn(1L);
             when(itemCollectService.getByUserId(1L)).thenReturn(Collections.singletonList(collect));
             when(itemService.getById(1L)).thenReturn(item);
             when(userService.listByIds(any())).thenReturn(Collections.emptyList());
@@ -173,7 +173,7 @@ class ItemCollectControllerTest {
         @Test
         @DisplayName("获取空收藏列表")
         void shouldGetEmptyCollectedItems() throws Exception {
-            when(authService.getUserIdFromToken(anyString())).thenReturn(1L);
+            when(authService.getUserIdFromAuthHeader(anyString())).thenReturn(1L);
             when(itemCollectService.getByUserId(1L)).thenReturn(Collections.emptyList());
 
             mockMvc.perform(get(BASE_URL + "/collected")
@@ -203,7 +203,7 @@ class ItemCollectControllerTest {
 
             Item item = createTestItem(1L, null, "测试物品", new BigDecimal("99.99"));
 
-            when(authService.getUserIdFromToken(anyString())).thenReturn(1L);
+            when(authService.getUserIdFromAuthHeader(anyString())).thenReturn(1L);
             when(itemCollectService.getByUserId(1L)).thenReturn(Collections.singletonList(collect));
             when(itemService.getById(1L)).thenReturn(item);
 

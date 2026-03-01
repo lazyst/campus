@@ -125,7 +125,7 @@ class CommentControllerTest {
 
             Post post = createTestPost(1L, 2L, "测试帖子");
 
-            when(authService.getUserIdFromToken(anyString())).thenReturn(1L);
+            when(authService.getUserIdFromAuthHeader(anyString())).thenReturn(1L);
             when(postService.getById(1L)).thenReturn(post);
             when(commentService.save(any(Comment.class))).thenReturn(true);
 
@@ -164,7 +164,7 @@ class CommentControllerTest {
             request.setPostId(999L);
             request.setContent("评论内容");
 
-            when(authService.getUserIdFromToken(anyString())).thenReturn(1L);
+            when(authService.getUserIdFromAuthHeader(anyString())).thenReturn(1L);
             when(postService.getById(999L)).thenReturn(null);
 
             mockMvc.perform(post(BASE_URL)
@@ -200,7 +200,7 @@ class CommentControllerTest {
         void shouldDeleteCommentSuccessfully() throws Exception {
             Comment existingComment = createTestComment(1L, 1L, 1L, "测试评论");
 
-            when(authService.getUserIdFromToken(anyString())).thenReturn(1L);
+            when(authService.getUserIdFromAuthHeader(anyString())).thenReturn(1L);
             when(commentService.getById(1L)).thenReturn(existingComment);
             when(commentService.isAuthor(1L, 1L)).thenReturn(true);
             when(commentService.updateById(any(Comment.class))).thenReturn(true);
@@ -215,7 +215,7 @@ class CommentControllerTest {
         @Test
         @DisplayName("删除评论失败 - 评论不存在")
         void shouldFailDeleteWhenCommentNotFound() throws Exception {
-            when(authService.getUserIdFromToken(anyString())).thenReturn(1L);
+            when(authService.getUserIdFromAuthHeader(anyString())).thenReturn(1L);
             when(commentService.getById(999L)).thenReturn(null);
 
             mockMvc.perform(delete(BASE_URL + "/999")
@@ -230,7 +230,7 @@ class CommentControllerTest {
         void shouldFailDeleteWhenNotAuthor() throws Exception {
             Comment existingComment = createTestComment(1L, 1L, 1L, "测试评论");
 
-            when(authService.getUserIdFromToken(anyString())).thenReturn(999L);
+            when(authService.getUserIdFromAuthHeader(anyString())).thenReturn(999L);
             when(commentService.getById(1L)).thenReturn(existingComment);
             when(commentService.isAuthor(1L, 999L)).thenReturn(false);
 

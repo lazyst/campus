@@ -31,6 +31,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 import org.springframework.mock.web.MockMultipartFile;
+import org.springframework.util.MultiValueMap;
 
 @SpringBootTest
 @AutoConfigureMockMvc
@@ -72,7 +73,7 @@ class UserControllerTest {
         @DisplayName("获取用户信息成功")
         void shouldGetProfileSuccessfully() throws Exception {
             User user = createTestUser();
-            when(authService.getUserIdFromToken(anyString())).thenReturn(1L);
+            when(authService.getUserIdFromAuthHeader(anyString())).thenReturn(1L);
             when(userService.getById(1L)).thenReturn(user);
 
             mockMvc.perform(get(BASE_URL + "/profile")
@@ -95,7 +96,7 @@ class UserControllerTest {
         @Test
         @DisplayName("Token无效时返回null")
         void shouldReturnNullWhenTokenInvalid() throws Exception {
-            when(authService.getUserIdFromToken(anyString())).thenReturn(null);
+            when(authService.getUserIdFromAuthHeader(anyString())).thenReturn(null);
 
             mockMvc.perform(get(BASE_URL + "/profile")
                     .header("Authorization", "Bearer invalid-token"))
@@ -107,7 +108,7 @@ class UserControllerTest {
         @Test
         @DisplayName("用户不存在时返回null")
         void shouldReturnNullWhenUserNotFound() throws Exception {
-            when(authService.getUserIdFromToken(anyString())).thenReturn(1L);
+            when(authService.getUserIdFromAuthHeader(anyString())).thenReturn(1L);
             when(userService.getById(1L)).thenReturn(null);
 
             mockMvc.perform(get(BASE_URL + "/profile")
@@ -125,7 +126,7 @@ class UserControllerTest {
         @Test
         @DisplayName("更新用户信息成功")
         void shouldUpdateProfileSuccessfully() throws Exception {
-            when(authService.getUserIdFromToken(anyString())).thenReturn(1L);
+            when(authService.getUserIdFromAuthHeader(anyString())).thenReturn(1L);
             doNothing().when(userService).updateProfile(anyLong(), anyString(), any(), any(), any(), any(), any());
 
             UpdateProfileRequest request = new UpdateProfileRequest();
@@ -147,7 +148,7 @@ class UserControllerTest {
         @Test
         @DisplayName("Token无效时更新失败")
         void shouldFailUpdateWhenTokenInvalid() throws Exception {
-            when(authService.getUserIdFromToken(anyString())).thenReturn(null);
+            when(authService.getUserIdFromAuthHeader(anyString())).thenReturn(null);
 
             UpdateProfileRequest request = new UpdateProfileRequest();
             request.setNickname("新昵称");
@@ -230,7 +231,7 @@ class UserControllerTest {
         @Test
         @DisplayName("注销账号成功")
         void shouldDeactivateAccountSuccessfully() throws Exception {
-            when(authService.getUserIdFromToken(anyString())).thenReturn(1L);
+            when(authService.getUserIdFromAuthHeader(anyString())).thenReturn(1L);
             doNothing().when(userService).deactivateAccount(1L);
 
             mockMvc.perform(delete(BASE_URL + "/account")
@@ -243,7 +244,7 @@ class UserControllerTest {
         @Test
         @DisplayName("Token无效时注销失败")
         void shouldFailDeactivateWhenTokenInvalid() throws Exception {
-            when(authService.getUserIdFromToken(anyString())).thenReturn(null);
+            when(authService.getUserIdFromAuthHeader(anyString())).thenReturn(null);
 
             mockMvc.perform(delete(BASE_URL + "/account")
                     .header("Authorization", "Bearer invalid-token"))
@@ -260,7 +261,7 @@ class UserControllerTest {
         @Test
         @DisplayName("上传头像成功")
         void shouldUploadAvatarSuccessfully() throws Exception {
-            when(authService.getUserIdFromToken(anyString())).thenReturn(1L);
+            when(authService.getUserIdFromAuthHeader(anyString())).thenReturn(1L);
             doNothing().when(userService).updateAvatar(anyLong(), anyString());
 
             MockMultipartFile mockFile = new MockMultipartFile(
@@ -277,7 +278,7 @@ class UserControllerTest {
         @Test
         @DisplayName("Token无效时上传失败")
         void shouldFailUploadWhenTokenInvalid() throws Exception {
-            when(authService.getUserIdFromToken(anyString())).thenReturn(null);
+            when(authService.getUserIdFromAuthHeader(anyString())).thenReturn(null);
 
             MockMultipartFile mockFile = new MockMultipartFile(
                     "file", "test.jpg", "image/jpeg", "test image content".getBytes());

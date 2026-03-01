@@ -61,7 +61,7 @@ class CollectControllerTest {
         void shouldToggleCollectSuccessfully_FirstCollect() throws Exception {
             Post post = createTestPost(1L, 2L, "测试帖子");
 
-            when(authService.getUserIdFromToken(anyString())).thenReturn(1L);
+            when(authService.getUserIdFromAuthHeader(anyString())).thenReturn(1L);
             when(postService.getById(1L)).thenReturn(post);
             when(collectService.toggleCollect(1L, 1L)).thenReturn(true);
 
@@ -77,7 +77,7 @@ class CollectControllerTest {
         void shouldToggleCollectSuccessfully_UnCollect() throws Exception {
             Post post = createTestPost(1L, 2L, "测试帖子");
 
-            when(authService.getUserIdFromToken(anyString())).thenReturn(1L);
+            when(authService.getUserIdFromAuthHeader(anyString())).thenReturn(1L);
             when(postService.getById(1L)).thenReturn(post);
             when(collectService.toggleCollect(1L, 1L)).thenReturn(false);
 
@@ -100,7 +100,7 @@ class CollectControllerTest {
         @Test
         @DisplayName("收藏失败 - 帖子不存在")
         void shouldFailToggleCollectWhenPostNotFound() throws Exception {
-            when(authService.getUserIdFromToken(anyString())).thenReturn(1L);
+            when(authService.getUserIdFromAuthHeader(anyString())).thenReturn(1L);
             when(postService.getById(999L)).thenReturn(null);
 
             mockMvc.perform(post(BASE_URL + "/999/collect")
@@ -113,7 +113,7 @@ class CollectControllerTest {
         @Test
         @DisplayName("收藏失败 - Token无效")
         void shouldFailToggleCollectWhenTokenInvalid() throws Exception {
-            when(authService.getUserIdFromToken(anyString())).thenReturn(null);
+            when(authService.getUserIdFromAuthHeader(anyString())).thenReturn(null);
 
             mockMvc.perform(post(BASE_URL + "/1/collect")
                     .header("Authorization", "Bearer invalid-token"))
@@ -129,7 +129,7 @@ class CollectControllerTest {
         @Test
         @DisplayName("检查收藏状态成功 - 已收藏")
         void shouldCheckCollectedSuccessfully_True() throws Exception {
-            when(authService.getUserIdFromToken(anyString())).thenReturn(1L);
+            when(authService.getUserIdFromAuthHeader(anyString())).thenReturn(1L);
             when(collectService.hasCollected(1L, 1L)).thenReturn(true);
 
             mockMvc.perform(get(BASE_URL + "/1/collect/check")
@@ -142,7 +142,7 @@ class CollectControllerTest {
         @Test
         @DisplayName("检查收藏状态成功 - 未收藏")
         void shouldCheckCollectedSuccessfully_False() throws Exception {
-            when(authService.getUserIdFromToken(anyString())).thenReturn(1L);
+            when(authService.getUserIdFromAuthHeader(anyString())).thenReturn(1L);
             when(collectService.hasCollected(1L, 1L)).thenReturn(false);
 
             mockMvc.perform(get(BASE_URL + "/1/collect/check")
@@ -182,7 +182,7 @@ class CollectControllerTest {
             Post post = createTestPost(1L, 2L, "测试帖子");
             User user = createTestUser(2L, "帖子作者", "http://example.com/avatar.jpg");
 
-            when(authService.getUserIdFromToken(anyString())).thenReturn(1L);
+            when(authService.getUserIdFromAuthHeader(anyString())).thenReturn(1L);
             when(collectService.getCollectedPosts(1L)).thenReturn(Collections.singletonList(post));
             when(userService.listByIds(any())).thenReturn(Collections.singletonList(user));
 
@@ -198,7 +198,7 @@ class CollectControllerTest {
         @Test
         @DisplayName("获取收藏列表成功 - 空列表")
         void shouldGetMyCollectionsSuccessfully_EmptyList() throws Exception {
-            when(authService.getUserIdFromToken(anyString())).thenReturn(1L);
+            when(authService.getUserIdFromAuthHeader(anyString())).thenReturn(1L);
             when(collectService.getCollectedPosts(1L)).thenReturn(Collections.emptyList());
 
             mockMvc.perform(get(BASE_URL + "/collections")
@@ -221,7 +221,7 @@ class CollectControllerTest {
         @Test
         @DisplayName("获取收藏列表失败 - Token无效")
         void shouldFailGetMyCollectionsWhenTokenInvalid() throws Exception {
-            when(authService.getUserIdFromToken(anyString())).thenReturn(null);
+            when(authService.getUserIdFromAuthHeader(anyString())).thenReturn(null);
 
             mockMvc.perform(get(BASE_URL + "/collections")
                     .header("Authorization", "Bearer invalid-token"))
@@ -235,7 +235,7 @@ class CollectControllerTest {
             Post post = createTestPost(1L, 2L, "测试帖子");
             User user = createTestUser(2L, "帖子作者", "http://example.com/avatar.jpg");
 
-            when(authService.getUserIdFromToken(anyString())).thenReturn(1L);
+            when(authService.getUserIdFromAuthHeader(anyString())).thenReturn(1L);
             when(collectService.getCollectedPosts(1L)).thenReturn(Collections.singletonList(post));
             when(userService.listByIds(any())).thenReturn(Collections.singletonList(user));
 

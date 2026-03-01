@@ -182,7 +182,7 @@ class PostControllerTest {
             Post savedPost = createTestPost(1L, 1L, "新帖子标题", "新帖子内容");
             savedPost.setId(1L);
 
-            when(authService.getUserIdFromToken(anyString())).thenReturn(1L);
+            when(authService.getUserIdFromAuthHeader(anyString())).thenReturn(1L);
             when(boardService.getById(1L)).thenReturn(board);
             when(postService.save(any(Post.class))).thenReturn(true);
             when(postService.getById(1L)).thenReturn(savedPost);
@@ -205,7 +205,7 @@ class PostControllerTest {
             request.setTitle("新帖子标题");
             request.setContent("新帖子内容");
 
-            when(authService.getUserIdFromToken(anyString())).thenReturn(1L);
+            when(authService.getUserIdFromAuthHeader(anyString())).thenReturn(1L);
             when(boardService.getById(999L)).thenReturn(null);
 
             mockMvc.perform(post(BASE_URL)
@@ -246,7 +246,7 @@ class PostControllerTest {
 
             Post existingPost = createTestPost(1L, 1L, "原标题", "原内容");
 
-            when(authService.getUserIdFromToken(anyString())).thenReturn(1L);
+            when(authService.getUserIdFromAuthHeader(anyString())).thenReturn(1L);
             when(postService.getById(1L)).thenReturn(existingPost);
             when(postService.isAuthor(1L, 1L)).thenReturn(true);
             when(postService.updateById(any(Post.class))).thenReturn(true);
@@ -267,7 +267,7 @@ class PostControllerTest {
             PostUpdateRequest request = new PostUpdateRequest();
             request.setTitle("更新后的标题");
 
-            when(authService.getUserIdFromToken(anyString())).thenReturn(1L);
+            when(authService.getUserIdFromAuthHeader(anyString())).thenReturn(1L);
             when(postService.getById(999L)).thenReturn(null);
 
             mockMvc.perform(put(BASE_URL + "/999")
@@ -287,7 +287,7 @@ class PostControllerTest {
 
             Post existingPost = createTestPost(1L, 1L, "原标题", "原内容");
 
-            when(authService.getUserIdFromToken(anyString())).thenReturn(999L);
+            when(authService.getUserIdFromAuthHeader(anyString())).thenReturn(999L);
             when(postService.getById(1L)).thenReturn(existingPost);
             when(postService.isAuthor(1L, 999L)).thenReturn(false);
 
@@ -310,7 +310,7 @@ class PostControllerTest {
         void shouldDeletePostSuccessfully() throws Exception {
             Post existingPost = createTestPost(1L, 1L, "测试帖子", "测试内容");
 
-            when(authService.getUserIdFromToken(anyString())).thenReturn(1L);
+            when(authService.getUserIdFromAuthHeader(anyString())).thenReturn(1L);
             when(postService.getById(1L)).thenReturn(existingPost);
             when(postService.isAuthor(1L, 1L)).thenReturn(true);
             when(postService.updateById(any(Post.class))).thenReturn(true);
@@ -325,7 +325,7 @@ class PostControllerTest {
         @Test
         @DisplayName("删除帖子失败 - 帖子不存在")
         void shouldFailDeleteWhenPostNotFound() throws Exception {
-            when(authService.getUserIdFromToken(anyString())).thenReturn(1L);
+            when(authService.getUserIdFromAuthHeader(anyString())).thenReturn(1L);
             when(postService.getById(999L)).thenReturn(null);
 
             mockMvc.perform(delete(BASE_URL + "/999")
@@ -340,7 +340,7 @@ class PostControllerTest {
         void shouldFailDeleteWhenNotAuthor() throws Exception {
             Post existingPost = createTestPost(1L, 1L, "测试帖子", "测试内容");
 
-            when(authService.getUserIdFromToken(anyString())).thenReturn(999L);
+            when(authService.getUserIdFromAuthHeader(anyString())).thenReturn(999L);
             when(postService.getById(1L)).thenReturn(existingPost);
             when(postService.isAuthor(1L, 999L)).thenReturn(false);
 

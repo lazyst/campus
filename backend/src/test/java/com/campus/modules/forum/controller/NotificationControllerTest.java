@@ -73,7 +73,7 @@ class NotificationControllerTest {
             Notification notification = createTestNotification(1L, 1L, 2L, 1, "有人评论了你的帖子");
             User fromUser = createTestUser(2L, "评论者昵称", "http://avatar.url/2.png");
 
-            when(authService.getUserIdFromToken(anyString())).thenReturn(1L);
+            when(authService.getUserIdFromAuthHeader(anyString())).thenReturn(1L);
             when(notificationService.getByUserId(1L)).thenReturn(Collections.singletonList(notification));
             when(userService.getById(2L)).thenReturn(fromUser);
 
@@ -86,7 +86,7 @@ class NotificationControllerTest {
                     .andExpect(jsonPath("$.data[0].id").value(1))
                     .andExpect(jsonPath("$.data[0].content").value("有人评论了你的帖子"));
 
-            verify(authService).getUserIdFromToken(anyString());
+            verify(authService).getUserIdFromAuthHeader(anyString());
             verify(notificationService).getByUserId(1L);
         }
 
@@ -96,7 +96,7 @@ class NotificationControllerTest {
             Notification notification1 = createTestNotification(1L, 1L, 2L, 1, "评论通知");
             Notification notification2 = createTestNotification(2L, 1L, 3L, 2, "点赞通知");
 
-            when(authService.getUserIdFromToken(anyString())).thenReturn(1L);
+            when(authService.getUserIdFromAuthHeader(anyString())).thenReturn(1L);
             when(notificationService.getByUserId(1L)).thenReturn(Arrays.asList(notification1, notification2));
             when(userService.getById(2L)).thenReturn(createTestUser(2L, "用户A", null));
             when(userService.getById(3L)).thenReturn(createTestUser(3L, "用户B", null));
@@ -113,7 +113,7 @@ class NotificationControllerTest {
         @Test
         @DisplayName("获取通知列表 - 空列表")
         void shouldReturnEmptyNotificationsList() throws Exception {
-            when(authService.getUserIdFromToken(anyString())).thenReturn(1L);
+            when(authService.getUserIdFromAuthHeader(anyString())).thenReturn(1L);
             when(notificationService.getByUserId(1L)).thenReturn(Collections.emptyList());
 
             mockMvc.perform(get(BASE_URL)
@@ -131,7 +131,7 @@ class NotificationControllerTest {
         void shouldHandleMissingFromUser() throws Exception {
             Notification notification = createTestNotification(1L, 1L, 999L, 1, "通知内容");
 
-            when(authService.getUserIdFromToken(anyString())).thenReturn(1L);
+            when(authService.getUserIdFromAuthHeader(anyString())).thenReturn(1L);
             when(notificationService.getByUserId(1L)).thenReturn(Collections.singletonList(notification));
             when(userService.getById(999L)).thenReturn(null);
 
@@ -154,7 +154,7 @@ class NotificationControllerTest {
         @Test
         @DisplayName("获取未读数量成功")
         void shouldGetUnreadCountSuccessfully() throws Exception {
-            when(authService.getUserIdFromToken(anyString())).thenReturn(1L);
+            when(authService.getUserIdFromAuthHeader(anyString())).thenReturn(1L);
             when(notificationService.getUnreadCount(1L)).thenReturn(5);
 
             mockMvc.perform(get(BASE_URL + "/unread/count")
@@ -169,7 +169,7 @@ class NotificationControllerTest {
         @Test
         @DisplayName("获取未读数量 - 无未读")
         void shouldReturnZeroWhenNoUnread() throws Exception {
-            when(authService.getUserIdFromToken(anyString())).thenReturn(1L);
+            when(authService.getUserIdFromAuthHeader(anyString())).thenReturn(1L);
             when(notificationService.getUnreadCount(1L)).thenReturn(0);
 
             mockMvc.perform(get(BASE_URL + "/unread/count")
@@ -193,7 +193,7 @@ class NotificationControllerTest {
         void shouldMarkAsReadSuccessfully() throws Exception {
             Notification notification = createTestNotification(1L, 1L, 2L, 1, "通知内容");
 
-            when(authService.getUserIdFromToken(anyString())).thenReturn(1L);
+            when(authService.getUserIdFromAuthHeader(anyString())).thenReturn(1L);
             when(notificationService.getById(1L)).thenReturn(notification);
             doNothing().when(notificationService).markAsRead(1L);
 
@@ -209,7 +209,7 @@ class NotificationControllerTest {
         @Test
         @DisplayName("标记已读失败 - 通知不存在")
         void shouldFailMarkAsReadWhenNotFound() throws Exception {
-            when(authService.getUserIdFromToken(anyString())).thenReturn(1L);
+            when(authService.getUserIdFromAuthHeader(anyString())).thenReturn(1L);
             when(notificationService.getById(999L)).thenReturn(null);
 
             mockMvc.perform(put(BASE_URL + "/999/read")
@@ -226,7 +226,7 @@ class NotificationControllerTest {
         void shouldFailMarkAsReadWhenNoPermission() throws Exception {
             Notification notification = createTestNotification(1L, 999L, 2L, 1, "通知内容");
 
-            when(authService.getUserIdFromToken(anyString())).thenReturn(1L);
+            when(authService.getUserIdFromAuthHeader(anyString())).thenReturn(1L);
             when(notificationService.getById(1L)).thenReturn(notification);
 
             mockMvc.perform(put(BASE_URL + "/1/read")
@@ -248,7 +248,7 @@ class NotificationControllerTest {
         @Test
         @DisplayName("标记所有通知为已读成功")
         void shouldMarkAllAsReadSuccessfully() throws Exception {
-            when(authService.getUserIdFromToken(anyString())).thenReturn(1L);
+            when(authService.getUserIdFromAuthHeader(anyString())).thenReturn(1L);
             doNothing().when(notificationService).markAllAsRead(1L);
 
             mockMvc.perform(put(BASE_URL + "/read/all")

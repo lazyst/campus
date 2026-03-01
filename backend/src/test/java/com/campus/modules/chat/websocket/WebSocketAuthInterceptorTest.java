@@ -43,7 +43,7 @@ class WebSocketAuthInterceptorTest {
 
         Message<?> message = MessageBuilder.createMessage(new byte[0], accessor.getMessageHeaders());
 
-        when(authService.getUserIdFromToken("valid-token")).thenReturn(1L);
+        when(authService.getUserIdFromAuthHeader("valid-token")).thenReturn(1L);
 
         Message<?> result = interceptor.preSend(message, null);
 
@@ -87,7 +87,7 @@ class WebSocketAuthInterceptorTest {
 
         Message<?> message = MessageBuilder.createMessage(new byte[0], accessor.getMessageHeaders());
 
-        when(authService.getUserIdFromToken("invalid-token")).thenThrow(new RuntimeException("Invalid token"));
+        when(authService.getUserIdFromAuthHeader("invalid-token")).thenThrow(new RuntimeException("Invalid token"));
 
         assertThrows(IllegalArgumentException.class, () -> interceptor.preSend(message, null));
     }

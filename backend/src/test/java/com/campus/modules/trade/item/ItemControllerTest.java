@@ -168,7 +168,7 @@ class ItemControllerTest {
             Item savedItem = createTestItem(1L, 1L, "iPhone 14 Pro", new BigDecimal("3999.00"));
             savedItem.setId(1L);
 
-            when(authService.getUserIdFromToken(anyString())).thenReturn(1L);
+            when(authService.getUserIdFromAuthHeader(anyString())).thenReturn(1L);
             when(itemService.save(any(Item.class))).thenReturn(true);
             when(itemService.getById(1L)).thenReturn(savedItem);
             when(userService.listByIds(any())).thenReturn(Collections.emptyList());
@@ -197,11 +197,10 @@ class ItemControllerTest {
 
             Item existingItem = createTestItem(1L, 1L, "原标题", new BigDecimal("3999.00"));
 
-            when(authService.getUserIdFromToken(anyString())).thenReturn(1L);
-            when(itemService.getById(1L)).thenReturn(existingItem);
+            when(authService.getUserIdFromAuthHeader(anyString())).thenReturn(1L);
             when(itemService.isAuthor(1L, 1L)).thenReturn(true);
-            when(itemService.updateById(any(Item.class))).thenReturn(true);
             when(itemService.getById(1L)).thenReturn(existingItem);
+            when(itemService.updateById(any(Item.class))).thenReturn(true);
             when(userService.listByIds(any())).thenReturn(Collections.emptyList());
 
             mockMvc.perform(put(BASE_URL + "/1")
@@ -213,12 +212,32 @@ class ItemControllerTest {
         }
 
         @Test
+        @DisplayName("更新物品失败 - 非作者无权操作")
+        void shouldFailUpdateWhenNotAuthor() throws Exception {
+            ItemController.ItemUpdateRequest request = new ItemController.ItemUpdateRequest();
+            request.setTitle("更新后的标题");
+
+            Item existingItem = createTestItem(1L, 1L, "原标题", new BigDecimal("3999.00"));
+
+            when(authService.getUserIdFromAuthHeader(anyString())).thenReturn(999L);
+            when(itemService.isAuthor(999L, 1L)).thenReturn(false);
+
+            mockMvc.perform(put(BASE_URL + "/1")
+                    .header("Authorization", "Bearer mock-token")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(objectMapper.writeValueAsString(request)))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.code").value(500))
+                    .andExpect(jsonPath("$.message").value("无权操作"));
+        }
+
+        @Test
         @DisplayName("更新物品失败 - 物品不存在")
         void shouldFailUpdateWhenItemNotFound() throws Exception {
             ItemController.ItemUpdateRequest request = new ItemController.ItemUpdateRequest();
             request.setTitle("更新后的标题");
 
-            when(authService.getUserIdFromToken(anyString())).thenReturn(1L);
+            when(authService.getUserIdFromAuthHeader(anyString())).thenReturn(1L);
             when(itemService.isAuthor(1L, 999L)).thenReturn(true);
             when(itemService.getById(999L)).thenReturn(null);
 
@@ -229,27 +248,6 @@ class ItemControllerTest {
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.code").value(500))
                     .andExpect(jsonPath("$.message").value("物品不存在"));
-        }
-
-        @Test
-        @DisplayName("更新物品失败 - 非作者无权操作")
-        void shouldFailUpdateWhenNotAuthor() throws Exception {
-            ItemController.ItemUpdateRequest request = new ItemController.ItemUpdateRequest();
-            request.setTitle("更新后的标题");
-
-            Item existingItem = createTestItem(1L, 1L, "原标题", new BigDecimal("3999.00"));
-
-            when(authService.getUserIdFromToken(anyString())).thenReturn(999L);
-            when(itemService.getById(1L)).thenReturn(existingItem);
-            when(itemService.isAuthor(1L, 999L)).thenReturn(false);
-
-            mockMvc.perform(put(BASE_URL + "/1")
-                    .header("Authorization", "Bearer mock-token")
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .content(objectMapper.writeValueAsString(request)))
-                    .andExpect(status().isOk())
-                    .andExpect(jsonPath("$.code").value(500))
-                    .andExpect(jsonPath("$.message").value("无权操作"));
         }
     }
 
@@ -262,9 +260,9 @@ class ItemControllerTest {
         void shouldDeleteItemSuccessfully() throws Exception {
             Item existingItem = createTestItem(1L, 1L, "测试物品", new BigDecimal("99.99"));
 
-            when(authService.getUserIdFromToken(anyString())).thenReturn(1L);
-            when(itemService.getById(1L)).thenReturn(existingItem);
+            when(authService.getUserIdFromAuthHeader(anyString())).thenReturn(1L);
             when(itemService.isAuthor(1L, 1L)).thenReturn(true);
+            when(itemService.getById(1L)).thenReturn(existingItem);
             when(itemService.removeById(1L)).thenReturn(true);
 
             mockMvc.perform(delete(BASE_URL + "/1")
@@ -275,9 +273,22 @@ class ItemControllerTest {
         }
 
         @Test
+        @DisplayName("删除物品失败 - 非作者无权操作")
+        void shouldFailDeleteWhenNotAuthor() throws Exception {
+            when(authService.getUserIdFromAuthHeader(anyString())).thenReturn(999L);
+            when(itemService.isAuthor(999L, 1L)).thenReturn(false);
+
+            mockMvc.perform(delete(BASE_URL + "/1")
+                    .header("Authorization", "Bearer mock-token"))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.code").value(500))
+                    .andExpect(jsonPath("$.message").value("无权操作"));
+        }
+
+        @Test
         @DisplayName("删除物品失败 - 物品不存在")
         void shouldFailDeleteWhenItemNotFound() throws Exception {
-            when(authService.getUserIdFromToken(anyString())).thenReturn(1L);
+            when(authService.getUserIdFromAuthHeader(anyString())).thenReturn(1L);
             when(itemService.isAuthor(1L, 999L)).thenReturn(true);
             when(itemService.getById(999L)).thenReturn(null);
 
@@ -286,22 +297,6 @@ class ItemControllerTest {
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.code").value(500))
                     .andExpect(jsonPath("$.message").value("物品不存在"));
-        }
-
-        @Test
-        @DisplayName("删除物品失败 - 非作者无权操作")
-        void shouldFailDeleteWhenNotAuthor() throws Exception {
-            Item existingItem = createTestItem(1L, 1L, "测试物品", new BigDecimal("99.99"));
-
-            when(authService.getUserIdFromToken(anyString())).thenReturn(999L);
-            when(itemService.getById(1L)).thenReturn(existingItem);
-            when(itemService.isAuthor(1L, 999L)).thenReturn(false);
-
-            mockMvc.perform(delete(BASE_URL + "/1")
-                    .header("Authorization", "Bearer mock-token"))
-                    .andExpect(status().isOk())
-                    .andExpect(jsonPath("$.code").value(500))
-                    .andExpect(jsonPath("$.message").value("无权操作"));
         }
     }
 
