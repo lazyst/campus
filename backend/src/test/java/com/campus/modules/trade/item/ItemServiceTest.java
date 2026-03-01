@@ -268,23 +268,21 @@ class ItemServiceTest {
         @Test
         @DisplayName("增加联系次数成功")
         void shouldIncrementContactCountSuccessfully() {
-            when(itemMapper.selectById(1L)).thenReturn(testItem);
-            when(itemMapper.updateById(any(Item.class))).thenReturn(1);
+            when(itemMapper.incrementContactCount(1L)).thenReturn(1);
 
             itemService.incrementContactCount(1L);
 
-            assertEquals(6, testItem.getContactCount());
-            verify(itemMapper).updateById(testItem);
+            verify(itemMapper).incrementContactCount(1L);
         }
 
         @Test
         @DisplayName("物品不存在时不执行操作")
         void shouldDoNothingWhenItemNotFound() {
-            when(itemMapper.selectById(999L)).thenReturn(null);
+            when(itemMapper.incrementContactCount(999L)).thenReturn(0);
 
             itemService.incrementContactCount(999L);
 
-            verify(itemMapper, never()).updateById(any(Item.class));
+            verify(itemMapper).incrementContactCount(999L);
         }
     }
 

@@ -159,7 +159,7 @@ class ChatServiceTest {
         @DisplayName("获取会话列表成功")
         void shouldGetConversationsSuccessfully() {
             when(conversationMapper.selectList(any(LambdaQueryWrapper.class))).thenReturn(List.of(testConversation));
-            when(userService.getById(2L)).thenReturn(testUser2);
+            when(userService.listByIds(any())).thenReturn(List.of(testUser2));
             when(messageMapper.selectOne(any(LambdaQueryWrapper.class))).thenReturn(testMessage);
 
             List<Conversation> result = chatService.getConversations(1L);
@@ -169,7 +169,7 @@ class ChatServiceTest {
             assertEquals("用户2", result.get(0).getOtherUserNickname());
             assertEquals(2, result.get(0).getOtherUserId());
             verify(conversationMapper).selectList(any(LambdaQueryWrapper.class));
-            verify(userService).getById(2L);
+            verify(userService).listByIds(any());
         }
 
         @Test
@@ -187,7 +187,7 @@ class ChatServiceTest {
         @DisplayName("获取会话列表 - 用户不存在时")
         void shouldReturnConversationsWhenOtherUserNotExists() {
             when(conversationMapper.selectList(any(LambdaQueryWrapper.class))).thenReturn(List.of(testConversation));
-            when(userService.getById(2L)).thenReturn(null);
+            when(userService.listByIds(any())).thenReturn(Collections.emptyList());
             when(messageMapper.selectOne(any(LambdaQueryWrapper.class))).thenReturn(testMessage);
 
             List<Conversation> result = chatService.getConversations(1L);
@@ -208,7 +208,7 @@ class ChatServiceTest {
             Page<Message> page = new Page<>(1, 10);
             page.setRecords(List.of(testMessage));
             when(messageMapper.selectPage(any(Page.class), any(LambdaQueryWrapper.class))).thenReturn(page);
-            when(userService.getById(1L)).thenReturn(testUser1);
+            when(userService.listByIds(any())).thenReturn(List.of(testUser1));
 
             List<Message> result = chatService.getMessages(1L, 1, 10);
 
@@ -398,52 +398,31 @@ class ChatServiceTest {
         @Test
         @DisplayName("获取用户总未读数成功")
         void shouldGetTotalUnreadCountSuccessfully() {
-            Conversation conv1 = new Conversation();
-            conv1.setId(1L);
-            conv1.setUserId1(1L);
-            conv1.setUserId2(2L);
-            conv1.setUnreadCount1(3);
-            conv1.setUnreadCount2(0);
-
-            Conversation conv2 = new Conversation();
-            conv2.setId(2L);
-            conv2.setUserId1(1L);
-            conv2.setUserId2(3L);
-            conv2.setUnreadCount1(5);
-            conv2.setUnreadCount2(0);
-
-            when(conversationMapper.selectList(any(LambdaQueryWrapper.class)))
-                    .thenReturn(Arrays.asList(conv1, conv2));
+            when(conversationMapper.sumUnreadCount(1L)).thenReturn(8);
 
             Integer result = chatService.getTotalUnreadCount(1L);
 
             assertNotNull(result);
             assertEquals(8, result);
+            verify(conversationMapper).sumUnreadCount(1L);
         }
 
         @Test
         @DisplayName("获取用户2的总未读数成功")
         void shouldGetTotalUnreadCountForUser2() {
-            Conversation conv1 = new Conversation();
-            conv1.setId(1L);
-            conv1.setUserId1(1L);
-            conv1.setUserId2(2L);
-            conv1.setUnreadCount1(0);
-            conv1.setUnreadCount2(4);
-
-            when(conversationMapper.selectList(any(LambdaQueryWrapper.class)))
-                    .thenReturn(Arrays.asList(conv1));
+            when(conversationMapper.sumUnreadCount(2L)).thenReturn(4);
 
             Integer result = chatService.getTotalUnreadCount(2L);
 
             assertNotNull(result);
             assertEquals(4, result);
+            verify(conversationMapper).sumUnreadCount(2L);
         }
 
         @Test
         @DisplayName("没有会话时返回0")
         void shouldReturnZeroWhenNoConversations() {
-            when(conversationMapper.selectList(any(LambdaQueryWrapper.class))).thenReturn(Collections.emptyList());
+            when(conversationMapper.sumUnreadCount(1L)).thenReturn(0);
 
             Integer result = chatService.getTotalUnreadCount(1L);
 
@@ -454,14 +433,7 @@ class ChatServiceTest {
         @Test
         @DisplayName("未读数为null时正确处理")
         void shouldHandleNullUnreadCount() {
-            Conversation conv = new Conversation();
-            conv.setId(1L);
-            conv.setUserId1(1L);
-            conv.setUserId2(2L);
-            // 不设置unreadCount1和unreadCount2，即为null
-
-            when(conversationMapper.selectList(any(LambdaQueryWrapper.class)))
-                    .thenReturn(Arrays.asList(conv));
+            when(conversationMapper.sumUnreadCount(1L)).thenReturn(0);
 
             Integer result = chatService.getTotalUnreadCount(1L);
 
