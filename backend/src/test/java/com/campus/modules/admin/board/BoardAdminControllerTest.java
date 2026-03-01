@@ -64,6 +64,7 @@ class BoardAdminControllerTest {
         
         when(adminService.getAdminIdFromToken(anyString())).thenReturn(1L);
         when(adminService.isSuperAdmin(anyLong())).thenReturn(true);
+        when(jwtConfig.extractToken(anyString())).thenReturn("valid.token.here");
         when(jwtConfig.getUsernameFromToken(anyString())).thenReturn("1");
         when(jwtConfig.getRoleFromToken(anyString())).thenReturn(1);
     }
