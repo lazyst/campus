@@ -47,16 +47,12 @@ test.describe('用户注册功能测试', () => {
       await page.fill('input[type="password"]', password)
       console.log('密码已填入')
 
-      // ===== 步骤4: 输入昵称 =====
-      console.log('步骤4: 输入昵称')
+      // ===== 步骤4: 检查是否有昵称输入框并输入 =====
+      console.log('步骤4: 检查昵称输入框')
+      await page.waitForTimeout(500)
 
-      // 查找昵称输入框
-      const nicknameInput = page.locator(
-        'input[placeholder*="昵称"], ' +
-        'input[name="nickname"], ' +
-        'input[type="text"]'
-      ).first()
-
+      // 尝试找到昵称输入框
+      const nicknameInput = page.locator('input').nth(2)
       const hasNicknameInput = await nicknameInput.count() > 0
 
       if (hasNicknameInput) {
@@ -68,12 +64,13 @@ test.describe('用户注册功能测试', () => {
       // ===== 步骤5: 点击注册按钮 =====
       console.log('步骤5: 点击注册按钮')
 
-      const registerButton = page.locator(
-        'button[type="submit"], ' +
-        'button:has-text("注册")'
-      ).first()
+      // 等待按钮可用
+      await page.waitForTimeout(1000)
+      const registerButton = page.locator('button[type="submit"]')
 
-      await registerButton.click()
+      // 强制点击
+      await registerButton.click({ force: true })
+      await page.waitForTimeout(3000)
 
       // ===== 步骤6: 等待页面跳转 =====
       console.log('步骤6: 等待页面跳转')

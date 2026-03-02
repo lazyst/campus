@@ -22,32 +22,31 @@ test.describe('查看我的帖子功能测试', () => {
     console.log('开始测试: 查看我的帖子')
 
     try {
-      // ===== 步骤1: 登录系统 =====
-      console.log('步骤1: 登录系统')
-      await page.goto(`${BASE_URL}/login`)
-      await page.waitForSelector('input[type="tel"]', { timeout: 10000 })
-      await page.fill('input[type="tel"]', testUser.phone)
-      await page.fill('input[type="password"]', testUser.password)
-      await page.click('button[type="submit"]')
-      await page.waitForURL('**/', { timeout: 15000 })
-      console.log('登录成功，进入首页')
+      // ===== 步骤1: 登录并保存token =====
+      console.log('步骤1: 登录并保存token')
+      const loginResponse = await fetch('http://localhost:8080/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ phone: testUser.phone, password: testUser.password })
+      })
+      const loginData = await loginResponse.json()
 
-      // ===== 步骤2: 直接访问我的发布页面 =====
-      console.log('步骤2: 直接访问我的发布页面')
+      if (!loginData.token) {
+        throw new Error('登录失败')
+      }
+
+      // 保存token到localStorage
+      await page.goto(BASE_URL)
+      await page.evaluate((token) => {
+        localStorage.setItem('token', token)
+        localStorage.setItem('userInfo', JSON.stringify({ phone: testUser.phone }))
+      }, loginData.token)
+      console.log('登录成功，token已保存')
+
+      // ===== 步骤2: 访问我的发布页面 =====
+      console.log('步骤2: 访问我的发布页面')
       await page.goto(`${BASE_URL}/profile/posts`, { waitUntil: 'networkidle' })
       await page.waitForTimeout(2000)
-
-      // 如果被重定向到登录页，先登录
-      if (page.url().includes('/login')) {
-        console.log('需要登录，先进行登录')
-        await page.fill('input[type="tel"]', testUser.phone)
-        await page.fill('input[type="password"]', testUser.password)
-        await page.click('button[type="submit"]')
-        await page.waitForURL('**/', { timeout: 15000 })
-        // 登录后再次访问
-        await page.goto(`${BASE_URL}/profile/posts`, { waitUntil: 'networkidle' })
-        await page.waitForTimeout(2000)
-      }
 
       // ===== 步骤3: 点击"我的发布" =====
       console.log('步骤3: 点击"我的发布"')
