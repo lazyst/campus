@@ -162,6 +162,9 @@ interface CollectedItem {
   type: number
   images: string | null
   image?: string
+  userId?: number
+  userNickname?: string
+  userAvatar?: string
 }
 
 const props = defineProps<Props>()
@@ -231,8 +234,8 @@ async function sendMessage(content?: string, type: number = 1, itemId?: number) 
         itemPrice: selectedItem?.price,
         itemImage: selectedItem?.image,
         itemType: selectedItem?.type,
-        itemUserNickname: userStore.userInfo?.nickname,
-        itemUserAvatar: userStore.userInfo?.avatar,
+        itemUserNickname: selectedItem?.userNickname,
+        itemUserAvatar: selectedItem?.userAvatar,
         senderId: currentUserId,
         receiverId: props.userId,
         createdAt: new Date().toISOString()

@@ -78,7 +78,7 @@ public class ChatServiceImpl extends ServiceImpl<MessageMapper, Message>
                 message.setItemImage(item.getImages());
                 message.setItemType(item.getType());
                 
-                // 查询商品所有者信息
+                // 查询商品原始所有者信息（不是发送消息的用户）
                 User itemOwner = userService.getById(item.getUserId());
                 if (itemOwner != null) {
                     message.setItemUserNickname(itemOwner.getNickname());
