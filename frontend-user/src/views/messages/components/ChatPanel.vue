@@ -129,8 +129,20 @@
                 </span>
               </div>
               <div class="item-selector-item-content">
+                <!-- 用户信息 -->
+                <div class="item-selector-item-user" v-if="item.userNickname">
+                  <div class="item-selector-item-user-avatar">
+                    <span>{{ (item.userNickname || '匿名').charAt(0) }}</span>
+                  </div>
+                  <span class="item-selector-item-user-name">{{ item.userNickname }}</span>
+                </div>
+                <!-- 商品标题 -->
                 <h4 class="item-selector-item-title">{{ item.title }}</h4>
-                <span class="item-selector-item-price">¥{{ item.price }}</span>
+                <!-- 价格和时间 -->
+                <div class="item-selector-item-footer">
+                  <span class="item-selector-item-price">¥{{ item.price }}</span>
+                  <span class="item-selector-item-time">{{ formatTime(item.createdAt || item.updatedAt) }}</span>
+                </div>
               </div>
             </div>
           </div>
@@ -165,6 +177,8 @@ interface CollectedItem {
   userId?: number
   userNickname?: string
   userAvatar?: string
+  createdAt?: string
+  updatedAt?: string
 }
 
 const props = defineProps<Props>()
@@ -874,11 +888,39 @@ onUnmounted(() => {
   padding: 10px;
 }
 
+/* 商品选择器 - 用户信息 */
+.item-selector-item-user {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 6px;
+}
+
+.item-selector-item-user-avatar {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #6366f1, #4f46e5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  font-weight: 600;
+  color: white;
+  flex-shrink: 0;
+}
+
+.item-selector-item-user-name {
+  font-size: 11px;
+  color: #6b7280;
+  font-weight: 500;
+}
+
 .item-selector-item-title {
   font-size: 13px;
   font-weight: 500;
   color: #1f2937;
-  margin: 0 0 6px 0;
+  margin: 0 0 8px 0;
   display: -webkit-box;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
@@ -886,10 +928,23 @@ onUnmounted(() => {
   line-height: 1.3;
 }
 
+.item-selector-item-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-top: 8px;
+  border-top: 1px solid #f3f4f6;
+}
+
 .item-selector-item-price {
   font-size: 16px;
   font-weight: 700;
   color: #ef4444;
+}
+
+.item-selector-item-time {
+  font-size: 11px;
+  color: #9ca3af;
 }
 
 @media (min-width: 768px) {
