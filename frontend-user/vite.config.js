@@ -42,11 +42,14 @@ export default defineConfig({
     proxy: {
       '/api': {
         target: 'http://localhost:8080',
-        changeOrigin: true
+        changeOrigin: true,
+        secure: false,
+        ws: false
       },
       '/uploads': {
         target: 'http://localhost:8080',
-        changeOrigin: true
+        changeOrigin: true,
+        secure: false
       },
       '/ws': {
         target: 'ws://localhost:8080',
