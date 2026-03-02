@@ -3,19 +3,27 @@ package com.campus.config;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import org.springframework.cache.CacheManager;
+import org.springframework.cache.annotation.EnableCaching;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.data.redis.cache.RedisCacheConfiguration;
+import org.springframework.data.redis.cache.RedisCacheManager;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.listener.RedisMessageListenerContainer;
 import org.springframework.data.redis.serializer.GenericJackson2JsonRedisSerializer;
+import org.springframework.data.redis.serializer.RedisSerializationContext;
 import org.springframework.data.redis.serializer.StringRedisSerializer;
+
+import java.time.Duration;
 
 /**
  * Redis 配置类
  * 配置 RedisTemplate 和 Pub/Sub 监听容器
  */
 @Configuration
+@EnableCaching
 public class RedisConfig {
 
     /**
@@ -69,5 +77,37 @@ public class RedisConfig {
         RedisMessageListenerContainer container = new RedisMessageListenerContainer();
         container.setConnectionFactory(connectionFactory);
         return container;
+    }
+
+    /**
+     * 配置缓存管理器
+     * boards: 5分钟
+     * posts: 1分钟
+     * items: 1分钟
+     */
+    @Bean
+    public CacheManager cacheManager(RedisConnectionFactory connectionFactory) {
+        ObjectMapper objectMapper = new ObjectMapper();
+        objectMapper.registerModule(new JavaTimeModule());
+        objectMapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
+        GenericJackson2JsonRedisSerializer jsonSerializer = new GenericJackson2JsonRedisSerializer(objectMapper);
+
+        RedisCacheConfiguration defaultConfig = RedisCacheConfiguration.defaultCacheConfig()
+                .serializeKeysWith(RedisSerializationContext.SerializationPair.fromSerializer(new StringRedisSerializer()))
+                .serializeValuesWith(RedisSerializationContext.SerializationPair.fromSerializer(jsonSerializer))
+                .disableCachingNullValues();
+
+        // 不同缓存配置不同过期时间
+        RedisCacheConfiguration boardsConfig = defaultConfig.entryTtl(Duration.ofMinutes(5));
+        RedisCacheConfiguration postsConfig = defaultConfig.entryTtl(Duration.ofMinutes(1));
+        RedisCacheConfiguration itemsConfig = defaultConfig.entryTtl(Duration.ofMinutes(1));
+
+        return RedisCacheManager.builder(connectionFactory)
+                .cacheDefaults(defaultConfig.entryTtl(Duration.ofMinutes(1)))
+                .withCacheConfiguration("boards", boardsConfig)
+                .withCacheConfiguration("posts", postsConfig)
+                .withCacheConfiguration("items", itemsConfig)
+                .transactionAware()
+                .build();
     }
 }

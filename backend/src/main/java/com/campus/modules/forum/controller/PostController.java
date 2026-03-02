@@ -14,6 +14,8 @@ import com.campus.modules.user.service.UserService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Collections;
@@ -44,6 +46,7 @@ public class PostController {
 
     @Operation(summary = "分页获取帖子列表")
     @GetMapping
+    @Cacheable(value = "posts", key = "'page:' + #boardId + ':' + #page + ':' + #size", cacheManager = "cacheManager")
     public Result<Page<Post>> pagePosts(
             @RequestParam(required = false) Long boardId,
             @RequestParam(defaultValue = "1") Integer page,
@@ -79,6 +82,7 @@ public class PostController {
 
     @Operation(summary = "创建帖子")
     @PostMapping
+    @CacheEvict(value = "posts", allEntries = true)
     public Result<Post> createPost(
             @RequestHeader("Authorization") String authHeader,
             @Valid @RequestBody PostCreateRequest request) {
@@ -111,6 +115,7 @@ public class PostController {
 
     @Operation(summary = "更新帖子")
     @PutMapping("/{id}")
+    @CacheEvict(value = "posts", allEntries = true)
     public Result<Post> updatePost(
             @RequestHeader("Authorization") String authHeader,
             @PathVariable Long id,
@@ -146,6 +151,7 @@ public class PostController {
 
     @Operation(summary = "删除帖子")
     @DeleteMapping("/{id}")
+    @CacheEvict(value = "posts", allEntries = true)
     public Result<Void> deletePost(
             @RequestHeader("Authorization") String authHeader,
             @PathVariable Long id) {

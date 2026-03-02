@@ -13,7 +13,12 @@ import java.math.BigDecimal;
  */
 @Getter
 @Setter
-@TableName("item")
+@TableName("item", indexes = {
+    @TableIndex(name = "idx_item_status", value = {"status"}),
+    @TableIndex(name = "idx_item_user", value = {"user_id"}),
+    @TableIndex(name = "idx_item_type", value = {"type"}),
+    @TableIndex(name = "idx_item_created", value = {"created_at"})
+})
 public class Item extends BaseEntity {
 
     /**

@@ -12,6 +12,8 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.*;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
@@ -44,6 +46,7 @@ public class ItemController {
 
     @Operation(summary = "发布物品")
     @PostMapping
+    @CacheEvict(value = "items", allEntries = true)
     public Result<Item> create(
             @RequestHeader("Authorization") String authHeader,
             @Valid @RequestBody ItemCreateRequest request) {
@@ -68,6 +71,7 @@ public class ItemController {
 
     @Operation(summary = "获取物品列表")
     @GetMapping
+    @Cacheable(value = "items", key = "'list:' + #type + ':' + #status + ':' + #sortBy + ':' + #page + ':' + #size", cacheManager = "cacheManager")
     public Result<Page<Item>> list(
             @RequestParam(defaultValue = "1") Integer page,
             @RequestParam(defaultValue = "10") Integer size,
@@ -203,6 +207,7 @@ public class ItemController {
 
     @Operation(summary = "更新物品")
     @PutMapping("/{itemId}")
+    @CacheEvict(value = "items", allEntries = true)
     public Result<Item> update(
             @RequestHeader("Authorization") String authHeader,
             @PathVariable Long itemId,
@@ -238,6 +243,7 @@ public class ItemController {
 
     @Operation(summary = "删除物品")
     @DeleteMapping("/{itemId}")
+    @CacheEvict(value = "items", allEntries = true)
     public Result<Void> delete(
             @RequestHeader("Authorization") String authHeader,
             @PathVariable Long itemId) {
@@ -263,6 +269,7 @@ public class ItemController {
 
     @Operation(summary = "上架物品")
     @PutMapping("/{itemId}/online")
+    @CacheEvict(value = "items", allEntries = true)
     public Result<Void> online(
             @RequestHeader("Authorization") String authHeader,
             @PathVariable Long itemId) {
@@ -284,6 +291,7 @@ public class ItemController {
 
     @Operation(summary = "下架物品")
     @PutMapping("/{itemId}/offline")
+    @CacheEvict(value = "items", allEntries = true)
     public Result<Void> offline(
             @RequestHeader("Authorization") String authHeader,
             @PathVariable Long itemId) {
@@ -305,6 +313,7 @@ public class ItemController {
 
     @Operation(summary = "标记为已完成")
     @PutMapping("/{itemId}/complete")
+    @CacheEvict(value = "items", allEntries = true)
     public Result<Void> complete(
             @RequestHeader("Authorization") String authHeader,
             @PathVariable Long itemId) {

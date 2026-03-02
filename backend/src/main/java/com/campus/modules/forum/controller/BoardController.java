@@ -10,6 +10,8 @@ import com.campus.modules.forum.service.BoardService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -30,6 +32,7 @@ public class BoardController {
 
     @Operation(summary = "获取所有启用板块列表")
     @GetMapping
+    @Cacheable(value = "boards", key = "'list'", cacheManager = "cacheManager")
     public Result<List<Board>> listBoards() {
         LambdaQueryWrapper<Board> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq(Board::getStatus, 1)
@@ -62,6 +65,7 @@ public class BoardController {
 
     @Operation(summary = "创建板块")
     @PostMapping
+    @CacheEvict(value = "boards", allEntries = true)
     public Result<Board> createBoard(@Valid @RequestBody BoardCreateRequest request) {
         // Check if name already exists
         if (boardService.existsByName(request.getName())) {
@@ -81,6 +85,7 @@ public class BoardController {
 
     @Operation(summary = "更新板块")
     @PutMapping("/{id}")
+    @CacheEvict(value = "boards", allEntries = true)
     public Result<Board> updateBoard(
             @PathVariable Long id,
             @Valid @RequestBody BoardUpdateRequest request) {
@@ -116,6 +121,7 @@ public class BoardController {
 
     @Operation(summary = "删除板块")
     @DeleteMapping("/{id}")
+    @CacheEvict(value = "boards", allEntries = true)
     public Result<Void> deleteBoard(@PathVariable Long id) {
         Board board = boardService.getById(id);
         if (board == null) {

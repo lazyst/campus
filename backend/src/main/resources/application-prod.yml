@@ -9,3 +9,10 @@ app:
   # 生产环境使用 Docker 卷挂载路径
   upload-path: /app/uploads
   default-avatar: /images/default-avatar.png
+
+# ==================== 日志配置 ====================
+logging:
+  level:
+    root: WARN
+    com.campus: WARN
+    com.baomidou.mybatisplus: WARN

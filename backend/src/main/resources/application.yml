@@ -1,6 +1,12 @@
 server:
   port: 8080
   address: 0.0.0.0  # 监听所有网卡
+  tomcat:
+    threads:
+      max: 200
+      min-spare: 20
+    accept-count: 100
+    max-connections: 10000
 
 spring:
   application:
@@ -22,9 +28,9 @@ spring:
           username: root
           password: ${DB_PASSWORD:123}
           druid:
-            initial-size: 5
-            min-idle: 5
-            max-active: 20
+            initial-size: 10
+            min-idle: 10
+            max-active: 50
             max-wait: 60000
             time-between-eviction-runs-millis: 60000
             min-evictable-idle-time-millis: 300000
@@ -33,7 +39,7 @@ spring:
             test-on-borrow: false
             test-on-return: false
             filters: stat,wall,slf4j
-            
+
         # 从库配置（读操作）
         slave:
           driver-class-name: com.mysql.cj.jdbc.Driver
@@ -41,9 +47,9 @@ spring:
           username: root
           password: ${DB_SLAVE_PASSWORD:123}
           druid:
-            initial-size: 5
-            min-idle: 5
-            max-active: 20
+            initial-size: 10
+            min-idle: 10
+            max-active: 50
             max-wait: 60000
             time-between-eviction-runs-millis: 60000
             min-evictable-idle-time-millis: 300000
@@ -81,10 +87,10 @@ spring:
       timeout: 10000ms
       lettuce:
         pool:
-          max-active: 20
+          max-active: 50
           max-wait: -1ms
-          max-idle: 10
-          min-idle: 0
+          max-idle: 20
+          min-idle: 5
 
 # MyBatis-Plus配置
 mybatis-plus:
@@ -134,8 +140,8 @@ springdoc:
 logging:
   level:
     root: INFO
-    com.campus: DEBUG
-    com.baomidou.mybatisplus: DEBUG
+    com.campus: INFO
+    com.baomidou.mybatisplus: INFO
   pattern:
     console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
 
