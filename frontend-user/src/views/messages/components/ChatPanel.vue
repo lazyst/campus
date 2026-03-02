@@ -2,8 +2,10 @@
   <div class="chat-panel">
     <!-- 聊天头部 -->
     <div class="chat-panel-header">
-      <span class="chat-panel-title">{{ userNickname }}</span>
-      <button class="chat-panel-close" @click="$emit('close')">×</button>
+      <span class="chat-panel-title">
+        <span class="chat-panel-back" @click="$emit('close')">‹</span>
+        {{ userNickname }}
+      </span>
     </div>
 
     <!-- 消息列表 -->
@@ -70,7 +72,7 @@ interface Props {
 }
 
 const props = defineProps<Props>()
-const emit = defineEmits(['close', 'message-sent'])
+const emit = defineEmits(['close', 'message-sent', 'message-updated'])
 
 const userStore = useUserStore()
 const currentUserId = userStore.userInfo?.id
@@ -132,6 +134,7 @@ async function sendMessage() {
     inputMessage.value = ''
     scrollToBottom()
     emit('message-sent')
+    emit('message-updated')
   } catch (error) {
     console.error('发送消息失败:', error)
   } finally {
@@ -162,6 +165,7 @@ function setupWebSocket() {
         createdAt: data.createdAt || new Date().toISOString()
       })
       scrollToBottom()
+      emit('message-updated')
     }
   })
 }
@@ -201,15 +205,34 @@ onUnmounted(() => {
 .chat-panel-header {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: center;
   padding: 16px 20px;
   border-bottom: 1px solid #e5e7eb;
+  position: relative;
 }
 
 .chat-panel-title {
+  display: flex;
+  align-items: center;
+  justify-content: center;
   font-size: 16px;
   font-weight: 600;
   color: #1f2937;
+}
+
+.chat-panel-back {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 28px;
+  color: #1f2937;
+  cursor: pointer;
+  margin-right: 8px;
+  width: 32px;
+  height: 32px;
+  flex-shrink: 0;
+  position: absolute;
+  left: 20px;
 }
 
 .chat-panel-close {

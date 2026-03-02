@@ -181,6 +181,7 @@ import { useRouter, useRoute } from 'vue-router';
 import { getUserPublicInfo } from '@/api/modules/user';
 import { getPostsByUserId } from '@/api/modules/post';
 import { getItemsByUserId } from '@/api/modules/item';
+import { createConversation } from '@/api/modules/conversation';
 import NavBar from '@/components/navigation/NavBar.vue';
 import { useUserStore } from '@/stores/user';
 import { getImageUrl } from '@/utils/imageUrl';
@@ -219,7 +220,7 @@ const canSendMessage = computed(() => {
 });
 
 // 跳转到聊天页面
-function goToChat() {
+async function goToChat() {
   if (!userStore.token) {
     showToast('请先登录后再私信');
     router.push('/login');
@@ -228,6 +229,14 @@ function goToChat() {
   if (currentUserId.value === userId.value) {
     showToast('不能给自己发私信');
     return;
+  }
+
+  try {
+    // 先创建会话
+    await createConversation(userId.value);
+  } catch (error) {
+    // 创建会话失败不阻塞，继续跳转
+    console.error('创建会话失败:', error);
   }
 
   // 统一跳转到 /messages/{userId}，消息页面会根据屏幕尺寸自动适配PC/移动端布局

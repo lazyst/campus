@@ -90,6 +90,7 @@
               :user-nickname="selectedConversation.otherUserNickname"
               :user-avatar="selectedConversation.otherUserAvatar"
               @close="selectedConversation = null"
+              @message-updated="handleMessageUpdated"
             />
           </div>
         </div>
@@ -106,6 +107,7 @@
         :user-nickname="selectedConversation?.otherUserNickname || '用户' + chatUserId"
         :user-avatar="selectedConversation?.otherUserAvatar"
         @close="router.push('/messages')"
+        @message-updated="handleMessageUpdated"
       />
     </div>
     <!-- 没有聊天用户ID时显示消息列表 -->
@@ -176,6 +178,7 @@ import { ref, computed, onMounted, onUnmounted, watch, inject, Ref } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import { useUserStore } from '@/stores/user';
 import { getConversations, clearUnreadCount } from '@/api/modules/conversation';
+import { getUserPublicInfo } from '@/api/modules/user';
 import { showToast } from '@/services/toastService';
 import { getImageUrl } from '@/utils/imageUrl';
 import dayjs from 'dayjs';
@@ -287,6 +290,19 @@ async function loadConversations() {
   }
 }
 
+// 刷新会话列表（不带loading状态，用于实时更新）
+async function refreshConversations() {
+  try {
+    const data = await getConversations();
+    conversations.value = (data || []).map((conv: any) => {
+      conv.unreadCount = conv.unreadCount || 0;
+      return conv;
+    });
+  } catch (err: any) {
+    console.error('刷新会话列表失败:', err);
+  }
+}
+
 // 重试加载
 function retryLoad() {
   loadConversations();
@@ -367,8 +383,8 @@ onMounted(async () => {
       console.log('Messages 页面收到消息更新事件，刷新列表')
       // 先立即更新本地数据
       syncLocalUnreadCounts()
-      // 再异步刷新列表
-      loadConversations()
+      // 再异步刷新列表（不带loading）
+      refreshConversations()
     })
 
     // 保存取消监听函数
@@ -389,7 +405,7 @@ watch(chatUserId, (newId) => {
 });
 
 // 根据用户ID选择会话
-function selectConversationByUserId(userId: number) {
+async function selectConversationByUserId(userId: number) {
   const conversation = conversations.value.find(c => c.otherUserId === userId);
   if (conversation) {
     selectedConversation.value = conversation;
@@ -400,12 +416,22 @@ function selectConversationByUserId(userId: number) {
       console.error('清除未读数失败:', err)
     });
   } else {
-    // 如果没有会话记录，创建一个临时会话对象用于显示聊天面板
-    selectedConversation.value = {
-      otherUserId: userId,
-      otherUserNickname: '用户' + userId,
-      otherUserAvatar: null
-    };
+    // 如果没有会话记录，获取用户信息并创建临时会话对象
+    try {
+      const userInfo = await getUserPublicInfo(userId);
+      selectedConversation.value = {
+        otherUserId: userId,
+        otherUserNickname: userInfo?.nickname || '用户' + userId,
+        otherUserAvatar: userInfo?.avatar || null
+      };
+    } catch (error) {
+      // 如果获取失败，使用默认信息
+      selectedConversation.value = {
+        otherUserId: userId,
+        otherUserNickname: '用户' + userId,
+        otherUserAvatar: null
+      };
+    }
   }
 }
 
@@ -420,8 +446,8 @@ function handleStorageChange(e: StorageEvent) {
     console.log('收到 storage 事件，设置用户', userId, '的未读数为0');
     // 立即更新本地数据
     updateLocalUnreadCount(userId, 0);
-    // 刷新会话列表
-    loadConversations();
+    // 刷新会话列表（不带loading）
+    refreshConversations();
   }
   // 监听未读数增加事件
   if (e.key && e.key.startsWith('unread_increment_')) {
@@ -431,8 +457,8 @@ function handleStorageChange(e: StorageEvent) {
     console.log('收到 storage 事件，用户', userId, '的未读数增加为', newUnreadCount);
     // 立即更新本地数据
     updateLocalUnreadCount(userId, newUnreadCount);
-    // 刷新会话列表
-    loadConversations();
+    // 刷新会话列表（不带loading）
+    refreshConversations();
   }
 }
 
@@ -442,8 +468,8 @@ function handleUnreadCleared(e: CustomEvent) {
   console.log('收到 unread-cleared 事件，刷新消息列表', userId);
   // 立即更新本地数据
   updateLocalUnreadCount(userId, 0);
-  // 刷新会话列表
-  loadConversations();
+  // 刷新会话列表（不带loading）
+  refreshConversations();
 }
 
 // 立即更新本地会话的未读数
@@ -463,12 +489,17 @@ function syncLocalUnreadCounts() {
   console.log('syncLocalUnreadCounts 被调用，但已改用事件监听');
 }
 
+// 处理消息更新事件，刷新会话列表
+async function handleMessageUpdated() {
+  await refreshConversations();
+}
+
 // 监听页面可见性变化，当从聊天页面返回时刷新
 function handleVisibilityChange() {
   if (!document.hidden && isLoggedIn.value) {
-    // 页面重新可见时刷新会话列表和未读数
+    // 页面重新可见时刷新会话列表和未读数（不带loading）
     console.log('页面可见，刷新会话列表')
-    loadConversations()
+    refreshConversations()
   }
 }
 
