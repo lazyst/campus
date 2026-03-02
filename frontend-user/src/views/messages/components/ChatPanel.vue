@@ -55,9 +55,19 @@
             </span>
           </div>
           <div class="item-card-content">
+            <!-- 用户信息 -->
+            <div class="item-card-user" v-if="msg.itemUserNickname">
+              <div class="item-card-user-avatar">
+                <span>{{ (msg.itemUserNickname || '匿名').charAt(0) }}</span>
+              </div>
+              <span class="item-card-user-name">{{ msg.itemUserNickname }}</span>
+            </div>
+            <!-- 商品标题 -->
             <h3 class="item-card-title">{{ msg.itemTitle }}</h3>
+            <!-- 价格和时间 -->
             <div class="item-card-footer">
               <span class="item-card-price">¥{{ msg.itemPrice }}</span>
+              <span class="item-card-time">{{ formatTime(msg.createdAt) }}</span>
             </div>
           </div>
         </div>
@@ -211,15 +221,18 @@ async function sendMessage(content?: string, type: number = 1, itemId?: number) 
       sendStompMessage(props.userId, messageContent, type, itemId)
       
       // 添加到本地显示
+      const selectedItem = collectedItems.value.find(item => item.id === itemId)
       messages.value.push({
         id: Date.now(),
         content: messageContent,
         type: 3,
         itemId: itemId,
-        itemTitle: collectedItems.value.find(item => item.id === itemId)?.title,
-        itemPrice: collectedItems.value.find(item => item.id === itemId)?.price,
-        itemImage: collectedItems.value.find(item => item.id === itemId)?.image,
-        itemType: collectedItems.value.find(item => item.id === itemId)?.type,
+        itemTitle: selectedItem?.title,
+        itemPrice: selectedItem?.price,
+        itemImage: selectedItem?.image,
+        itemType: selectedItem?.type,
+        itemUserNickname: userStore.userInfo?.nickname,
+        itemUserAvatar: userStore.userInfo?.avatar,
         senderId: currentUserId,
         receiverId: props.userId,
         createdAt: new Date().toISOString()
@@ -282,6 +295,24 @@ function transformItem(item: any): CollectedItem {
   }
 }
 
+function formatTime(dateString: string): string {
+  if (!dateString) return ''
+  const date = new Date(dateString)
+  const now = new Date()
+  const diff = now.getTime() - date.getTime()
+
+  const minutes = Math.floor(diff / 60000)
+  const hours = Math.floor(diff / 3600000)
+  const days = Math.floor(diff / 86400000)
+
+  if (minutes < 1) return '刚刚'
+  if (minutes < 60) return `${minutes}分钟前`
+  if (hours < 24) return `${hours}小时前`
+  if (days < 7) return `${days}天前`
+
+  return date.toLocaleDateString('zh-CN', { month: 'short', day: 'numeric' })
+}
+
 function selectItem(item: CollectedItem) {
   sendMessage(item.title, 3, item.id)
   showItemSelector.value = false
@@ -314,11 +345,15 @@ function setupWebSocket() {
         createdAt: data.createdAt || new Date().toISOString()
       }
       
-      // 如果是商品卡片消息，需要加载商品信息
+      // 如果是商品卡片消息，填充商品信息
       if (data.type === 3 && data.itemId) {
         message.itemId = data.itemId
-        // 商品卡片消息的商品信息需要额外加载，这里先设置基础信息
-        // 实际项目中可以通过 API 获取完整商品信息
+        message.itemTitle = data.itemTitle
+        message.itemPrice = data.itemPrice
+        message.itemImage = data.itemImage
+        message.itemType = data.itemType
+        message.itemUserNickname = data.itemUserNickname
+        message.itemUserAvatar = data.itemUserAvatar
       }
       
       messages.value.push(message)
@@ -645,16 +680,52 @@ onUnmounted(() => {
   line-height: 1.4;
 }
 
+/* 商品卡片用户信息 */
+.item-card-user {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 6px;
+}
+
+.item-card-user-avatar {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #6366f1, #4f46e5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  font-weight: 600;
+  color: white;
+  flex-shrink: 0;
+}
+
+.item-card-user-name {
+  font-size: 11px;
+  color: #6b7280;
+  font-weight: 500;
+}
+
 .item-card-footer {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid #f3f4f6;
 }
 
 .item-card-price {
   font-size: 18px;
   font-weight: 700;
   color: #ef4444;
+}
+
+.item-card-time {
+  font-size: 11px;
+  color: #9ca3af;
 }
 
 /* 闲置商品选择器弹窗样式 */

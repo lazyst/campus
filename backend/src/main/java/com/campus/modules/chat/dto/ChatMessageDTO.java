@@ -64,4 +64,40 @@ public class ChatMessageDTO implements Serializable {
      * 创建时间
      */
     private LocalDateTime createdAt;
+
+    /**
+     * 商品标题（非数据库字段，消息类型为 3 时使用）
+     */
+    @TableField(exist = false)
+    private String itemTitle;
+
+    /**
+     * 商品价格（非数据库字段，消息类型为 3 时使用）
+     */
+    @TableField(exist = false)
+    private Double itemPrice;
+
+    /**
+     * 商品图片（非数据库字段，消息类型为 3 时使用）
+     */
+    @TableField(exist = false)
+    private String itemImage;
+
+    /**
+     * 商品类型（非数据库字段，消息类型为 3 时使用）
+     */
+    @TableField(exist = false)
+    private Integer itemType;
+
+    /**
+     * 商品所有者昵称（非数据库字段，消息类型为 3 时使用）
+     */
+    @TableField(exist = false)
+    private String itemUserNickname;
+
+    /**
+     * 商品所有者头像（非数据库字段，消息类型为 3 时使用）
+     */
+    @TableField(exist = false)
+    private String itemUserAvatar;
 }

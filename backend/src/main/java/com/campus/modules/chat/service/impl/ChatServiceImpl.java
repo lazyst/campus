@@ -11,6 +11,8 @@ import com.campus.modules.chat.mapper.ConversationMapper;
 import com.campus.modules.chat.mapper.MessageMapper;
 import com.campus.modules.chat.publisher.ChatMessagePublisher;
 import com.campus.modules.chat.service.ChatService;
+import com.campus.modules.trade.entity.Item;
+import com.campus.modules.trade.mapper.ItemMapper;
 import com.campus.modules.user.entity.User;
 import com.campus.modules.user.service.UserService;
 import lombok.extern.slf4j.Slf4j;
@@ -33,13 +35,16 @@ public class ChatServiceImpl extends ServiceImpl<MessageMapper, Message>
     private final ConversationMapper conversationMapper;
     private final UserService userService;
     private final ChatMessagePublisher chatMessagePublisher;
+    private final ItemMapper itemMapper;
 
     public ChatServiceImpl(ConversationMapper conversationMapper,
                           UserService userService,
-                          ChatMessagePublisher chatMessagePublisher) {
+                          ChatMessagePublisher chatMessagePublisher,
+                          ItemMapper itemMapper) {
         this.conversationMapper = conversationMapper;
         this.userService = userService;
         this.chatMessagePublisher = chatMessagePublisher;
+        this.itemMapper = itemMapper;
     }
 
     @Override
@@ -63,6 +68,24 @@ public class ChatServiceImpl extends ServiceImpl<MessageMapper, Message>
         message.setType(itemId != null ? 3 : 1);
         message.setItemId(itemId);
         message.setSendTime(LocalDateTime.now());
+
+        // 如果是商品卡片消息，填充商品信息
+        if (itemId != null) {
+            Item item = itemMapper.selectById(itemId);
+            if (item != null) {
+                message.setItemTitle(item.getTitle());
+                message.setItemPrice(item.getPrice());
+                message.setItemImage(item.getImages());
+                message.setItemType(item.getType());
+                
+                // 查询商品所有者信息
+                User itemOwner = userService.getById(item.getUserId());
+                if (itemOwner != null) {
+                    message.setItemUserNickname(itemOwner.getNickname());
+                    message.setItemUserAvatar(itemOwner.getAvatar());
+                }
+            }
+        }
 
         this.save(message);
 
@@ -92,6 +115,12 @@ public class ChatServiceImpl extends ServiceImpl<MessageMapper, Message>
                 .content(message.getContent())
                 .type(message.getType())
                 .itemId(message.getItemId())
+                .itemTitle(message.getItemTitle())
+                .itemPrice(message.getItemPrice())
+                .itemImage(message.getItemImage())
+                .itemType(message.getItemType())
+                .itemUserNickname(message.getItemUserNickname())
+                .itemUserAvatar(message.getItemUserAvatar())
                 .sendTime(message.getSendTime())
                 .createdAt(message.getCreatedAt())
                 .build();
@@ -230,7 +259,7 @@ public class ChatServiceImpl extends ServiceImpl<MessageMapper, Message>
 
         List<Message> messages = result.getRecords();
         if (!messages.isEmpty()) {
-            // 批量查询发送者信息，避免N+1问题
+            // 批量查询发送者信息，避免 N+1 问题
             Set<Long> senderIds = messages.stream()
                     .map(Message::getSenderId)
                     .collect(Collectors.toSet());
@@ -238,13 +267,44 @@ public class ChatServiceImpl extends ServiceImpl<MessageMapper, Message>
             Map<Long, User> userMap = userService.listByIds(senderIds).stream()
                     .collect(Collectors.toMap(User::getId, user -> user));
 
+            // 批量查询商品信息（只查询商品卡片消息）
+            Set<Long> itemIds = messages.stream()
+                    .filter(m -> m.getType() != null && m.getType() == 3 && m.getItemId() != null)
+                    .map(Message::getItemId)
+                    .collect(Collectors.toSet());
+
+            Map<Long, Item> itemMap = null;
+            if (!itemIds.isEmpty()) {
+                itemMap = itemMapper.selectBatchIds(itemIds).stream()
+                        .collect(Collectors.toMap(Item::getId, item -> item));
+            }
+
             for (Message message : messages) {
+                // 填充发送者信息
                 User sender = userMap.get(message.getSenderId());
                 if (sender != null) {
                     message.setSenderNickname(sender.getNickname());
                     message.setSenderAvatar(sender.getAvatar());
                 }
                 message.setSendTime(message.getCreatedAt());
+
+                // 填充商品信息（如果是商品卡片消息）
+                if (message.getType() != null && message.getType() == 3 && message.getItemId() != null) {
+                    Item item = itemMap != null ? itemMap.get(message.getItemId()) : null;
+                    if (item != null) {
+                        message.setItemTitle(item.getTitle());
+                        message.setItemPrice(item.getPrice());
+                        message.setItemImage(item.getImages());
+                        message.setItemType(item.getType());
+                        
+                        // 查询商品所有者信息
+                        User itemOwner = userMap.get(item.getUserId());
+                        if (itemOwner != null) {
+                            message.setItemUserNickname(itemOwner.getNickname());
+                            message.setItemUserAvatar(itemOwner.getAvatar());
+                        }
+                    }
+                }
             }
         }
 
