@@ -92,8 +92,8 @@ test.describe('评论帖子功能测试', () => {
         console.log(`评论输入框存在: ${hasCommentInput}`)
 
         if (hasCommentInput) {
-          const commentText = 'E2E测试 commentInput.fill(comment评论'
-          awaitText)
+          const commentText = 'E2E测试评论'
+          await commentInput.fill(commentText)
           console.log(`评论内容已填入: ${commentText}`)
 
           // ===== 步骤5: 点击发送按钮 =====

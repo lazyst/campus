@@ -32,17 +32,22 @@ test.describe('资料编辑功能测试', () => {
       await page.waitForURL('**/', { timeout: 15000 })
       console.log('登录成功，进入首页')
 
-      // ===== 步骤2: 进入个人中心 =====
-      console.log('步骤2: 进入个人中心')
-
-      const profileTab = page.locator(
-        '.van-tabbar-item:has-text("我的"), ' +
-        '.van-tabbar-item[data-name="profile"]'
-      ).first()
-
-      await profileTab.click()
+      // ===== 步骤2: 直接访问资料编辑页面 =====
+      console.log('步骤2: 直接访问资料编辑页面')
+      await page.goto(`${BASE_URL}/profile/edit`, { waitUntil: 'networkidle' })
       await page.waitForTimeout(2000)
-      console.log('已点击个人中心')
+
+      // 如果被重定向到登录页，先登录
+      if (page.url().includes('/login')) {
+        console.log('需要登录，先进行登录')
+        await page.fill('input[type="tel"]', testUser.phone)
+        await page.fill('input[type="password"]', testUser.password)
+        await page.click('button[type="submit"]')
+        await page.waitForURL('**/', { timeout: 15000 })
+        // 登录后再次访问
+        await page.goto(`${BASE_URL}/profile/edit`, { waitUntil: 'networkidle' })
+        await page.waitForTimeout(2000)
+      }
 
       // ===== 步骤3: 点击头像或编辑资料 =====
       console.log('步骤3: 点击头像或编辑资料')

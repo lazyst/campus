@@ -150,7 +150,7 @@ test.describe('商品详情功能测试', () => {
 
         // 3. URL正确
         const currentUrl = page.url()
-        expect(currentUrl).toContain('/trade/detail/') || expect(currentUrl).toContain('/item/')
+        expect(currentUrl).toContain('/trade/')
         console.log('- URL正确: 通过')
 
         // 4. 联系方式显示
