@@ -74,7 +74,7 @@ public class ChatServiceImpl extends ServiceImpl<MessageMapper, Message>
             Item item = itemMapper.selectById(itemId);
             if (item != null) {
                 message.setItemTitle(item.getTitle());
-                message.setItemPrice(item.getPrice());
+                message.setItemPrice(item.getPrice() != null ? item.getPrice().doubleValue() : null);
                 message.setItemImage(item.getImages());
                 message.setItemType(item.getType());
                 
@@ -264,9 +264,6 @@ public class ChatServiceImpl extends ServiceImpl<MessageMapper, Message>
                     .map(Message::getSenderId)
                     .collect(Collectors.toSet());
 
-            Map<Long, User> userMap = userService.listByIds(senderIds).stream()
-                    .collect(Collectors.toMap(User::getId, user -> user));
-
             // 批量查询商品信息（只查询商品卡片消息）
             Set<Long> itemIds = messages.stream()
                     .filter(m -> m.getType() != null && m.getType() == 3 && m.getItemId() != null)
@@ -274,10 +271,24 @@ public class ChatServiceImpl extends ServiceImpl<MessageMapper, Message>
                     .collect(Collectors.toSet());
 
             Map<Long, Item> itemMap = null;
+            Set<Long> itemOwnerIds = new java.util.HashSet<>();
             if (!itemIds.isEmpty()) {
                 itemMap = itemMapper.selectBatchIds(itemIds).stream()
                         .collect(Collectors.toMap(Item::getId, item -> item));
+                // 收集商品所有者 ID
+                itemMap.values().forEach(item -> {
+                    if (item.getUserId() != null) {
+                        itemOwnerIds.add(item.getUserId());
+                    }
+                });
             }
+
+            // 合并发送者 ID 和商品所有者 ID，统一查询
+            Set<Long> allUserIds = new java.util.HashSet<>(senderIds);
+            allUserIds.addAll(itemOwnerIds);
+
+            Map<Long, User> userMap = userService.listByIds(allUserIds).stream()
+                    .collect(Collectors.toMap(User::getId, user -> user));
 
             for (Message message : messages) {
                 // 填充发送者信息
