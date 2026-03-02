@@ -523,27 +523,20 @@ onUnmounted(() => {
   background: #4338ca;
 }
 
-.chat-panel-add-btn {
+.chat-panel-input button.chat-panel-add-btn {
   width: 40px;
-  height: 40px;
+  padding: 0;
   border: 1px solid #e5e7eb;
   background: #fff;
   color: #6b7280;
-  border-radius: 20px;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: all 0.2s;
-  padding: 0;
 }
 
-.chat-panel-add-btn svg {
+.chat-panel-input button.chat-panel-add-btn svg {
   width: 20px;
   height: 20px;
 }
 
-.chat-panel-add-btn:hover {
+.chat-panel-input button.chat-panel-add-btn:hover {
   background: #f9fafb;
   color: #4f46e5;
   border-color: #4f46e5;
@@ -551,7 +544,7 @@ onUnmounted(() => {
   box-shadow: 0 2px 8px rgba(79, 70, 229, 0.1);
 }
 
-.chat-panel-add-btn:active {
+.chat-panel-input button.chat-panel-add-btn:active {
   transform: translateY(0);
 }
 
