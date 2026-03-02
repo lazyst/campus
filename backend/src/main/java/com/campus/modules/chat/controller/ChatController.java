@@ -40,14 +40,14 @@ public class ChatController {
             ChatPrincipal chatPrincipal = (ChatPrincipal) principal;
             Long senderId = chatPrincipal.getUserId();
             String content = (String) message.get("content");
-            Integer type = (Integer) message.get("type");
+            Integer type = message.get("type") != null ? ((Number) message.get("type")).intValue() : 1;
             Long itemId = null;
-            
-            if (type != null && type == 3) {
+
+            if (type == 3) {
                 itemId = ((Number) message.get("itemId")).longValue();
             }
-            
-            chatService.saveMessage(senderId, receiverId, content, itemId);
+
+            chatService.saveMessage(senderId, receiverId, content, type, itemId);
         }
     }
 
@@ -112,7 +112,7 @@ public class ChatController {
             return Result.error("消息内容不能为空");
         }
 
-        return Result.success(chatService.saveMessage(currentUserId, userId, content, itemId));
+        return Result.success(chatService.saveMessage(currentUserId, userId, content, type, itemId));
     }
 
     /**

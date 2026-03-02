@@ -22,6 +22,12 @@ public interface ChatService extends IService<Message> {
     Message saveMessage(Long senderId, Long receiverId, String content, Long itemId);
 
     /**
+     * 保存聊天消息（支持消息类型）
+     * @param type 消息类型：1-文本，2-图片，3-商品卡片
+     */
+    Message saveMessage(Long senderId, Long receiverId, String content, Integer type, Long itemId);
+
+    /**
      * 获取会话列表
      */
     List<Conversation> getConversations(Long userId);
