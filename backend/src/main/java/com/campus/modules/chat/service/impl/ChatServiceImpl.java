@@ -293,7 +293,7 @@ public class ChatServiceImpl extends ServiceImpl<MessageMapper, Message>
                     Item item = itemMap != null ? itemMap.get(message.getItemId()) : null;
                     if (item != null) {
                         message.setItemTitle(item.getTitle());
-                        message.setItemPrice(item.getPrice());
+                        message.setItemPrice(item.getPrice() != null ? item.getPrice().doubleValue() : null);
                         message.setItemImage(item.getImages());
                         message.setItemType(item.getType());
                         
