@@ -602,7 +602,7 @@ onUnmounted(() => {
 
 /* 商品卡片消息样式 */
 .chat-panel-item-card {
-  width: 50vw;
+  width: 50%;
   background-color: var(--bg-card);
   border-radius: var(--radius-lg);
   overflow: hidden;
@@ -952,6 +952,10 @@ onUnmounted(() => {
 @media (min-width: 768px) {
   .item-selector-list {
     grid-template-columns: repeat(3, 1fr);
+  }
+
+  .chat-panel-back {
+    display: none;
   }
 }
 </style>
