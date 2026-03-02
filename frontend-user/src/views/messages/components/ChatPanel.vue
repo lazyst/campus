@@ -71,9 +71,8 @@
     <!-- 输入区域 -->
     <div class="chat-panel-input">
       <button class="chat-panel-add-btn" @click="showItemSelector = true" title="发送收藏的闲置">
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <line x1="12" y1="5" x2="12" y2="19"></line>
-          <line x1="5" y1="12" x2="19" y2="12"></line>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M12 5v14M5 12h14" stroke-linecap="round" stroke-linejoin="round"/>
         </svg>
       </button>
       <input
@@ -527,8 +526,8 @@ onUnmounted(() => {
 .chat-panel-add-btn {
   width: 40px;
   height: 40px;
-  border: none;
-  background: #f3f4f6;
+  border: 1px solid #e5e7eb;
+  background: #fff;
   color: #6b7280;
   border-radius: 20px;
   cursor: pointer;
@@ -536,11 +535,24 @@ onUnmounted(() => {
   align-items: center;
   justify-content: center;
   transition: all 0.2s;
+  padding: 0;
+}
+
+.chat-panel-add-btn svg {
+  width: 20px;
+  height: 20px;
 }
 
 .chat-panel-add-btn:hover {
-  background: #e5e7eb;
+  background: #f9fafb;
   color: #4f46e5;
+  border-color: #4f46e5;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(79, 70, 229, 0.1);
+}
+
+.chat-panel-add-btn:active {
+  transform: translateY(0);
 }
 
 /* 商品卡片消息样式 */
