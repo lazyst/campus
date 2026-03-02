@@ -85,6 +85,14 @@
           <path d="M12 5v14M5 12h14" stroke-linecap="round" stroke-linejoin="round"/>
         </svg>
       </button>
+      <input type="file" ref="imageInput" accept="image/*" style="display: none" @change="handleImageSelect" />
+      <button class="chat-panel-add-btn" @click="triggerImageUpload" title="发送图片">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
+          <circle cx="8.5" cy="8.5" r="1.5" />
+          <polyline points="21,15 16,10 5,21" />
+        </svg>
+      </button>
       <input
         v-model="inputMessage"
         type="text"
@@ -159,6 +167,7 @@ import { useUserStore } from '@/stores/user'
 import { getMessagesWithUser } from '@/api/modules/message'
 import { getCollectedItems } from '@/api/modules/itemCollect'
 import { getImageUrl } from '@/utils/imageUrl'
+import { uploadImage } from '@/api/modules/upload'
 import { onMessage, sendMessage as sendStompMessage, connect as connectWs, getIsConnected } from '@/services/websocket'
 
 interface Props {
@@ -191,6 +200,7 @@ const currentUserId = userStore.userInfo?.id
 const messages = ref<any[]>([])
 const inputMessage = ref('')
 const messagesContainer = ref<HTMLElement | null>(null)
+const imageInput = ref<HTMLInputElement | null>(null)
 const loading = ref(false)
 const isSending = ref(false)
 const showItemSelector = ref(false)
@@ -337,6 +347,47 @@ function selectItem(item: CollectedItem) {
 
 function goToItemDetail(itemId: number) {
   router.push(`/trade/${itemId}`)
+}
+
+function triggerImageUpload() {
+  imageInput.value?.click()
+}
+
+async function handleImageSelect(event: Event) {
+  const input = event.target as HTMLInputElement
+  const file = input.files?.[0]
+  if (!file || !props.userId) return
+
+  isSending.value = true
+
+  try {
+    const imageUrl = await uploadImage(file)
+
+    // 确保 WebSocket 已连接
+    if (!getIsConnected()) {
+      await connectWs(userStore.token)
+    }
+
+    // 发送图片消息 (type = 2)
+    sendStompMessage(props.userId, imageUrl, 2)
+
+    // 添加到本地显示
+    messages.value.push({
+      id: Date.now(),
+      content: imageUrl,
+      type: 2,
+      senderId: currentUserId,
+      receiverId: props.userId,
+      createdAt: new Date().toISOString()
+    })
+
+    scrollToBottom()
+  } catch (error) {
+    console.error('上传图片失败:', error)
+  } finally {
+    isSending.value = false
+    input.value = ''
+  }
 }
 
 function scrollToBottom() {
