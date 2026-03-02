@@ -35,6 +35,7 @@
           v-if="msg.type === 2"
           class="chat-panel-image"
           :class="{ sent: msg.senderId === currentUserId }"
+          @click="openImagePreview(messages.indexOf(msg))"
         >
           <img :src="getImageUrl(msg.content)" alt="图片" />
         </div>
@@ -157,6 +158,14 @@
         </div>
       </div>
     </div>
+
+    <!-- 图片预览组件 -->
+    <ImagePreview
+      v-model:visible="showImagePreview"
+      :images="[messages[previewImageIndex]?.content]"
+      :initial-index="0"
+      @close="showImagePreview = false"
+    />
   </div>
 </template>
 
@@ -168,6 +177,7 @@ import { getMessagesWithUser } from '@/api/modules/message'
 import { getCollectedItems } from '@/api/modules/itemCollect'
 import { getImageUrl } from '@/utils/imageUrl'
 import { uploadImage } from '@/api/modules/upload'
+import ImagePreview from '@/components/ImagePreview.vue'
 import { onMessage, sendMessage as sendStompMessage, connect as connectWs, getIsConnected } from '@/services/websocket'
 
 interface Props {
@@ -204,6 +214,8 @@ const imageInput = ref<HTMLInputElement | null>(null)
 const loading = ref(false)
 const isSending = ref(false)
 const showItemSelector = ref(false)
+const showImagePreview = ref(false)
+const previewImageIndex = ref(0)
 const collectedItems = ref<CollectedItem[]>([])
 const loadingItems = ref(false)
 
@@ -343,6 +355,11 @@ function formatTime(dateString: string): string {
 function selectItem(item: CollectedItem) {
   sendMessage(item.title, 3, item.id)
   showItemSelector.value = false
+}
+
+function openImagePreview(index: number) {
+  previewImageIndex.value = index
+  showImagePreview.value = true
 }
 
 function goToItemDetail(itemId: number) {
