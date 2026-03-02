@@ -46,6 +46,13 @@ public class ChatServiceImpl extends ServiceImpl<MessageMapper, Message>
     @Transactional(rollbackFor = Exception.class)
     @DS("master")
     public Message saveMessage(Long senderId, Long receiverId, String content) {
+        return saveMessage(senderId, receiverId, content, null);
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    @DS("master")
+    public Message saveMessage(Long senderId, Long receiverId, String content, Long itemId) {
         Conversation conversation = getOrCreateConversation(senderId, receiverId);
 
         Message message = new Message();
@@ -53,7 +60,8 @@ public class ChatServiceImpl extends ServiceImpl<MessageMapper, Message>
         message.setSenderId(senderId);
         message.setReceiverId(receiverId);
         message.setContent(content);
-        message.setType(1);
+        message.setType(itemId != null ? 3 : 1);
+        message.setItemId(itemId);
         message.setSendTime(LocalDateTime.now());
 
         this.save(message);
@@ -83,6 +91,7 @@ public class ChatServiceImpl extends ServiceImpl<MessageMapper, Message>
                 .conversationId(conversationId)
                 .content(message.getContent())
                 .type(message.getType())
+                .itemId(message.getItemId())
                 .sendTime(message.getSendTime())
                 .createdAt(message.getCreatedAt())
                 .build();

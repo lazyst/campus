@@ -224,15 +224,20 @@ export function disconnect() {
   connectionPromise = null
 }
 
-export function sendMessage(receiverId, content, type = 1) {
+export function sendMessage(receiverId, content, type = 1, itemId = null) {
   if (!stompClient || !isConnected.value) {
     throw new Error('WebSocket 未连接，请先调用 connect()')
+  }
+
+  const payload = { content, type }
+  if (type === 3 && itemId) {
+    payload.itemId = itemId
   }
 
   stompClient.send(
     `/app/chat.send/${receiverId}`,
     { Authorization: `Bearer ${localStorage.getItem('token')}` },
-    JSON.stringify({ content, type })
+    JSON.stringify(payload)
   )
 }
 

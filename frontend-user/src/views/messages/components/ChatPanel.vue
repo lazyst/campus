@@ -30,13 +30,38 @@
           <span v-else>{{ userNickname?.charAt(0) || '用' }}</span>
         </div>
 
+        <!-- 图片消息 -->
         <div
-          v-if="msg.messageType === 2"
+          v-if="msg.type === 2"
           class="chat-panel-image"
           :class="{ sent: msg.senderId === currentUserId }"
         >
           <img :src="getImageUrl(msg.content)" alt="图片" />
         </div>
+        <!-- 商品卡片消息 -->
+        <div
+          v-else-if="msg.type === 3"
+          class="chat-panel-item-card"
+          :class="{ sent: msg.senderId === currentUserId }"
+          @click="msg.itemId && goToItemDetail(msg.itemId)"
+        >
+          <div class="item-card-image">
+            <img v-if="msg.itemImage" :src="msg.itemImage" :alt="msg.itemTitle" />
+            <div v-else class="item-card-placeholder">
+              <span class="item-card-placeholder-text">物品介绍</span>
+            </div>
+            <span v-if="msg.itemType" class="item-card-type" :class="{ 'item-card-type--buy': msg.itemType === 1 }">
+              {{ msg.itemType === 1 ? '求购' : '出售' }}
+            </span>
+          </div>
+          <div class="item-card-content">
+            <h3 class="item-card-title">{{ msg.itemTitle }}</h3>
+            <div class="item-card-footer">
+              <span class="item-card-price">¥{{ msg.itemPrice }}</span>
+            </div>
+          </div>
+        </div>
+        <!-- 文本消息 -->
         <div v-else class="chat-panel-bubble" :class="{ sent: msg.senderId === currentUserId }">
           {{ msg.content }}
         </div>
@@ -45,6 +70,12 @@
 
     <!-- 输入区域 -->
     <div class="chat-panel-input">
+      <button class="chat-panel-add-btn" @click="showItemSelector = true" title="发送收藏的闲置">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <line x1="12" y1="5" x2="12" y2="19"></line>
+          <line x1="5" y1="12" x2="19" y2="12"></line>
+        </svg>
+      </button>
       <input
         v-model="inputMessage"
         type="text"
@@ -55,13 +86,57 @@
         {{ isSending ? '发送中' : '发送' }}
       </button>
     </div>
+
+    <!-- 闲置商品选择器弹窗 -->
+    <div v-if="showItemSelector" class="item-selector-overlay" @click="showItemSelector = false">
+      <div class="item-selector" @click.stop>
+        <div class="item-selector-header">
+          <h3>选择要发送的闲置商品</h3>
+          <button class="item-selector-close" @click="showItemSelector = false">×</button>
+        </div>
+        <div class="item-selector-content">
+          <div v-if="loadingItems" class="item-selector-loading">
+            <div class="loading-spinner"></div>
+            <span>加载中...</span>
+          </div>
+          <div v-else-if="collectedItems.length === 0" class="item-selector-empty">
+            <div class="empty-icon">🛍️</div>
+            <p>暂无收藏的闲置物品</p>
+          </div>
+          <div v-else class="item-selector-list">
+            <div
+              v-for="item in collectedItems"
+              :key="item.id"
+              class="item-selector-item"
+              @click="selectItem(item)"
+            >
+              <div class="item-selector-item-image">
+                <img v-if="item.image" :src="item.image" :alt="item.title" />
+                <div v-else class="item-card-placeholder">
+                  <span class="item-card-placeholder-text">物品介绍</span>
+                </div>
+                <span v-if="item.type" class="item-card-type" :class="{ 'item-card-type--buy': item.type === 1 }">
+                  {{ item.type === 1 ? '求购' : '出售' }}
+                </span>
+              </div>
+              <div class="item-selector-item-content">
+                <h4 class="item-selector-item-title">{{ item.title }}</h4>
+                <span class="item-selector-item-price">¥{{ item.price }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted, nextTick, watch } from 'vue'
+import { useRouter } from 'vue-router'
 import { useUserStore } from '@/stores/user'
 import { getMessagesWithUser } from '@/api/modules/message'
+import { getCollectedItems } from '@/api/modules/itemCollect'
 import { getImageUrl } from '@/utils/imageUrl'
 import { onMessage, sendMessage as sendStompMessage, connect as connectWs, getIsConnected } from '@/services/websocket'
 
@@ -71,9 +146,19 @@ interface Props {
   userAvatar?: string
 }
 
+interface CollectedItem {
+  id: number
+  title: string
+  price: number
+  type: number
+  images: string | null
+  image?: string
+}
+
 const props = defineProps<Props>()
 const emit = defineEmits(['close', 'message-sent', 'message-updated'])
 
+const router = useRouter()
 const userStore = useUserStore()
 const currentUserId = userStore.userInfo?.id
 
@@ -82,6 +167,9 @@ const inputMessage = ref('')
 const messagesContainer = ref<HTMLElement | null>(null)
 const loading = ref(false)
 const isSending = ref(false)
+const showItemSelector = ref(false)
+const collectedItems = ref<CollectedItem[]>([])
+const loadingItems = ref(false)
 
 let unsubscribeMessage: (() => void) | null = null
 
@@ -100,11 +188,11 @@ async function loadMessages() {
   }
 }
 
-async function sendMessage() {
-  if (!inputMessage.value.trim() || !props.userId || isSending.value) return
+async function sendMessage(content?: string, type: number = 1, itemId?: number) {
+  const messageContent = content || inputMessage.value.trim()
+  if (!messageContent || !props.userId || isSending.value) return
 
   isSending.value = true
-  const content = inputMessage.value.trim()
 
   // 确保 WebSocket 已连接
   if (!getIsConnected()) {
@@ -119,19 +207,41 @@ async function sendMessage() {
 
   try {
     // 使用 WebSocket 发送消息
-    sendStompMessage(props.userId, content, 1)
+    if (type === 3 && itemId) {
+      // 发送商品卡片消息
+      sendStompMessage(props.userId, messageContent, type, itemId)
+      
+      // 添加到本地显示
+      messages.value.push({
+        id: Date.now(),
+        content: messageContent,
+        type: 3,
+        itemId: itemId,
+        itemTitle: collectedItems.value.find(item => item.id === itemId)?.title,
+        itemPrice: collectedItems.value.find(item => item.id === itemId)?.price,
+        itemImage: collectedItems.value.find(item => item.id === itemId)?.image,
+        itemType: collectedItems.value.find(item => item.id === itemId)?.type,
+        senderId: currentUserId,
+        receiverId: props.userId,
+        createdAt: new Date().toISOString()
+      })
+    } else {
+      // 发送文本消息
+      sendStompMessage(props.userId, messageContent, 1)
+      
+      messages.value.push({
+        id: Date.now(),
+        content: messageContent,
+        type: 1,
+        senderId: currentUserId,
+        receiverId: props.userId,
+        createdAt: new Date().toISOString()
+      })
+    }
 
-    // 添加到本地显示
-    messages.value.push({
-      id: Date.now(),
-      content: content,
-      type: 1,
-      senderId: currentUserId,
-      receiverId: props.userId,
-      createdAt: new Date().toISOString()
-    })
-
-    inputMessage.value = ''
+    if (!content) {
+      inputMessage.value = ''
+    }
     scrollToBottom()
     emit('message-sent')
     emit('message-updated')
@@ -140,6 +250,46 @@ async function sendMessage() {
   } finally {
     isSending.value = false
   }
+}
+
+async function loadCollectedItems() {
+  if (loadingItems.value || collectedItems.value.length > 0) return
+  
+  loadingItems.value = true
+  try {
+    const result = await getCollectedItems()
+    collectedItems.value = (result || []).map(transformItem)
+  } catch (error) {
+    console.error('获取收藏物品失败:', error)
+  } finally {
+    loadingItems.value = false
+  }
+}
+
+function transformItem(item: any): CollectedItem {
+  let image = ''
+  if (item.images) {
+    try {
+      const images = JSON.parse(item.images)
+      image = Array.isArray(images) && images.length > 0 ? getImageUrl(images[0]) : ''
+    } catch {
+      image = getImageUrl(item.images)
+    }
+  }
+
+  return {
+    ...item,
+    image,
+  }
+}
+
+function selectItem(item: CollectedItem) {
+  sendMessage(item.title, 3, item.id)
+  showItemSelector.value = false
+}
+
+function goToItemDetail(itemId: number) {
+  router.push(`/trade/${itemId}`)
 }
 
 function scrollToBottom() {
@@ -156,14 +306,23 @@ function setupWebSocket() {
   unsubscribeMessage = onMessage((data) => {
     // 只处理当前聊天对象发来的消息
     if (data.senderId === props.userId) {
-      messages.value.push({
+      const message: any = {
         id: data.id || Date.now(),
         content: data.content,
         type: data.type || 1,
         senderId: data.senderId,
         receiverId: data.receiverId,
         createdAt: data.createdAt || new Date().toISOString()
-      })
+      }
+      
+      // 如果是商品卡片消息，需要加载商品信息
+      if (data.type === 3 && data.itemId) {
+        message.itemId = data.itemId
+        // 商品卡片消息的商品信息需要额外加载，这里先设置基础信息
+        // 实际项目中可以通过 API 获取完整商品信息
+      }
+      
+      messages.value.push(message)
       scrollToBottom()
       emit('message-updated')
     }
@@ -183,6 +342,7 @@ watch(() => props.userId, () => {
 onMounted(() => {
   loadMessages()
   setupWebSocket()
+  loadCollectedItems()
 })
 
 onUnmounted(() => {
@@ -362,5 +522,300 @@ onUnmounted(() => {
 
 .chat-panel-input button:hover {
   background: #4338ca;
+}
+
+.chat-panel-add-btn {
+  width: 40px;
+  height: 40px;
+  border: none;
+  background: #f3f4f6;
+  color: #6b7280;
+  border-radius: 20px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+}
+
+.chat-panel-add-btn:hover {
+  background: #e5e7eb;
+  color: #4f46e5;
+}
+
+/* 商品卡片消息样式 */
+.chat-panel-item-card {
+  max-width: 320px;
+  background: #fff;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  cursor: pointer;
+  transition: transform 0.2s;
+}
+
+.chat-panel-item-card:active {
+  transform: scale(0.98);
+}
+
+.chat-panel-item-card.sent {
+  background: #e0e7ff;
+}
+
+.item-card-image {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 4/3;
+  background: #f9fafb;
+  overflow: hidden;
+}
+
+.item-card-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.item-card-placeholder {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #fdf8f0;
+  position: relative;
+}
+
+.item-card-placeholder::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.08'/%3E%3C/svg%3E");
+  pointer-events: none;
+}
+
+.item-card-placeholder-text {
+  font-size: 12px;
+  font-weight: bold;
+  color: #c45c5c;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  font-family: 'Georgia', serif;
+  transform: rotate(-4deg);
+  border: 2px dashed #c45c5c;
+  padding: 4px 8px;
+  border-radius: 4px;
+}
+
+.item-card-type {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  padding: 4px 8px;
+  font-size: 10px;
+  font-weight: 600;
+  background: #4f46e5;
+  color: #fff;
+  border-radius: 4px;
+  text-transform: uppercase;
+}
+
+.item-card-type--buy {
+  background: #10b981;
+}
+
+.item-card-content {
+  padding: 12px;
+}
+
+.item-card-title {
+  font-size: 14px;
+  font-weight: 500;
+  color: #1f2937;
+  margin: 0 0 8px 0;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  line-height: 1.4;
+}
+
+.item-card-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.item-card-price {
+  font-size: 18px;
+  font-weight: 700;
+  color: #ef4444;
+}
+
+/* 闲置商品选择器弹窗样式 */
+.item-selector-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 20px;
+}
+
+.item-selector {
+  width: 100%;
+  max-width: 500px;
+  max-height: 80vh;
+  background: #fff;
+  border-radius: 16px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.item-selector-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.item-selector-header h3 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
+  color: #1f2937;
+}
+
+.item-selector-close {
+  width: 32px;
+  height: 32px;
+  border: none;
+  background: transparent;
+  font-size: 24px;
+  color: #6b7280;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+}
+
+.item-selector-close:hover {
+  background: #f3f4f6;
+}
+
+.item-selector-content {
+  flex: 1;
+  overflow-y: auto;
+  padding: 20px;
+}
+
+.item-selector-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 0;
+  color: #9ca3af;
+}
+
+.item-selector-loading .loading-spinner {
+  width: 32px;
+  height: 32px;
+  border: 3px solid #e5e7eb;
+  border-top-color: #4f46e5;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+  margin-bottom: 12px;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.item-selector-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 20px;
+  color: #9ca3af;
+}
+
+.item-selector-empty .empty-icon {
+  font-size: 48px;
+  margin-bottom: 16px;
+}
+
+.item-selector-empty p {
+  margin: 0;
+  font-size: 14px;
+}
+
+.item-selector-list {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+}
+
+.item-selector-item {
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  overflow: hidden;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.item-selector-item:active {
+  transform: scale(0.98);
+  border-color: #4f46e5;
+  box-shadow: 0 2px 8px rgba(79, 70, 229, 0.1);
+}
+
+.item-selector-item-image {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 4/3;
+  background: #f9fafb;
+  overflow: hidden;
+}
+
+.item-selector-item-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.item-selector-item-content {
+  padding: 10px;
+}
+
+.item-selector-item-title {
+  font-size: 13px;
+  font-weight: 500;
+  color: #1f2937;
+  margin: 0 0 6px 0;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  line-height: 1.3;
+}
+
+.item-selector-item-price {
+  font-size: 16px;
+  font-weight: 700;
+  color: #ef4444;
+}
+
+@media (min-width: 768px) {
+  .item-selector-list {
+    grid-template-columns: repeat(3, 1fr);
+  }
 }
 </style>

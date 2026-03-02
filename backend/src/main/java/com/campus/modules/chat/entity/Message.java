@@ -37,9 +37,14 @@ public class Message extends BaseEntity {
     private String content;
 
     /**
-     * 消息类型：1文本 2图片
+     * 消息类型：1 文本 2 图片 3 商品卡片
      */
     private Integer type;
+
+    /**
+     * 关联的商品 ID（消息类型为 3 时使用）
+     */
+    private Long itemId;
 
     /**
      * 发送时间（非数据库字段，用于前端展示）

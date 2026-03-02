@@ -39,9 +39,15 @@ public class ChatController {
         if (principal instanceof ChatPrincipal) {
             ChatPrincipal chatPrincipal = (ChatPrincipal) principal;
             Long senderId = chatPrincipal.getUserId();
+            String content = (String) message.get("content");
+            Integer type = (Integer) message.get("type");
+            Long itemId = null;
             
-            chatService.saveMessage(senderId, receiverId, 
-                (String) message.get("content"));
+            if (type != null && type == 3) {
+                itemId = ((Number) message.get("itemId")).longValue();
+            }
+            
+            chatService.saveMessage(senderId, receiverId, content, itemId);
         }
     }
 
@@ -95,16 +101,18 @@ public class ChatController {
     public Result<?> sendMessageToUser(
             @RequestHeader("Authorization") String authHeader,
             @PathVariable Long userId,
-            @RequestBody Map<String, String> request) {
+            @RequestBody Map<String, Object> request) {
 
         Long currentUserId = authService.getUserIdFromAuthHeader(authHeader);
-        String content = request.get("content");
+        String content = (String) request.get("content");
+        Integer type = request.get("type") != null ? ((Number) request.get("type")).intValue() : 1;
+        Long itemId = request.get("itemId") != null ? ((Number) request.get("itemId")).longValue() : null;
 
         if (content == null || content.trim().isEmpty()) {
             return Result.error("消息内容不能为空");
         }
 
-        return Result.success(chatService.saveMessage(currentUserId, userId, content));
+        return Result.success(chatService.saveMessage(currentUserId, userId, content, itemId));
     }
 
     /**

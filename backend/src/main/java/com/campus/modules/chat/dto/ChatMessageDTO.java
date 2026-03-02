@@ -36,7 +36,7 @@ public class ChatMessageDTO implements Serializable {
     private Long receiverId;
 
     /**
-     * 会话ID
+     * 会话 ID
      */
     private Long conversationId;
 
@@ -46,9 +46,14 @@ public class ChatMessageDTO implements Serializable {
     private String content;
 
     /**
-     * 消息类型: 1-文本, 2-图片, 3-语音等
+     * 消息类型：1-文本，2-图片，3-商品卡片
      */
     private Integer type;
+
+    /**
+     * 关联的商品 ID（消息类型为 3 时使用）
+     */
+    private Long itemId;
 
     /**
      * 发送时间
