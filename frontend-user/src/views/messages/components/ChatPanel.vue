@@ -602,13 +602,14 @@ onUnmounted(() => {
 
 /* 商品卡片消息样式 */
 .chat-panel-item-card {
-  max-width: 320px;
-  background: #fff;
-  border-radius: 12px;
+  max-width: 200px;
+  background-color: var(--bg-card);
+  border-radius: var(--radius-lg);
   overflow: hidden;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
   cursor: pointer;
-  transition: transform 0.2s;
+  transition: all var(--transition-normal);
+  box-shadow: var(--shadow-card);
+  border: 1px solid var(--border-light);
 }
 
 .chat-panel-item-card:active {
@@ -623,7 +624,7 @@ onUnmounted(() => {
   position: relative;
   width: 100%;
   aspect-ratio: 4/3;
-  background: #f9fafb;
+  background-color: var(--bg-tertiary);
   overflow: hidden;
 }
 
@@ -666,19 +667,20 @@ onUnmounted(() => {
 
 .item-card-type {
   position: absolute;
-  top: 8px;
-  left: 8px;
-  padding: 4px 8px;
+  top: var(--space-2);
+  left: var(--space-2);
+  padding: 4px var(--space-2);
   font-size: 10px;
-  font-weight: 600;
-  background: #4f46e5;
-  color: #fff;
-  border-radius: 4px;
+  font-weight: var(--font-weight-semibold);
   text-transform: uppercase;
+  letter-spacing: 0.05em;
+  background-color: var(--color-primary-700);
+  color: white;
+  border-radius: var(--radius-sm);
 }
 
 .item-card-type--buy {
-  background: #10b981;
+  background-color: var(--color-success-600);
 }
 
 .item-card-content {
@@ -686,15 +688,15 @@ onUnmounted(() => {
 }
 
 .item-card-title {
-  font-size: 14px;
-  font-weight: 500;
-  color: #1f2937;
-  margin: 0 0 8px 0;
+  font-size: var(--text-sm);
+  font-weight: var(--font-weight-medium);
+  color: var(--text-primary);
+  margin: 0 0 var(--space-2) 0;
+  line-height: var(--line-height-normal);
   display: -webkit-box;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
-  line-height: 1.4;
 }
 
 /* 商品卡片用户信息 */
@@ -729,20 +731,20 @@ onUnmounted(() => {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-top: 8px;
-  padding-top: 8px;
-  border-top: 1px solid #f3f4f6;
+  margin-top: var(--space-2);
+  padding-top: var(--space-2);
+  border-top: 1px solid var(--border-light);
 }
 
 .item-card-price {
-  font-size: 18px;
-  font-weight: 700;
-  color: #ef4444;
+  font-size: var(--text-lg);
+  font-weight: var(--font-weight-bold);
+  color: var(--color-error-600);
 }
 
 .item-card-time {
-  font-size: 11px;
-  color: #9ca3af;
+  font-size: var(--text-xs);
+  color: var(--text-tertiary);
 }
 
 /* 闲置商品选择器弹窗样式 */
