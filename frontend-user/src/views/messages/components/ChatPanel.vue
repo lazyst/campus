@@ -602,7 +602,7 @@ onUnmounted(() => {
 
 /* 商品卡片消息样式 */
 .chat-panel-item-card {
-  max-width: 200px;
+  width: 50vw;
   background-color: var(--bg-card);
   border-radius: var(--radius-lg);
   overflow: hidden;
