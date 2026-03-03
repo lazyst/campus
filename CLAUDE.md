@@ -11,8 +11,7 @@ campus-fenbushi/
 ├── backend/           # Spring Boot 3.2 + Java 17 + MyBatis-Plus (port 8080)
 ├── frontend-user/     # Vue 3 + Vant UI + Tailwind CSS v4 (port 3000)
 ├── frontend-admin/    # Vue 3 + Element Plus (port 3001)
-├── nginx/             # Reverse proxy with load balancing
-├── docker-compose.yml # Production deployment
+├── deploy/            # Docker 部署配置
 └── docs/              # Documentation
 ```
 

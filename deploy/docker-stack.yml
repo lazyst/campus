@@ -1,0 +1,168 @@
+# Docker Swarm 生产环境部署配置
+# 使用方式: docker stack deploy -c docker-stack.yml campus
+
+version: '3.8'
+
+services:
+  # Nginx 反向代理 + 负载均衡 + 静态资源
+  nginx:
+    image: campus-nginx:latest
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - nginx-html:/usr/share/nginx/html
+      - nginx-logs:/var/log/nginx
+      - uploads-data:/var/www/uploads
+    networks:
+      - app-network
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 3
+      placement:
+        constraints:
+          - node.role == manager
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # 后端 API 服务（多副本）
+  backend:
+    image: campus-backend:latest
+    environment:
+      - SPRING_PROFILES_ACTIVE=prod
+      - DB_HOST=campus-mysql
+      - DB_PORT=3306
+      - DB_USERNAME=root
+      - DB_PASSWORD=123
+      - DB_SLAVE_HOST=campus-mysql
+      - DB_SLAVE_PORT=3306
+      - DB_SLAVE_PASSWORD=123
+      - REDIS_HOST=campus-redis
+      - REDIS_PORT=6379
+      - REDIS_PASSWORD=123
+      - JWT_SECRET=campus-helping-platform-jwt-secret-key-2024-very-long-and-secure
+      - JWT_EXPIRATION=604800000
+    volumes:
+      - uploads-data:/app/uploads
+    networks:
+      - app-network
+    deploy:
+      replicas: 2
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 3
+      update_config:
+        parallelism: 1
+        delay: 10s
+        failure_action: rollback
+      resources:
+        limits:
+          memory: 1G
+        reservations:
+          memory: 512M
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:8080/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+  # MySQL 数据库
+  mysql:
+    image: mysql:8.0
+    environment:
+      MYSQL_ROOT_PASSWORD: 123
+      MYSQL_DATABASE: campus_fenbushi
+    volumes:
+      - mysql-data:/var/lib/mysql
+      - ./mysql-charset.cnf:/etc/mysql/conf.d/charset.cnf:ro
+    networks:
+      - app-network
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 3
+      placement:
+        constraints:
+          - node.role == manager
+    healthcheck:
+      test: ["CMD", "mysqladmin", "-p123", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+
+  # Redis 缓存
+  redis:
+    image: redis:7-alpine
+    command: redis-server --requirepass 123
+    networks:
+      - app-network
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 3
+      placement:
+        constraints:
+          - node.role == manager
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "123", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # 用户前端
+  frontend-user:
+    image: campus-frontend-user:latest
+    networks:
+      - app-network
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 3
+      placement:
+        constraints:
+          - node.role == manager
+
+  # 管理后台
+  frontend-admin:
+    image: campus-frontend-admin:latest
+    networks:
+      - app-network
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 3
+      placement:
+        constraints:
+          - node.role == manager
+
+networks:
+  app-network:
+    driver: overlay
+    attachable: true
+
+volumes:
+  nginx-html:
+    driver: local
+  nginx-logs:
+    driver: local
+  uploads-data:
+    driver: local
+  mysql-data:
+    driver: local

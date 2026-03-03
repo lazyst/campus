@@ -19,42 +19,27 @@ var seriesFilter = "";
 var filtersOnlySampleSeries = true;
 
 /*
- * Add header in statistics table to group metrics by category
- * format
- *
+ * Add header row to statistics table grouping metrics by category
  */
 function summaryTableHeader(header) {
     var newRow = header.insertRow(-1);
     newRow.className = "tablesorter-no-sort";
-    var cell = document.createElement('th');
-    cell.setAttribute("data-sorter", false);
-    cell.colSpan = 1;
-    cell.innerHTML = "Requests";
-    newRow.appendChild(cell);
 
-    cell = document.createElement('th');
-    cell.setAttribute("data-sorter", false);
-    cell.colSpan = 3;
-    cell.innerHTML = "Executions";
-    newRow.appendChild(cell);
+    var headers = [
+        { colSpan: 1, text: "Requests" },
+        { colSpan: 3, text: "Executions" },
+        { colSpan: 7, text: "Response Times (ms)" },
+        { colSpan: 1, text: "Throughput" },
+        { colSpan: 2, text: "Network (KB/sec)" }
+    ];
 
-    cell = document.createElement('th');
-    cell.setAttribute("data-sorter", false);
-    cell.colSpan = 7;
-    cell.innerHTML = "Response Times (ms)";
-    newRow.appendChild(cell);
-
-    cell = document.createElement('th');
-    cell.setAttribute("data-sorter", false);
-    cell.colSpan = 1;
-    cell.innerHTML = "Throughput";
-    newRow.appendChild(cell);
-
-    cell = document.createElement('th');
-    cell.setAttribute("data-sorter", false);
-    cell.colSpan = 2;
-    cell.innerHTML = "Network (KB/sec)";
-    newRow.appendChild(cell);
+    headers.forEach(function(config) {
+        var cell = document.createElement('th');
+        cell.setAttribute("data-sorter", false);
+        cell.colSpan = config.colSpan;
+        cell.innerHTML = config.text;
+        newRow.appendChild(cell);
+    });
 }
 
 /*
@@ -133,7 +118,7 @@ $(document).ready(function() {
         widgets: ['zebra']
     });
 
-    var data = {"OkPercent": 95.63664503839514, "KoPercent": 4.363354961604857};
+    var data = {"OkPercent": 89.78697437035393, "KoPercent": 10.213025629646067};
     var dataset = [
         {
             "label" : "FAIL",
@@ -173,63 +158,82 @@ $(document).ready(function() {
     });
 
     // Creates APDEX table
-    createTable($("#apdexTable"), {"supportsControllersDiscrimination": true, "overall": {"data": [0.9496398595154474, 500, 1500, "Total"], "isController": false}, "titles": ["Apdex", "T (Toleration threshold)", "F (Frustration threshold)", "Label"], "items": [{"data": [0.6226158038147139, 500, 1500, "GET /api/posts/1"], "isController": false}, {"data": [0.9340033500837521, 500, 1500, "GET /api/items"], "isController": false}, {"data": [0.9430338541666666, 500, 1500, "GET /api/posts"], "isController": false}, {"data": [0.9803157474020784, 500, 1500, "GET /api/boards"], "isController": false}]}, function(index, item){
-        switch(index){
-            case 0:
-                item = item.toFixed(3);
-                break;
-            case 1:
-            case 2:
-                item = formatDuration(item);
-                break;
+    var apdexFormatter = function(index, item) {
+        if (index === 0) {
+            return item.toFixed(3);
+        }
+        if (index === 1 || index === 2) {
+            return formatDuration(item);
         }
         return item;
-    }, [[0, 0]], 3);
+    };
+
+    var apdexInfo = {
+        supportsControllersDiscrimination: true,
+        overall: { data: [0.8787307222900255, 500, 1500, "Total"], isController: false },
+        titles: ["Apdex", "T (Toleration threshold)", "F (Frustration threshold)", "Label"],
+        items: [
+            { data: [0.4335691823899371, 500, 1500, "GET /api/posts/1"], isController: false },
+            { data: [0.8772228033472803, 500, 1500, "GET /api/items"], isController: false },
+            { data: [0.8795798104022546, 500, 1500, "GET /api/posts"], isController: false },
+            { data: [0.9417303644621691, 500, 1500, "GET /api/boards"], isController: false }
+        ]
+    };
+    createTable($("#apdexTable"), apdexInfo, apdexFormatter, [[0, 0]], 3);
 
     // Create statistics table
-    createTable($("#statisticsTable"), {"supportsControllersDiscrimination": true, "overall": {"data": ["Total", 16799, 733, 4.363354961604857, 65.79516637895132, 3, 1296, 37.0, 119.0, 160.0, 566.0, 562.3096234309623, 1403.1443187761506, 66.16586035564853], "isController": false}, "titles": ["Label", "#Samples", "FAIL", "Error %", "Average", "Min", "Max", "Median", "90th pct", "95th pct", "99th pct", "Transactions/s", "Received", "Sent"], "items": [{"data": ["GET /api/posts/1", 734, 164, 22.3433242506812, 377.45504087193495, 8, 1296, 382.5, 724.0, 805.0, 1109.65, 24.569037656903767, 33.00758368200837, 2.2731433054393304], "isController": false}, {"data": ["GET /api/items", 2985, 197, 6.599664991624791, 92.58961474036857, 3, 326, 88.0, 142.0, 167.0, 219.27999999999975, 99.9163179916318, 497.90896312761504, 12.303216527196653], "isController": false}, {"data": ["GET /api/posts", 3072, 175, 5.696614583333333, 90.0442708333334, 11, 299, 85.0, 137.0, 159.0, 212.0, 102.83533625682054, 402.83116495246543, 12.785080538864525], "isController": false}, {"data": ["GET /api/boards", 10008, 197, 1.9684252597921663, 27.502498001598664, 3, 177, 25.0, 47.0, 56.0, 83.0, 335.02945902517405, 469.4707182938873, 38.80917304457351], "isController": false}]}, function(index, item){
-        switch(index){
-            // Errors pct
-            case 3:
-                item = item.toFixed(2) + '%';
-                break;
-            // Mean
-            case 4:
-            // Mean
-            case 7:
-            // Median
-            case 8:
-            // Percentile 1
-            case 9:
-            // Percentile 2
-            case 10:
-            // Percentile 3
-            case 11:
-            // Throughput
-            case 12:
-            // Kbytes/s
-            case 13:
-            // Sent Kbytes/s
-                item = item.toFixed(2);
-                break;
+    var statisticsFormatter = function(index, item) {
+        if (index === 3) {
+            return item.toFixed(2) + '%';
+        }
+        if (index >= 4 && index <= 13 && index !== 6) {
+            return item.toFixed(2);
         }
         return item;
-    }, [[0, 0]], 0, summaryTableHeader);
+    };
+
+    var statisticsInfo = {
+        supportsControllersDiscrimination: true,
+        overall: { data: ["Total", 18026, 1841, 10.213025629646067, 121.97570176411779, 3, 1126, 85.0, 230.0, 386.0, 702.0, 602.7754556094299, 1608.1968551454606, 67.08799871467981], isController: false },
+        titles: ["Label", "#Samples", "FAIL", "Error %", "Average", "Min", "Max", "Median", "90th pct", "95th pct", "99th pct", "Transactions/s", "Received", "Sent"],
+        items: [
+            { data: ["GET /api/posts/1", 1272, 384, 30.18867924528302, 433.1713836477988, 3, 1126, 516.5, 743.7, 823.3499999999999, 1004.3499999999999, 42.551767972435016, 61.18933571404676, 3.539185595289867], isController: false },
+            { data: ["GET /api/items", 3824, 466, 12.186192468619247, 143.7609832635985, 3, 559, 135.0, 237.0, 281.0, 400.5, 127.87159337903361, 616.4842313158334, 14.8037143663267], isController: false },
+            { data: ["GET /api/posts", 3903, 465, 11.91391237509608, 140.8565206251605, 3, 729, 134.0, 234.0, 277.0, 372.8000000000002, 130.653098115355, 497.744716958039, 15.17262923459311], isController: false },
+            { data: ["GET /api/boards", 9027, 526, 5.826963553783095, 60.73280159521444, 3, 440, 59.0, 116.0, 143.0, 222.71999999999935, 302.17922538747365, 433.79992881322596, 33.62610703017775], isController: false }
+        ]
+    };
+    createTable($("#statisticsTable"), statisticsInfo, statisticsFormatter, [[0, 0]], 0, summaryTableHeader);
 
     // Create error table
-    createTable($("#errorsTable"), {"supportsControllersDiscrimination": false, "titles": ["Type of error", "Number of errors", "% in errors", "% in all samples"], "items": [{"data": ["Non HTTP response code: java.net.BindException/Non HTTP response message: Address already in use: connect", 733, 100.0, 4.363354961604857], "isController": false}]}, function(index, item){
-        switch(index){
-            case 2:
-            case 3:
-                item = item.toFixed(2) + '%';
-                break;
+    var errorsFormatter = function(index, item) {
+        if (index === 2 || index === 3) {
+            return item.toFixed(2) + '%';
         }
         return item;
-    }, [[1, 1]]);
+    };
 
-        // Create top5 errors by sampler
-    createTable($("#top5ErrorsBySamplerTable"), {"supportsControllersDiscrimination": false, "overall": {"data": ["Total", 16799, 733, "Non HTTP response code: java.net.BindException/Non HTTP response message: Address already in use: connect", 733, "", "", "", "", "", "", "", ""], "isController": false}, "titles": ["Sample", "#Samples", "#Errors", "Error", "#Errors", "Error", "#Errors", "Error", "#Errors", "Error", "#Errors", "Error", "#Errors"], "items": [{"data": ["GET /api/posts/1", 734, 164, "Non HTTP response code: java.net.BindException/Non HTTP response message: Address already in use: connect", 164, "", "", "", "", "", "", "", ""], "isController": false}, {"data": ["GET /api/items", 2985, 197, "Non HTTP response code: java.net.BindException/Non HTTP response message: Address already in use: connect", 197, "", "", "", "", "", "", "", ""], "isController": false}, {"data": ["GET /api/posts", 3072, 175, "Non HTTP response code: java.net.BindException/Non HTTP response message: Address already in use: connect", 175, "", "", "", "", "", "", "", ""], "isController": false}, {"data": ["GET /api/boards", 10008, 197, "Non HTTP response code: java.net.BindException/Non HTTP response message: Address already in use: connect", 197, "", "", "", "", "", "", "", ""], "isController": false}]}, function(index, item){
-        return item;
-    }, [[0, 0]], 0);
+    var errorsInfo = {
+        supportsControllersDiscrimination: false,
+        titles: ["Type of error", "Number of errors", "% in errors", "% in all samples"],
+        items: [
+            { data: ["Non HTTP response code: java.net.BindException/Non HTTP response message: Address already in use: connect", 1841, 100.0, 10.213025629646067], isController: false }
+        ]
+    };
+    createTable($("#errorsTable"), errorsInfo, errorsFormatter, [[1, 1]]);
+
+    // Create top5 errors by sampler
+    var top5ErrorsInfo = {
+        supportsControllersDiscrimination: false,
+        overall: { data: ["Total", 18026, 1841, "Non HTTP response code: java.net.BindException/Non HTTP response message: Address already in use: connect", 1841, "", "", "", "", "", "", "", ""], isController: false },
+        titles: ["Sample", "#Samples", "#Errors", "Error", "#Errors", "Error", "#Errors", "Error", "#Errors", "Error", "#Errors", "Error", "#Errors"],
+        items: [
+            { data: ["GET /api/posts/1", 1272, 384, "Non HTTP response code: java.net.BindException/Non HTTP response message: Address already in use: connect", 384, "", "", "", "", "", "", "", ""], isController: false },
+            { data: ["GET /api/items", 3824, 466, "Non HTTP response code: java.net.BindException/Non HTTP response message: Address already in use: connect", 466, "", "", "", "", "", "", "", ""], isController: false },
+            { data: ["GET /api/posts", 3903, 465, "Non HTTP response code: java.net.BindException/Non HTTP response message: Address already in use: connect", 465, "", "", "", "", "", "", "", ""], isController: false },
+            { data: ["GET /api/boards", 9027, 526, "Non HTTP response code: java.net.BindException/Non HTTP response message: Address already in use: connect", 526, "", "", "", "", "", "", "", ""], isController: false }
+        ]
+    };
+    createTable($("#top5ErrorsBySamplerTable"), top5ErrorsInfo, function(index, item) { return item; }, [[0, 0]], 0);
 
 });

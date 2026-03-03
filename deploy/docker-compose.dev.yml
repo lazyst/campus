@@ -1,0 +1,148 @@
+# 开发环境 Docker Compose 配置
+# 使用方式: docker-compose -f docker-compose.dev.yml up -d
+
+version: '3.8'
+
+services:
+  # MySQL 数据库
+  mysql:
+    image: mysql:8.0
+    container_name: campus-mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: 123
+      MYSQL_DATABASE: campus_fenbushi
+      TZ: Asia/Shanghai
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql-data:/var/lib/mysql
+      - ./mysql-charset.cnf:/etc/mysql/conf.d/charset.cnf:ro
+    networks:
+      - campus-network
+    healthcheck:
+      test: ["CMD", "mysqladmin", "-p123", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Redis 缓存
+  redis:
+    image: redis:7-alpine
+    container_name: campus-redis
+    restart: unless-stopped
+    command: redis-server --requirepass 123 --appendonly yes
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    networks:
+      - campus-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "123", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+  # Nginx 反向代理
+  nginx:
+    image: nginx:alpine
+    container_name: campus-nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+      - uploads-data:/var/www/uploads
+    depends_on:
+      - backend
+    networks:
+      - campus-network
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # 后端服务
+  backend:
+    build:
+      context: ../backend
+      dockerfile: ../deploy/Dockerfile.dev
+    container_name: campus-backend
+    restart: unless-stopped
+    environment:
+      - SPRING_PROFILES_ACTIVE=dev
+      - DB_HOST=mysql
+      - DB_PORT=3306
+      - DB_USERNAME=root
+      - DB_PASSWORD=123
+      - DB_SLAVE_HOST=mysql
+      - DB_SLAVE_PORT=3306
+      - DB_SLAVE_PASSWORD=123
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - REDIS_PASSWORD=123
+      - JWT_SECRET=campus-helping-platform-jwt-secret-key-2024-very-long-and-secure
+      - JWT_EXPIRATION=604800000
+      - TZ=Asia/Shanghai
+    ports:
+      - "8080:8080"
+    volumes:
+      - uploads-data:/app/uploads
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - campus-network
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:8080/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+  # 用户前端
+  frontend-user:
+    build:
+      context: ../frontend-user
+      dockerfile: ../deploy/Dockerfile
+    container_name: campus-frontend-user
+    restart: unless-stopped
+    environment:
+      - NODE_ENV=development
+      - VITE_API_BASE_URL=http://localhost/api
+    ports:
+      - "3000:80"
+    depends_on:
+      - nginx
+    networks:
+      - campus-network
+
+  # 管理后台
+  frontend-admin:
+    build:
+      context: ../frontend-admin
+      dockerfile: ../deploy/Dockerfile
+    container_name: campus-frontend-admin
+    restart: unless-stopped
+    environment:
+      - NODE_ENV=development
+      - VITE_API_BASE_URL=http://localhost/api
+    ports:
+      - "3001:80"
+    depends_on:
+      - nginx
+    networks:
+      - campus-network
+
+networks:
+  campus-network:
+    driver: bridge
+
+volumes:
+  mysql-data:
+  redis-data:
+  uploads-data:

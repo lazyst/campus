@@ -1,0 +1,23 @@
+[client]
+default-character-set = utf8mb4
+
+[mysql]
+default-character-set = utf8mb4
+
+[mysqld]
+character-set-server = utf8mb4
+collation-server = utf8mb4_unicode_ci
+init_connect = 'SET NAMES utf8mb4'
+
+# 允许 Emoji 存储
+character-set-filesystem = utf8mb4
+
+# 连接设置
+max_connections = 200
+max_connect_errors = 10
+
+# 日志设置
+log_error = /var/log/mysql/error.log
+slow_query_log = 1
+slow_query_log_file = /var/log/mysql/slow.log
+long_query_time = 2
