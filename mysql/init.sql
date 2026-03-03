@@ -237,17 +237,19 @@ CREATE TABLE IF NOT EXISTS `message` (
     `sender_id` bigint NOT NULL COMMENT '发送者ID',
     `receiver_id` bigint NOT NULL COMMENT '接收者ID',
     `content` text COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '消息内容',
+    `type` int DEFAULT '1' COMMENT '消息类型: 1-文本, 2-图片, 3-商品卡片',
+    `item_id` bigint DEFAULT NULL COMMENT '关联的商品ID（消息类型为3时使用）',
     `created_at` datetime DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
     `updated_at` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
     `created_by` bigint DEFAULT NULL COMMENT '创建者ID',
     `updated_by` bigint DEFAULT NULL COMMENT '更新者ID',
     `deleted` tinyint(1) NOT NULL DEFAULT '0' COMMENT '是否删除（0=正常，1=已删除）',
-    `type` int DEFAULT '1' COMMENT '消息类型: 1-文本, 2-图片, 3-语音',
     PRIMARY KEY (`id`),
     KEY `idx_conversation_id` (`conversation_id`),
     KEY `idx_sender_id` (`sender_id`),
     KEY `idx_receiver_id` (`receiver_id`),
-    KEY `idx_created_at` (`created_at`)
+    KEY `idx_created_at` (`created_at`),
+    KEY `idx_item_id` (`item_id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=65 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='消息表';
 
 -- =====================================================
