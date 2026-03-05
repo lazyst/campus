@@ -81,20 +81,14 @@ public class RedisConfig {
 
     /**
      * 配置缓存管理器
-     * boards: 5分钟
-     * posts: 1分钟
-     * items: 1分钟
+     * 使用简单字符串序列化，避免泛型反序列化问题
      */
     @Bean
     public CacheManager cacheManager(RedisConnectionFactory connectionFactory) {
-        ObjectMapper objectMapper = new ObjectMapper();
-        objectMapper.registerModule(new JavaTimeModule());
-        objectMapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
-        GenericJackson2JsonRedisSerializer jsonSerializer = new GenericJackson2JsonRedisSerializer(objectMapper);
-
+        // 使用StringRedisSerializer作为缓存值的序列化器
         RedisCacheConfiguration defaultConfig = RedisCacheConfiguration.defaultCacheConfig()
                 .serializeKeysWith(RedisSerializationContext.SerializationPair.fromSerializer(new StringRedisSerializer()))
-                .serializeValuesWith(RedisSerializationContext.SerializationPair.fromSerializer(jsonSerializer))
+                .serializeValuesWith(RedisSerializationContext.SerializationPair.fromSerializer(new StringRedisSerializer()))
                 .disableCachingNullValues();
 
         // 不同缓存配置不同过期时间
