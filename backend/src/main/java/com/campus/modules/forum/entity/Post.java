@@ -14,12 +14,7 @@ import java.time.LocalDateTime;
  */
 @Getter
 @Setter
-@TableName("post", indexes = {
-    @TableIndex(name = "idx_post_status", value = {"status"}),
-    @TableIndex(name = "idx_post_board", value = {"board_id"}),
-    @TableIndex(name = "idx_post_user", value = {"user_id"}),
-    @TableIndex(name = "idx_post_created", value = {"created_at"})
-})
+@TableName("post")
 public class Post extends BaseEntity {
 
     /**

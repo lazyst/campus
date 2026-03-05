@@ -38,14 +38,6 @@
         </div>
         <span class="action-label">板块管理</span>
       </div>
-      <div class="action-item" @click="handleAction('storage')">
-        <div class="action-icon storage-icon">
-          <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
-            <path d="M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96z"/>
-          </svg>
-        </div>
-        <span class="action-label">文件管理</span>
-      </div>
       <div class="action-item" @click="handleAction('refresh')">
         <div class="action-icon refresh-icon">
           <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
@@ -78,9 +70,6 @@ const handleAction = (action: string) => {
       break
     case 'boards':
       router.push('/boards')
-      break
-    case 'storage':
-      router.push('/storage')
       break
     case 'refresh':
       emit('refresh')
@@ -178,11 +167,6 @@ const handleAction = (action: string) => {
 .boards-icon {
   background: linear-gradient(135deg, #E5E7EB 0%, #9CA3AF 100%);
   color: #4B5563;
-}
-
-.storage-icon {
-  background: linear-gradient(135deg, #EDE9FE 0%, #C4B5FD 100%);
-  color: #7C3AED;
 }
 
 .refresh-icon {

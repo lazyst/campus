@@ -13,12 +13,8 @@ import com.campus.modules.trade.entity.Item;
 import com.campus.modules.trade.service.ItemService;
 import com.campus.modules.user.entity.User;
 import com.campus.modules.user.service.UserService;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
-import java.io.File;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
@@ -34,9 +30,6 @@ public class DashboardServiceImpl implements DashboardService {
     private final PostService postService;
     private final ItemService itemService;
     private final BoardService boardService;
-
-    @Value("${app.upload-path:./uploads}")
-    private String uploadPath;
 
     // 应用启动时间（使用JVM启动时间）
     private static final long APP_START_MILLIS = System.currentTimeMillis();
@@ -183,37 +176,7 @@ public class DashboardServiceImpl implements DashboardService {
     public Map<String, Object> getSystemStatus() {
         Map<String, Object> status = new LinkedHashMap<>();
 
-        // 存储空间（真实数据）
-        Map<String, Object> storage = new LinkedHashMap<>();
-        try {
-            Path uploadDirPath = Paths.get(uploadPath).toAbsolutePath();
-            File uploadDir = uploadDirPath.toFile();
-
-            // 计算已使用空间
-            long usedBytes = calculateDirectorySize(uploadDir);
-            double usedGB = usedBytes / (1024.0 * 1024 * 1024);
-
-            // 获取磁盘总空间
-            Path rootPath = uploadDirPath.getRoot();
-            File rootDir = rootPath != null ? rootPath.toFile() : null;
-            long totalBytes = rootDir != null ? rootDir.getTotalSpace() : 10L * 1024 * 1024 * 1024;
-            double totalGB = totalBytes / (1024.0 * 1024 * 1024);
-
-            // 计算使用百分比
-            int percentage = (int) Math.round((usedBytes * 100.0) / totalBytes);
-
-            storage.put("used", Math.round(usedGB * 100) / 100.0);
-            storage.put("total", Math.round(totalGB * 100) / 100.0);
-            storage.put("percentage", percentage);
-        } catch (Exception e) {
-            // 获取失败时使用默认值
-            storage.put("used", 0.0);
-            storage.put("total", 0.0);
-            storage.put("percentage", 0);
-        }
-        status.put("storage", storage);
-
-        // 服务器状态（真实数据）
+        // 服务器状态
         Map<String, Object> server = new LinkedHashMap<>();
 
         // 计算运行时间（基于JVM启动时间）
@@ -229,28 +192,6 @@ public class DashboardServiceImpl implements DashboardService {
         status.put("server", server);
 
         return status;
-    }
-
-    /**
-     * 计算目录大小（递归）
-     */
-    private long calculateDirectorySize(File directory) {
-        long size = 0;
-        if (!directory.exists() || !directory.isDirectory()) {
-            return size;
-        }
-        File[] files = directory.listFiles();
-        if (files == null) {
-            return size;
-        }
-        for (File file : files) {
-            if (file.isDirectory()) {
-                size += calculateDirectorySize(file);
-            } else {
-                size += file.length();
-            }
-        }
-        return size;
     }
 
     @Override

@@ -5,8 +5,7 @@ const routes = [
   {
     path: '/login',
     name: 'Login',
-    component: () => import('@/views/login/index.vue'),
-    meta: { requiresAuth: false }
+    component: () => import('@/views/login/index.vue')
   },
   {
     path: '/',
@@ -37,11 +36,6 @@ const routes = [
         path: 'items',
         name: 'Items',
         component: () => import('@/views/items/index.vue')
-      },
-      {
-        path: 'storage',
-        name: 'Storage',
-        component: () => import('@/views/storage/index.vue')
       }
     ]
   }
@@ -52,17 +46,18 @@ const router = createRouter({
   routes
 })
 
-router.beforeEach((to, from, next) => {
+router.beforeEach(function(to, from, next) {
   const adminStore = useAdminStore()
-  const isAuthenticated = adminStore.token && !adminStore.isTokenExpired()
+  const isAuthenticated = adminStore.isLoggedIn
 
+  // Redirect authenticated users away from login page
   if (to.name === 'Login' && isAuthenticated) {
     next({ name: 'Dashboard', replace: true })
     return
   }
 
+  // Redirect unauthenticated users to login
   if (to.meta.requiresAuth && !isAuthenticated) {
-    adminStore.logout()
     next({ name: 'Login', replace: true })
     return
   }

@@ -8,6 +8,7 @@ import com.campus.modules.forum.entity.Post;
 import com.campus.modules.forum.mapper.PostMapper;
 import com.campus.modules.trade.entity.Item;
 import com.campus.modules.trade.mapper.ItemMapper;
+import com.campus.modules.common.service.ImgBedService;
 import com.campus.modules.user.dto.UpdateProfileRequest;
 import com.campus.modules.user.entity.User;
 import com.campus.modules.user.mapper.UserMapper;
@@ -19,11 +20,6 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.time.LocalDate;
-import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
@@ -41,14 +37,17 @@ public class UserController {
     private final UserMapper userMapper;
     private final PostMapper postMapper;
     private final ItemMapper itemMapper;
+    private final ImgBedService imgBedService;
 
     public UserController(UserService userService, AuthService authService,
-                         UserMapper userMapper, PostMapper postMapper, ItemMapper itemMapper) {
+                         UserMapper userMapper, PostMapper postMapper, ItemMapper itemMapper,
+                         ImgBedService imgBedService) {
         this.userService = userService;
         this.authService = authService;
         this.userMapper = userMapper;
         this.postMapper = postMapper;
         this.itemMapper = itemMapper;
+        this.imgBedService = imgBedService;
     }
 
     @Operation(summary = "获取当前用户信息")
@@ -156,27 +155,20 @@ public class UserController {
         }
 
         try {
-            // 创建日期目录
-            String dateDir = LocalDate.now().format(DateTimeFormatter.ofPattern("yyyyMMdd"));
-            Path uploadDir = Paths.get("./uploads/avatars");
-            if (!Files.exists(uploadDir)) {
-                Files.createDirectories(uploadDir);
-            }
-
-            // 生成唯一文件名
-            String ext = ".jpg";
+            // 生成文件名
             String originalFilename = file.getOriginalFilename();
+            String ext = ".jpg";
             if (originalFilename != null && originalFilename.contains(".")) {
                 ext = originalFilename.substring(originalFilename.lastIndexOf("."));
             }
             String filename = "avatar_" + userId + "_" + UUID.randomUUID().toString().replace("-", "").substring(0, 8) + ext;
 
-            // 保存文件
-            Path filePath = uploadDir.resolve(filename);
-            Files.copy(file.getInputStream(), filePath);
+            // 上传到图床
+            String avatarUrl = imgBedService.uploadImage(file.getInputStream(), filename);
 
-            // 返回访问URL
-            String avatarUrl = "/uploads/avatars/" + filename;
+            if (avatarUrl == null) {
+                return Result.error("头像上传失败，请稍后重试");
+            }
 
             // 更新用户头像
             userService.updateAvatar(userId, avatarUrl);

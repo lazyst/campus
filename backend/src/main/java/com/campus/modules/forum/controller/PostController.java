@@ -45,8 +45,16 @@ public class PostController {
     }
 
     @Operation(summary = "分页获取帖子列表")
+    @GetMapping("/list")
+    public Result<Page<Post>> listPosts(
+            @RequestParam(required = false) Long boardId,
+            @RequestParam(defaultValue = "1") Integer page,
+            @RequestParam(defaultValue = "10") Integer size) {
+        return pagePosts(boardId, page, size);
+    }
+
+    @Operation(summary = "分页获取帖子列表")
     @GetMapping
-    @Cacheable(value = "posts", key = "'page:' + #boardId + ':' + #page + ':' + #size", cacheManager = "cacheManager")
     public Result<Page<Post>> pagePosts(
             @RequestParam(required = false) Long boardId,
             @RequestParam(defaultValue = "1") Integer page,

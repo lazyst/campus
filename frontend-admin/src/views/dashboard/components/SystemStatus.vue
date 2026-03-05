@@ -6,23 +6,6 @@
       </div>
     </template>
     <div class="status-content">
-      <!-- 存储空间 -->
-      <div class="status-section">
-        <div class="section-title">
-          <span class="section-icon storage-icon"></span>
-          <span>存储空间</span>
-        </div>
-        <div class="storage-info">
-          <div class="storage-bar-container">
-            <div class="storage-bar" :style="{ width: storage.percentage + '%' }"></div>
-          </div>
-          <div class="storage-text">
-            <span>{{ storage.used }} GB / {{ storage.total }} GB</span>
-            <span class="storage-percent">{{ storage.percentage }}%</span>
-          </div>
-        </div>
-      </div>
-
       <!-- 服务器状态 -->
       <div class="status-section">
         <div class="section-title">
@@ -42,12 +25,6 @@
 </template>
 
 <script setup lang="ts">
-interface StorageInfo {
-  used: number
-  total: number
-  percentage: number
-}
-
 interface ServerInfo {
   uptime: string
   serverStatus: string
@@ -55,14 +32,12 @@ interface ServerInfo {
 
 interface Props {
   data: {
-    storage: StorageInfo
     server: ServerInfo
   }
 }
 
 const props = defineProps<Props>()
 
-const storage = computed(() => props.data.storage || { used: 0, total: 0, percentage: 0 })
 const server = computed(() => props.data.server || { uptime: '-', serverStatus: '正常运行' })
 </script>
 
@@ -127,43 +102,8 @@ const server = computed(() => props.data.server || { uptime: '-', serverStatus: 
   border-radius: 6px;
 }
 
-.storage-icon {
-  background: linear-gradient(135deg, #1E3A8A 0%, #3B82F6 100%);
-}
-
 .server-icon {
   background: linear-gradient(135deg, #10B981 0%, #34D399 100%);
-}
-
-.storage-info {
-  padding-left: 34px;
-}
-
-.storage-bar-container {
-  height: 8px;
-  background: #F3F4F6;
-  border-radius: 4px;
-  overflow: hidden;
-  margin-bottom: 8px;
-}
-
-.storage-bar {
-  height: 100%;
-  background: linear-gradient(90deg, #1E3A8A 0%, #3B82F6 100%);
-  border-radius: 4px;
-  transition: width 0.3s;
-}
-
-.storage-text {
-  display: flex;
-  justify-content: space-between;
-  font-size: 12px;
-  color: #6B7280;
-}
-
-.storage-percent {
-  color: #1E3A8A;
-  font-weight: 500;
 }
 
 .server-info {

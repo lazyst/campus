@@ -1,6 +1,7 @@
 package com.campus.modules.common.controller;
 
 import com.campus.common.Result;
+import com.campus.modules.common.service.ImgBedService;
 import com.campus.modules.forum.entity.Post;
 import com.campus.modules.trade.entity.Item;
 import com.campus.modules.user.entity.User;
@@ -18,8 +19,6 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.time.LocalDate;
-import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -51,6 +50,9 @@ public class UploadController {
 
     @Autowired
     private com.campus.modules.user.service.UserService userService;
+
+    @Autowired
+    private ImgBedService imgBedService;
 
     /**
      * 获取所有被引用的图片URL集合（用户头像、帖子图片、闲置物品图片）
@@ -109,26 +111,20 @@ public class UploadController {
         }
 
         try {
-            // 创建日期目录
-            String dateDir = LocalDate.now().format(DateTimeFormatter.ofPattern("yyyyMMdd"));
-            Path uploadDir = Paths.get(uploadPath, dateDir);
-            if (!Files.exists(uploadDir)) {
-                Files.createDirectories(uploadDir);
-            }
-
             // 生成唯一文件名
             String originalFilename = file.getOriginalFilename();
-            String ext = originalFilename != null && originalFilename.contains(".") 
-                    ? originalFilename.substring(originalFilename.lastIndexOf(".")) 
+            String ext = originalFilename != null && originalFilename.contains(".")
+                    ? originalFilename.substring(originalFilename.lastIndexOf("."))
                     : ".jpg";
             String filename = UUID.randomUUID().toString().replace("-", "") + ext;
 
-            // 保存文件
-            Path filePath = uploadDir.resolve(filename);
-            Files.copy(file.getInputStream(), filePath);
+            // 上传到图床
+            String imageUrl = imgBedService.uploadImage(file.getInputStream(), filename);
 
-            // 返回访问URL
-            String imageUrl = "/uploads/" + dateDir + "/" + filename;
+            if (imageUrl == null) {
+                return Result.error("图片上传失败，请稍后重试");
+            }
+
             return Result.success(imageUrl);
 
         } catch (IOException e) {
@@ -162,22 +158,19 @@ public class UploadController {
             }
 
             try {
-                String dateDir = LocalDate.now().format(DateTimeFormatter.ofPattern("yyyyMMdd"));
-                Path uploadDir = Paths.get(uploadPath, dateDir);
-                if (!Files.exists(uploadDir)) {
-                    Files.createDirectories(uploadDir);
-                }
-
                 String originalFilename = file.getOriginalFilename();
-                String ext = originalFilename != null && originalFilename.contains(".") 
-                        ? originalFilename.substring(originalFilename.lastIndexOf(".")) 
+                String ext = originalFilename != null && originalFilename.contains(".")
+                        ? originalFilename.substring(originalFilename.lastIndexOf("."))
                         : ".jpg";
                 String filename = UUID.randomUUID().toString().replace("-", "") + ext;
 
-                Path filePath = uploadDir.resolve(filename);
-                Files.copy(file.getInputStream(), filePath);
+                // 上传到图床
+                String imageUrl = imgBedService.uploadImage(file.getInputStream(), filename);
 
-                String imageUrl = "/uploads/" + dateDir + "/" + filename;
+                if (imageUrl == null) {
+                    return Result.error("图片上传失败，请稍后重试");
+                }
+
                 imageUrls.add(imageUrl);
 
             } catch (IOException e) {

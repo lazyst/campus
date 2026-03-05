@@ -3,19 +3,20 @@
 -- Database: campus_fenbushi
 -- Created for: Full Stack Campus Platform
 -- =====================================================
---
+
+-- 先删除已存在的数据库
+DROP DATABASE IF EXISTS campus_fenbushi;
+
 -- 使用说明:
 -- 1. 确保 MySQL 服务已启动
 -- 2. 执行脚本: mysql -u root -p < init.sql
 -- 3. 或在 MySQL 客户端中: source /path/to/init.sql
 --
--- 注意:
--- - 如果数据库已存在且有数据，请先删除数据库再执行:
---    DROP DATABASE IF EXISTS campus_fenbushi;
--- - AUTO_INCREMENT 值已设置为大于当前示例数据的值
--- - 如需重新初始化，请先删除数据库
---
 -- =====================================================
+
+-- 设置字符集
+SET NAMES utf8mb4;
+SET CHARACTER SET utf8mb4;
 
 -- 创建数据库
 CREATE DATABASE IF NOT EXISTS campus_fenbushi

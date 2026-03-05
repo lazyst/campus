@@ -32,7 +32,6 @@ public class BoardController {
 
     @Operation(summary = "获取所有启用板块列表")
     @GetMapping
-    @Cacheable(value = "boards", key = "'list'", cacheManager = "cacheManager")
     public Result<List<Board>> listBoards() {
         LambdaQueryWrapper<Board> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq(Board::getStatus, 1)
