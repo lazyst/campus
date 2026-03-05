@@ -71,7 +71,6 @@ public class ItemController {
 
     @Operation(summary = "获取物品列表")
     @GetMapping
-    @Cacheable(value = "items", key = "'list:' + #type + ':' + #status + ':' + #sortBy + ':' + #page + ':' + #size", cacheManager = "cacheManager")
     public Result<Page<Item>> list(
             @RequestParam(defaultValue = "1") Integer page,
             @RequestParam(defaultValue = "10") Integer size,

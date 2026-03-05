@@ -41,6 +41,7 @@
               v-for="conversation in conversations"
               :key="conversation.id"
               class="message-item"
+              :class="{ 'message-item-active': selectedConversation?.otherUserId === conversation.otherUserId }"
               @click="goToChat(conversation)"
             >
               <div class="message-avatar-container">
@@ -148,6 +149,7 @@
           v-for="conversation in conversations"
           :key="conversation.id"
           class="message-item"
+          :class="{ 'message-item-active': selectedConversation?.otherUserId === conversation.otherUserId }"
           @click="goToChat(conversation)"
         >
           <div class="message-avatar-container">
@@ -684,6 +686,11 @@ onUnmounted(() => {
     transform: none;
     box-shadow: none;
     border-color: var(--color-primary-100);
+  }
+
+  .messages-sidebar .message-item-active {
+    background-color: var(--color-primary-50) !important;
+    border-left: 3px solid var(--color-primary);
   }
 
   .messages-sidebar .message-avatar {

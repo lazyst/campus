@@ -1,8 +1,10 @@
 package com.campus.config;
 
+import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import org.springframework.data.redis.serializer.Jackson2JsonRedisSerializer;
 import org.springframework.cache.CacheManager;
 import org.springframework.cache.annotation.EnableCaching;
 import org.springframework.context.annotation.Bean;
@@ -81,14 +83,23 @@ public class RedisConfig {
 
     /**
      * 配置缓存管理器
-     * 使用简单字符串序列化，避免泛型反序列化问题
+     * 使用Jackson2JsonRedisSerializer并启用默认类型写入，解决泛型反序列化问题
      */
     @Bean
     public CacheManager cacheManager(RedisConnectionFactory connectionFactory) {
-        // 使用StringRedisSerializer作为缓存值的序列化器
+        // 配置支持类型信息的ObjectMapper
+        ObjectMapper mapper = new ObjectMapper();
+        mapper.registerModule(new JavaTimeModule());
+        mapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
+        // 启用默认类型写入，解决泛型擦除导致的ClassCastException
+        mapper.enableDefaultTyping(ObjectMapper.DefaultTyping.NON_FINAL, JsonTypeInfo.As.PROPERTY);
+
+        // 使用Jackson2JsonRedisSerializer
+        Jackson2JsonRedisSerializer<Object> jsonSerializer = new Jackson2JsonRedisSerializer<>(mapper, Object.class);
+
         RedisCacheConfiguration defaultConfig = RedisCacheConfiguration.defaultCacheConfig()
                 .serializeKeysWith(RedisSerializationContext.SerializationPair.fromSerializer(new StringRedisSerializer()))
-                .serializeValuesWith(RedisSerializationContext.SerializationPair.fromSerializer(new StringRedisSerializer()))
+                .serializeValuesWith(RedisSerializationContext.SerializationPair.fromSerializer(jsonSerializer))
                 .disableCachingNullValues();
 
         // 不同缓存配置不同过期时间

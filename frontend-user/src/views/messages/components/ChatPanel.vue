@@ -98,9 +98,9 @@
         v-model="inputMessage"
         type="text"
         placeholder="发送消息..."
-        @keyup.enter="sendMessage"
+        @keyup.enter="sendMessage()"
       />
-      <button :disabled="isSending" @click="sendMessage">
+      <button :disabled="isSending" @click="sendMessage()">
         {{ isSending ? '发送中' : '发送' }}
       </button>
     </div>
@@ -179,6 +179,7 @@ import { getImageUrl } from '@/utils/imageUrl'
 import { uploadImage } from '@/api/modules/upload'
 import ImagePreview from '@/components/ImagePreview.vue'
 import { onMessage, sendMessage as sendStompMessage, connect as connectWs, getIsConnected } from '@/services/websocket'
+import { clearUnreadCount } from '@/api/modules/conversation'
 
 interface Props {
   userId: number
@@ -421,6 +422,9 @@ function setupWebSocket() {
   unsubscribeMessage = onMessage((data) => {
     // 只处理当前聊天对象发来的消息
     if (data.senderId === props.userId) {
+      // 收到新消息立即标记为已读
+      clearUnreadCount(props.userId).catch(console.error)
+
       const message: any = {
         id: data.id || Date.now(),
         content: data.content,
