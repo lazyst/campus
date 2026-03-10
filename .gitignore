@@ -29,6 +29,7 @@ Desktop.ini
 
 # 临时文件
 .nul
+null
 *.tmp
 *.temp
 .sisyphus/
@@ -44,8 +45,14 @@ backend/uploads/
 .env
 .env.local
 .env.*.local
+.env.development
+.env.production
 *.key
 *.pem
+
+# 项目配置文件
+mysql-charset.cnf
+ssh-mcp.config.json
 
 # ========================================
 # Backend - Spring Boot + Maven
@@ -100,8 +107,8 @@ vitest.config.ts.timestamp-*
 
 # Lock files（团队约定）
 # package-lock.json (根据团队需求启用/禁用)
-# yarn.lock
-# pnpm-lock.yaml
+yarn.lock
+pnpm-lock.yaml
 
 # Logs
 frontend-user/node_modules/
