@@ -54,15 +54,17 @@
 | 认证授权 | JWT | 0.9+ | JSON Web Token 实现无状态认证 |
 | API 文档 | Swagger | 3.0 | OpenAPI 3.0 规范，自动生成文档 |
 | 数据库 | MySQL | 8.0+ | 关系型数据库存储核心数据 |
+| 缓存 | Redis | 7.0+ | 缓存热点数据、会话存储 |
+| 读写分离 | MySQL-Proxy | - | 主从复制，读写分离 |
 
 ### 3.3 部署技术栈
 
 | 领域 | 技术选型 | 说明 |
 |------|----------|------|
 | 容器化 | Docker | 应用容器化部署 |
-| 容器编排 | Docker Compose | 本地多服务编排 |
+| 容器编排 | Docker Swarm | 生产环境集群部署 |
 | 反向代理 | Nginx | 请求转发、负载均衡 |
-| 操作系统 | Ubuntu 20.04+ | 推荐部署环境 |
+| 操作系统 | Ubuntu 24.04 | 推荐部署环境 |
 
 ## 四、项目结构
 
@@ -114,26 +116,25 @@ campus/
 │   ├── package.json                # 依赖配置
 │   └── vite.config.js              # Vite 构建配置
 │
-├── docker/                         # Docker 配置文件
-│   ├── Dockerfile.backend          # 后端 Dockerfile
-│   ├── Dockerfile.user             # 用户前端 Dockerfile
-│   ├── Dockerfile.admin            # 管理前端 Dockerfile
-│   └── nginx.conf                  # Nginx 配置
-│
-├── deployment/                     # 部署脚本
-│   ├── docker-compose.yml          # Docker Compose 配置
-│   └── deploy.sh                   # 部署脚本
+├── deploy/                          # 部署配置目录
+│   ├── docker-compose.dev.yml       # Docker Compose 开发环境配置
+│   ├── docker-stack.yml             # Docker Stack 生产环境配置
+│   ├── Dockerfile.backend           # 后端 Dockerfile
+│   ├── Dockerfile.frontend          # 前端 Dockerfile
+│   ├── Dockerfile.nginx            # Nginx Dockerfile
+│   └── nginx.conf                   # Nginx 配置
 │
 ├── docs/                           # 项目文档
 │   ├── ARCHITECTURE.md             # 架构设计文档
 │   ├── API.md                      # API 接口文档
-│   ├── DATABASE.md                 # 数据库设计文档
-│   ├── DEVELOPMENT.md              # 开发环境搭建指南
-│   ├── BACKEND_GUIDE.md            # 后端开发规范
-│   ├── FRONTEND_USER_GUIDE.md      # 用户前端开发规范
-│   ├── FRONTEND_ADMIN_GUIDE.md     # 管理前端开发规范
-│   ├── DOCKER_DEV.md               # Docker 开发环境指南
-│   └── MONITORING.md               # 监控运维指南
+│   ├── BUSINESS_FLOW.md            # 业务流程文档
+│   ├── DEPLOYMENT_PROD.md          # 生产环境部署文档
+│   ├── E2E_TEST_PLAN.md            # 端到端测试计划
+│   ├── ENVIRONMENT_VARIABLES.md    # 环境变量说明
+│   ├── ENV_SETUP.md                # 环境搭建指南
+│   ├── PRD.md                      # 产品需求文档
+│   ├── QUICK_START.md              # 快速开始指南
+│   └── TROUBLESHOOTING.md          # 常见问题排查
 │
 └── README.md                       # 项目说明文档
 ```
@@ -165,31 +166,41 @@ git --version
 
 ### 5.2 数据库启动
 
-首先确保 MySQL 服务已启动，然后创建数据库并导入初始化脚本：
+项目使用 MySQL（主从复制）和 Redis（缓存），推荐通过 WSL Docker 容器运行：
 
 ```bash
-# 启动 MySQL 服务（根据操作系统不同，命令有所差异）
-# Linux (Ubuntu/Debian)
-sudo systemctl start mysql
+# 启动 MySQL 容器（需要先配置字符集）
+wsl -d Ubuntu-24.04 -- bash /mnt/d/develop/campus-fenbushi/scripts/start-mysql.sh
 
-# macOS (使用 Homebrew)
-brew services start mysql
+# 或者手动启动
+wsl -d Ubuntu-24.04 -- docker start campus-mysql campus-redis-master
 
-# Windows
-# 在服务管理器中启动 MySQL 服务，或使用以下命令
-net start mysql
+# 验证容器运行状态
+wsl -d Ubuntu-24.04 -- docker ps
+```
 
+本地端口映射：
+
+| 服务 | 本地地址 | 用途 |
+|------|----------|------|
+| MySQL Master | localhost:3306 | 写操作 |
+| MySQL Slave | localhost:3307 | 读操作 |
+| Redis | localhost:6379 | 缓存 |
+
+如果使用本地 MySQL 服务，请手动创建数据库：
+
+```bash
 # 登录 MySQL
 mysql -u root -p
 
 # 创建数据库
-CREATE DATABASE campus DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+CREATE DATABASE campus_fenbushi DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 # 退出 MySQL
 exit
 
 # 导入初始化脚本
-mysql -u root -p campus < backend/src/main/resources/schema.sql
+mysql -u root -p campus_fenbushi < mysql/init.sql
 ```
 
 初始化脚本会自动创建所有数据表并插入初始数据，包括讨论板块和管理员账号。
@@ -205,8 +216,8 @@ cd backend
 # 安装 Maven 依赖
 mvn clean install
 
-# 启动后端服务（开发模式，自动读取 application-dev.yml）
-mvn spring-boot:run
+# 启动后端服务（开发模式，指定 dev 配置）
+mvn spring-boot:run -Dspring-boot.run.profiles=dev
 
 # 或者打包后运行
 mvn package -DskipTests
@@ -277,8 +288,8 @@ npm run build
 
 | 角色 | 用户名 | 密码 |
 |------|--------|------|
-| 普通用户 | testuser | test123456 |
-| 管理员 | admin | admin123456 |
+| 普通用户 | 13800000001 | 123456 |
+| 管理员 | admin | admin123 |
 
 ## 六、Docker 快速启动
 
@@ -286,26 +297,28 @@ npm run build
 
 ```bash
 # 进入部署目录
-cd deployment
+cd deploy
 
 # 启动所有服务
-docker-compose up -d
+docker-compose -f docker-compose.dev.yml up -d
 
 # 查看服务状态
-docker-compose ps
+docker-compose -f docker-compose.dev.yml ps
 
 # 查看服务日志
-docker-compose logs -f
+docker-compose -f docker-compose.dev.yml logs -f
 
 # 停止所有服务
-docker-compose down
+docker-compose -f docker-compose.dev.yml down
 ```
 
 Docker Compose 会自动启动以下服务：
 
 | 服务 | 端口 | 说明 |
 |------|------|------|
-| MySQL | 3306 | 数据库服务 |
+| MySQL Master | 3306 | 数据库主库（写操作） |
+| MySQL Slave | 3307 | 数据库从库（读操作） |
+| Redis | 6379 | 缓存服务 |
 | Backend | 8080 | 后端 API 服务 |
 | Frontend-User | 3000 | 用户前端服务 |
 | Frontend-Admin | 3001 | 管理前端服务 |
@@ -342,8 +355,8 @@ POST /api/auth/login
 Content-Type: application/json
 
 {
-  "username": "testuser",
-  "password": "test123456"
+  "phone": "13800000001",
+  "password": "123456"
 }
 
 # 响应
@@ -368,13 +381,14 @@ Authorization: Bearer <your-token>
 |------|------|
 | ARCHITECTURE.md | 系统架构设计指南，包含技术选型、架构模式、安全设计等内容 |
 | API.md | API 接口完整参考，包含所有接口的详细说明和示例 |
-| DATABASE.md | 数据库设计说明，包含表结构、索引设计、初始化数据等内容 |
-| DEVELOPMENT.md | 本地开发环境搭建指南，帮助新开发者快速上手 |
-| BACKEND_GUIDE.md | 后端开发规范指南，包含代码风格、分层架构、异常处理等内容 |
-| FRONTEND_USER_GUIDE.md | 用户前端开发规范指南，包含组件开发、状态管理、样式规范等内容 |
-| FRONTEND_ADMIN_GUIDE.md | 管理前端开发规范指南，包含 Element Plus 使用、权限管理等内容 |
-| DOCKER_DEV.md | Docker 开发环境使用指南，包含配置说明、常见问题等内容 |
-| MONITORING.md | 监控运维指南，包含日志规范、健康检查、性能监控等内容 |
+| BUSINESS_FLOW.md | 业务流程文档，包含各功能模块的业务流程说明 |
+| DEPLOYMENT_PROD.md | 生产环境部署文档，包含 Docker Swarm 部署配置 |
+| E2E_TEST_PLAN.md | 端到端测试计划，包含测试用例和测试流程 |
+| ENVIRONMENT_VARIABLES.md | 环境变量说明，包含所有配置项的详细说明 |
+| ENV_SETUP.md | 环境搭建指南，包含开发环境配置说明 |
+| PRD.md | 产品需求文档，包含功能需求和设计决策 |
+| QUICK_START.md | 快速开始指南，帮助开发者快速启动项目 |
+| TROUBLESHOOTING.md | 常见问题排查指南，包含常见问题及解决方案 |
 
 ## 九、常见问题
 
@@ -436,8 +450,4 @@ npm run lint
 
 ---
 
-**项目地址**：https://github.com/your-org/campus
-
-**问题反馈**：https://github.com/your-org/campus/issues
-
-**更新日期**：2026年2月
+**更新日期**：2026年3月

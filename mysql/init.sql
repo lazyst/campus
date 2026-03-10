@@ -309,13 +309,14 @@ INSERT INTO `admin` (`id`, `username`, `password`, `nickname`, `avatar`, `role`,
 (1, 'admin', '$2a$10$YxE39kUPApogVkwimnlYOuW0xSM89h8nNda/Q0BOIHTKzKta8Tl/W', '超级管理员', NULL, 1, 1, '2026-02-01 16:06:12', NULL, '2026-01-27 18:48:18', '2026-01-27 18:48:18', NULL, NULL, 0);
 
 -- 插入用户数据
+-- 密码: 123456 (BCrypt hash)
 INSERT INTO `user` (`id`, `phone`, `password`, `nickname`, `gender`, `bio`, `avatar`, `status`, `created_at`, `updated_at`, `created_by`, `updated_by`, `deleted`, `grade`, `major`) VALUES
-(1, '13800000000', '$2a$10$N.zmdr9k7uOCQb376NoUnuTJ8iAt6Z5EHsM8lE9lBOsl7iAt6Z5EH', '测试用户', 1, '这是测试用户', NULL, 1, '2026-01-27 18:45:40', '2026-01-27 18:45:40', NULL, NULL, 0, NULL, NULL),
-(2, '13900000001', '$2a$10$N.zmdr9k7uOCQb376NoUnuTJ8iAt6Z5EHsM8lE9lBOsl7iAt6Z5EH', '校园小明', 1, '爱学习，喜欢交友的在校大学生', NULL, 1, '2026-01-27 18:45:40', '2026-01-27 18:45:40', NULL, NULL, 0, NULL, NULL),
-(3, '13900000002', '$2a$10$N.zmdr9k7uOCQb376NoUnuTJ8iAt6Z5EHsM8lE9lBOsl7iAt6Z5EH', '校园小花', 2, '大四学生，分享校园生活', NULL, 1, '2026-01-27 18:45:40', '2026-01-27 18:45:40', NULL, NULL, 0, NULL, NULL),
-(4, '13900000003', '$2a$10$N.zmdr9k7uOCQb376NoUnuTJ8iAt6Z5EHsM8lE9lBOsl7iAt6Z5EH', '学习达人', 1, '考研党，分享学习资料', NULL, 1, '2026-01-27 18:45:40', '2026-01-27 18:45:40', NULL, NULL, 0, NULL, NULL),
-(5, '13900000004', '$2a$10$N.zmdr9k7uOCQb376NoUnuTJ8iAt6Z5EHsM8lE9lBOsl7iAt6Z5EH', '二手小王', 1, '专注二手交易，帮大家淘好物', NULL, 1, '2026-01-27 18:45:40', '2026-01-27 18:45:40', NULL, NULL, 0, NULL, NULL),
-(6, '13900000005', '$2a$10$N.zmdr9k7uOCQb376NoUnuTJ8iAt6Z5EHsM8lE9lBOsl7iAt6Z5EH', '活动小精灵', 2, '校园活动组织者', NULL, 1, '2026-01-27 18:45:40', '2026-01-27 18:45:40', NULL, NULL, 0, NULL, NULL);
+(1, '13800000001', '$2a$10$wBcj0zNQoa3HMIyQ3WOA8OhCbYFbhFNskW5IKfmkqlNhlNZXjHw5K', '测试用户1', 1, '这是测试用户1', NULL, 1, '2026-01-27 18:45:40', '2026-01-27 18:45:40', NULL, NULL, 0, '大一', '计算机科学与技术'),
+(2, '13800000002', '$2a$10$wBcj0zNQoa3HMIyQ3WOA8OhCbYFbhFNskW5IKfmkqlNhlNZXjHw5K', '测试用户2', 2, '这是测试用户2', NULL, 1, '2026-01-27 18:45:40', '2026-01-27 18:45:40', NULL, NULL, 0, '大二', '软件工程'),
+(3, '13800000003', '$2a$10$wBcj0zNQoa3HMIyQ3WOA8OhCbYFbhFNskW5IKfmkqlNhlNZXjHw5K', '校园小明', 1, '爱学习，喜欢交友的在校大学生', NULL, 1, '2026-01-27 18:45:40', '2026-01-27 18:45:40', NULL, NULL, 0, '大三', '数据科学与大数据技术'),
+(4, '13800000004', '$2a$10$wBcj0zNQoa3HMIyQ3WOA8OhCbYFbhFNskW5IKfmkqlNhlNZXjHw5K', '校园小花', 2, '大四学生，分享校园生活', NULL, 1, '2026-01-27 18:45:40', '2026-01-27 18:45:40', NULL, NULL, 0, '大四', '工商管理'),
+(5, '13800000005', '$2a$10$wBcj0zNQoa3HMIyQ3WOA8OhCbYFbhFNskW5IKfmkqlNhlNZXjHw5K', '学习达人', 1, '考研党，分享学习资料', NULL, 1, '2026-01-27 18:45:40', '2026-01-27 18:45:40', NULL, NULL, 0, '大二', '法学'),
+(6, '13800000006', '$2a$10$wBcj0zNQoa3HMIyQ3WOA8OhCbYFbhFNskW5IKfmkqlNhlNZXjHw5K', '活动小精灵', 2, '校园活动组织者', NULL, 1, '2026-01-27 18:45:40', '2026-01-27 18:45:40', NULL, NULL, 0, '大一', '艺术设计');
 
 -- 插入板块数据
 INSERT INTO `board` (`id`, `name`, `description`, `icon`, `sort`, `status`, `created_at`, `updated_at`, `created_by`, `updated_by`, `deleted`) VALUES
